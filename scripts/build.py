@@ -147,7 +147,7 @@ def main():
         cover = "\n".join(f"\\newcommand{{\\{k}}}{{{v}}}" for k, v in fields.items())
         if a.date:
             cover += f"\n\\newcommand{{\\CoverDate}}{{{a.date}}}"
-    pdftitle = re.sub(r"[{}\\$]", "", " ".join(titles))
+    pdftitle = re.sub(r"[{}\\$]", "", " ".join(titles)).replace("%", "\\%").replace("#", "\\#").replace("&", "\\&")
 
     main = (TEMPLATE / "main.tex").read_text()
     for key, val in {"CLASS": a.cls, "FONTSIZE": a.fontsize, "HEADER": header, "GRAPHICSPATH": graphicspath,

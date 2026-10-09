@@ -43,6 +43,7 @@ local MATHCH = {
   ["∝"] = "\\propto", ["∫"] = "\\int", ["≈"] = "\\approx", ["≠"] = "\\neq", ["≤"] = "\\le",
   ["≥"] = "\\ge", ["≪"] = "\\ll", ["≫"] = "\\gg", ["⊕"] = "\\oplus", ["⇒"] = "\\Rightarrow",
   ["⇔"] = "\\Leftrightarrow", ["∞"] = "\\infty", ["∑"] = "\\sum", ["∂"] = "\\partial",
+  ["☐"] = "\\square", ["☒"] = "\\boxtimes",
 }
 local SUP = { ["⁰"]="0", ["¹"]="1", ["²"]="2", ["³"]="3", ["⁴"]="4", ["⁵"]="5", ["⁶"]="6", ["⁷"]="7", ["⁸"]="8", ["⁹"]="9", ["⁻"]="-", ["⁺"]="+" }
 local SUB = { ["₀"]="0", ["₁"]="1", ["₂"]="2", ["₃"]="3", ["₄"]="4", ["₅"]="5", ["₆"]="6", ["₇"]="7", ["₈"]="8", ["₉"]="9" }
@@ -482,7 +483,12 @@ local function table_block(t)
   local flex, best = nil, 0
   -- flexible column: the maths-heavy column with the longest entries (maths cannot wrap like text);
   -- otherwise the column with the longest average text
-  for j = 1, ncol do if (mshare[j] or 0) >= 0.5 and maxl[j] > best then best, flex = maxl[j], j end end
+  -- a "formula column": mostly maths and clearly more maths-heavy than every other column
+  for j = 1, ncol do
+    local other = 0
+    for i = 1, ncol do if i ~= j and (mshare[i] or 0) > other then other = mshare[i] end end
+    if (mshare[j] or 0) >= 0.3 and (mshare[j] or 0) >= other + 0.25 and maxl[j] > best then best, flex = maxl[j], j end
+  end
   if not flex then for j = 1, ncol do if avg[j] > best then best, flex = avg[j], j end end end
   local spec, kind, width = {}, {}, {}
   local fixed_total = 0
@@ -503,6 +509,11 @@ local function table_block(t)
       if w < mw then w = math.min(mw, 7.0) end
       kind[j] = "x"; width[j] = w; fixed_total = fixed_total + w
     end
+  end
+  -- two prose columns that both need room share the width equally
+  if ncol == 2 and kind[flex] == "L" then
+    local o = (flex == 1) and 2 or 1
+    if kind[o] == "x" and maxl[o] >= 30 and avg[o] >= 0.7 * avg[flex] then kind[o] = "L"; width[o] = nil end
   end
   local has_flex = false
   for j = 1, ncol do if kind[j] == "L" then has_flex = true end end
