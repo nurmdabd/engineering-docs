@@ -1,0 +1,25 @@
+% main.tex template. scripts/build.py fills every <<...>> placeholder.
+% To compile by hand, replace the placeholders and keep main-tex-preamble.tex beside this file.
+\documentclass[a4paper, <<FONTSIZE>>]{<<CLASS>>}
+\newcommand{\ReportHeader}{<<HEADER>>}
+\input{main-tex-preamble.tex}
+\IfFileExists{cover-page-preamble.tex}{\input{cover-page-preamble.tex}}{}
+\graphicspath{<<GRAPHICSPATH>>}
+
+\begin{document}
+\IfFileExists{cover-page-main.tex}{\include{cover-page-main}}{}
+\begin{center}
+<<TITLE_LINES>>
+\end{center}
+
+<<TOC_BLOCK>>
+\begin{center}
+	{\color{white!50!black}Created by <<AUTHOR>>} \\
+	\vspace{0.5cm}
+\end{center}
+
+\newpage
+
+<<BODY_INPUTS>>
+
+\end{document}

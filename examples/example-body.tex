@@ -1,0 +1,97 @@
+\section{Pre-emphasis and De-emphasis in FM}
+
+\subsection{Why FM Needs Emphasis}
+\label{sec:why_fm_needs_emphasis}
+
+In \keyterm{Frequency Modulation (FM)}, the output noise power spectral density grows as $f^2$, so the high audio frequencies (treble above about 2.2 kHz) are hit hardest by noise. Speech and music carry little power there, so the $\mathrm{SNR}$ at high frequencies is poor.
+
+\textbf{Idea:} boost the high frequencies before modulation and cut them by the same amount after demodulation.
+
+\begin{itemize}
+    \item \keyterm{Pre-emphasis} = high-pass boost at the transmitter.
+    \item \keyterm{De-emphasis} = matching low-pass cut at the receiver.
+    \begin{itemize}
+        \item The signal comes out unchanged.
+        \item The high-frequency noise is reduced by about 13 dB.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Transfer Functions}
+\label{sec:emphasis_transfer_functions}
+
+The pre-emphasis filter is
+\begin{equation}
+    H_p(f) = 1 + j\frac{f}{f_1}
+    \label{eq:pre_emphasis_filter}
+\end{equation}
+where:
+\begin{itemize}
+    \item $f_1 = \dfrac{1}{2\pi RC}$ is the corner frequency
+    \item $RC = 75\ \mu\text{s}$ gives $f_1 \approx 2.1$ kHz
+\end{itemize}
+
+The de-emphasis filter is the inverse of \cref{eq:pre_emphasis_filter}, so the cascade is flat:
+\begin{equation}
+    H_p(f)\,H_d(f) = \left(1 + j\frac{f}{f_1}\right)\frac{1}{1 + j\frac{f}{f_1}} = 1
+    \label{eq:emphasis_cascade}
+\end{equation}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{pre_de_emphasis_chain.png}
+    \caption{Pre-emphasis and de-emphasis around the FM link.}
+    \label{fig:pre_de_emphasis_chain}
+\end{figure}
+
+\textbf{Purpose:} \cref{fig:pre_de_emphasis_chain} shows that the boost and the cut sit on either side of the channel, so only the channel noise is filtered.
+
+\subsection{Comparison}
+\label{sec:emphasis_comparison}
+
+\begin{tabularx}{\textwidth}{|c|y{2.8cm}|L|}
+    \hline
+    \rowcolor{gray!15}
+    \cc{Stage}         &
+    \yy{Filter}{2.8cm} &
+    \CC{Effect}                                                                                     \\ \hline
+
+    Tx                 &
+    High-pass boost    &
+    Raises the amplitude of high audio frequencies before the FM modulator.                         \\ \hline
+
+    Rx                 &
+    Low-pass cut       &
+    Restores the original spectrum and attenuates the high-frequency noise added by the channel.    \\ \hline
+\caption{Role of each emphasis filter.}
+\label{tab:emphasis_filter_roles}
+\end{tabularx}
+
+\subsection{Numerical Check}
+\label{sec:emphasis_numerical_check}
+
+\textbf{Command:}
+\begin{lstlisting}[language=Python, caption={Corner frequency of a 75 µs network.}]
+import math
+RC = 75e-6                  # seconds
+f1 = 1 / (2 * math.pi * RC)
+print(f"f1 = {f1:.0f} Hz")
+\end{lstlisting}
+
+\textbf{Output:}
+\begin{lstlisting}[caption={Script output.}]
+f1 = 2122 Hz
+\end{lstlisting}
+
+The result matches \cref{sec:emphasis_transfer_functions}. The file \verb|emphasis_check.py| holds the script.
+
+\begin{repocard}{Course References}
+
+\textbf{Notes Repository:}
+\href{https://github.com/nurmdabd/Temp-3501}{\textit{Temp-3501/}}
+
+\vspace{2mm}
+
+\textbf{Textbook:}
+B.~P.~Lathi, \textit{Modern Digital and Analog Communication Systems}, Ch.~5.
+
+\end{repocard}
