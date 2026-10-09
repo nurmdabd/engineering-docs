@@ -6,7 +6,7 @@ Driven by md2tex.py; not meant to be called directly. Metadata options:
 ]]
 
 local stringify = pandoc.utils.stringify
-local CLASS, FONTPT = "extarticle", 12
+local CLASS, FONTPT, TEXTW = "extarticle", 12, 17.4
 
 local function latex(blocks_or_inlines, is_inline)
   local doc
@@ -88,6 +88,7 @@ end
 local meta_filter = {
   Meta = function(m)
     if m.house_class then CLASS = stringify(m.house_class) end
+    if m.house_textwidth then TEXTW = tonumber(stringify(m.house_textwidth)) or 17.4 end
     if m.house_fontsize then FONTPT = tonumber((stringify(m.house_fontsize):gsub("pt", ""))) or 12 end
   end,
 }
@@ -108,24 +109,25 @@ local function strip_heading_number(h)
   if last and last.t == "Str" and last.text:match(":$") then last.text = last.text:gsub(":$", "") end
 end
 
-local function math_len(inl)
-  local n = 0
+local function math_len(inl, mathonly)
+  local n, mn = 0, 0
   inl:walk({
     Str = function(s) n = n + utf8.len(s.text) end,
     Space = function() n = n + 1 end,
     Math = function(m)
       local t = m.text:gsub("\\[dt]?frac", ""):gsub("\\[a-zA-Z]+", "x"):gsub("[{}%^_ ]", "")
-      n = n + math.ceil(#t * 0.9)
+      n = n + math.ceil(#t * 0.9); mn = mn + math.ceil(#t * 0.9)
     end,
     Code = function(c) n = n + #c.text end,
   })
+  if mathonly then return mn end
   return n
 end
 
 local function table_metrics(tbl)
   local ncol = #tbl.colspecs
-  local maxl, sum, cnt = {}, {}, {}
-  for j = 1, ncol do maxl[j], sum[j], cnt[j] = 0, 0, 0 end
+  local maxl, sum, cnt, msum, tall, mmax = {}, {}, {}, {}, {}, {}
+  for j = 1, ncol do maxl[j], sum[j], cnt[j], msum[j], tall[j], mmax[j] = 0, 0, 0, 0, 0, 0 end
   local function scan(rows, is_head)
     for _, row in ipairs(rows) do
       for j, cell in ipairs(row.cells) do
@@ -133,16 +135,31 @@ local function table_metrics(tbl)
           local l = math_len(pandoc.Blocks(cell.contents))
           if is_head then l = l + 2 end
           if l > maxl[j] then maxl[j] = l end
-          if not is_head then sum[j] = sum[j] + l; cnt[j] = cnt[j] + 1 end
+          if not is_head then
+            sum[j] = sum[j] + l; cnt[j] = cnt[j] + 1
+            msum[j] = msum[j] + math_len(pandoc.Blocks(cell.contents), true)
+            pandoc.Blocks(cell.contents):walk({ Math = function(m)
+              local ml = math_len(pandoc.Inlines({ m }), true)
+              if ml > mmax[j] then mmax[j] = ml end
+              if m.text:match("\\[dt]?frac") or m.text:match("\\int") or m.text:match("\\sum")
+                or m.text:match("\\left") or m.text:match("\\begin") or m.text:match("\\sqrt")
+                or m.text:match("\\overline") or m.text:match("\\displaystyle") or m.text:match("\\boxed") then
+                tall[j] = 1
+              end
+            end })
+          end
         end
       end
     end
   end
   scan(tbl.head.rows, true)
   for _, b in ipairs(tbl.bodies) do scan(b.body, false) end
-  local avg = {}
-  for j = 1, ncol do avg[j] = cnt[j] > 0 and sum[j] / cnt[j] or 0 end
-  return maxl, avg
+  local avg, mshare = {}, {}
+  for j = 1, ncol do
+    avg[j] = cnt[j] > 0 and sum[j] / cnt[j] or 0
+    mshare[j] = sum[j] > 0 and msum[j] / sum[j] or 0
+  end
+  return maxl, avg, mshare, tall, mmax
 end
 
 local function first_display_math_only(blk)
@@ -229,9 +246,12 @@ local structure_filter = {
     end
     local function tag_tables(blk)
       local function tag(t)
-        local maxl, avg = table_metrics(t)
-        local ms, as = {}, {}
-        for j = 1, #maxl do ms[j] = tostring(maxl[j]); as[j] = string.format("%.1f", avg[j]) end
+        local maxl, avg, mshare, tall, mmax = table_metrics(t)
+        local ms, as, sh, tl, mm = {}, {}, {}, {}, {}
+        for j = 1, #maxl do
+          ms[j] = tostring(maxl[j]); as[j] = string.format("%.1f", avg[j])
+          sh[j] = string.format("%.2f", mshare[j]); tl[j] = tostring(tall[j]); mm[j] = tostring(mmax[j])
+        end
         local cap = stringify(t.caption.long or {})
         if cap == "" then cap = cur_title ~= "" and cur_title or "Summary" end
         for _, e in ipairs({ "🎯", "⚠", "📌", "\u{FE0F}" }) do cap = cap:gsub(e, "") end
@@ -240,6 +260,9 @@ local structure_filter = {
         local at = t.attr
         at.attributes["maxl"] = table.concat(ms, ",")
         at.attributes["avg"] = table.concat(as, ",")
+        at.attributes["mshare"] = table.concat(sh, ",")
+        at.attributes["tall"] = table.concat(tl, ",")
+        at.attributes["mmax"] = table.concat(mm, ",")
         at.attributes["cap"] = cap
         at.attributes["lab"] = unique("tab:" .. short(cur_sec) .. (tabn[cur_sec] > 1 and ("_" .. tabn[cur_sec]) or ""))
         t.attr = at
@@ -252,6 +275,10 @@ local structure_filter = {
       local b = out[k]
       if b.t == "Header" then
         cur_sec = b.attributes["label"]:gsub("^sec:", ""); cur_title = stringify(b.content)
+        local nxt = out[k + 1]
+        if nxt and (nxt.t == "Table" or (nxt.t == "Para" and #nxt.content == 1 and nxt.content[1].t == "Image")) then
+          b.attributes["keep"] = "1"
+        end
         final:insert(b); k = k + 1
       elseif first_display_math_only(b) and out[k + 1] and out[k + 1].t == "Para"
           and out[k + 1].content[1] and out[k + 1].content[1].t == "Emph"
@@ -274,6 +301,9 @@ local structure_filter = {
 -- ---------- pass 3: inline content ----------
 local inline_filter = {
   Str = function(s) return convert_str(s.text) end,
+  RawInline = function(r)
+    if r.format == "html" and r.text:match("^<br%s*/?>$") then return raw("\\newline ") end
+  end,
   Math = function(m)
     if m.mathtype == "InlineMath" then return raw("$" .. m.text:gsub("^%s+", ""):gsub("%s+$", "") .. "$") end
   end,
@@ -441,22 +471,36 @@ local function table_block(t)
   local maxl, avg = {}, {}
   for v in (t.attr.attributes["maxl"] or ""):gmatch("[^,]+") do maxl[#maxl + 1] = tonumber(v) end
   for v in (t.attr.attributes["avg"] or ""):gmatch("[^,]+") do avg[#avg + 1] = tonumber(v) end
+  local mshare, tall = {}, {}
+  for v in (t.attr.attributes["mshare"] or ""):gmatch("[^,]+") do mshare[#mshare + 1] = tonumber(v) end
+  for v in (t.attr.attributes["tall"] or ""):gmatch("[^,]+") do tall[#tall + 1] = tonumber(v) end
+  local mmax = {}
+  for v in (t.attr.attributes["mmax"] or ""):gmatch("[^,]+") do mmax[#mmax + 1] = tonumber(v) end
   local ncol = #t.colspecs
   local cw = 0.0185 * FONTPT             -- cm per character, rough
-  local textw = 17.4
+  local textw = TEXTW
   local flex, best = nil, 0
-  for j = 1, ncol do if avg[j] > best then best, flex = avg[j], j end end
+  -- flexible column: the maths-heavy column with the longest entries (maths cannot wrap like text);
+  -- otherwise the column with the longest average text
+  for j = 1, ncol do if (mshare[j] or 0) >= 0.5 and maxl[j] > best then best, flex = maxl[j], j end end
+  if not flex then for j = 1, ncol do if avg[j] > best then best, flex = avg[j], j end end end
   local spec, kind, width = {}, {}, {}
   local fixed_total = 0
   for j = 1, ncol do
     if j == flex then
       kind[j] = "L"
-    elseif maxl[j] <= 12 then
+    elseif maxl[j] <= 12 and (tall[j] or 0) == 0 then
       kind[j] = "c"; fixed_total = fixed_total + maxl[j] * cw + 0.5
     else
+      -- text columns wrap to 2 lines (3 when the flexible column holds maths, which cannot wrap)
+      local mathflex = (mshare[flex] or 0) >= 0.5
+      local lines, cap = mathflex and 3 or 2, mathflex and 4.4 or 5.2
       local w = maxl[j] * cw + 0.4
-      if w > 4.2 then w = math.max(maxl[j] * cw / 2 + 0.5, 2.4) end
-      if w > 5.2 then w = 5.2 end
+      if w > 4.2 then w = math.max(maxl[j] * cw / lines + 0.5, 2.4) end
+      if w > cap then w = cap end
+      -- never narrower than the longest single formula (inline maths does not wrap well)
+      local mw = (mmax[j] or 0) * cw * 1.05 + 0.4
+      if w < mw then w = math.min(mw, 7.0) end
       kind[j] = "x"; width[j] = w; fixed_total = fixed_total + w
     end
   end
@@ -486,17 +530,28 @@ local function table_block(t)
     end
     lines[#lines + 1] = table.concat(cells, " &\n") .. " \\\\ \\hline"
   end
+  lines[#lines + 1] = "\\endhead"   -- repeat the header row when the table continues on the next page
   lines[#lines + 1] = ""
   for _, body in ipairs(t.bodies) do
     for _, row in ipairs(body.body) do
       local cells = {}
-      for _, cell in ipairs(row.cells) do cells[#cells + 1] = "    " .. cell_tex(cell) end
+      for j, cell in ipairs(row.cells) do
+        local tex = cell_tex(cell)
+        if (tall[j] or 0) == 1 and kind[j] ~= "c" and tex:match("%$") and
+          (tex:match("\\[dt]?frac") or tex:match("\\int") or tex:match("\\sum") or tex:match("\\left")
+           or tex:match("\\begin") or tex:match("\\sqrt") or tex:match("\\overline") or tex:match("\\displaystyle")
+           or tex:match("\\boxed")) then
+          tex = "\\tallcell{" .. tex .. "}"
+        end
+        cells[#cells + 1] = "    " .. tex
+      end
       lines[#lines + 1] = table.concat(cells, " &\n") .. " \\\\ \\hline"
       lines[#lines + 1] = ""
     end
   end
   local cap = t.attr.attributes["cap"] or "Summary"
   cap = latex(pandoc.Inlines(convert_str(cap) or { pandoc.Str(cap) }), true)
+  lines[#lines + 1] = "\\rowcolor{white}"   -- keep the caption row out of the banding
   lines[#lines + 1] = "\\caption{" .. cap .. "}"
   lines[#lines + 1] = "\\label{" .. (t.attr.attributes["lab"] or unique("tab:table")) .. "}"
   lines[#lines + 1] = "\\end{tabularx}"
@@ -579,7 +634,8 @@ local block_filter = {
     if not cmd then
       return rawb("\\phantomsection\\label{" .. lbl .. "}\\textbf{" .. title .. ":}")
     end
-    return rawb("\\" .. cmd .. "{" .. title .. "}\n\\label{" .. lbl .. "}")
+    local keep = h.attributes["keep"] and "\\needspace{10\\baselineskip}\n" or ""
+    return rawb(keep .. "\\" .. cmd .. "{" .. title .. "}\n\\label{" .. lbl .. "}")
   end,
 }
 

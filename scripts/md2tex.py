@@ -8,7 +8,7 @@ equations, figures, callouts, question/solution boxes, Unicode table). The judge
 described in SKILL.md, Step 3.
 
 Usage:
-    python3 md2tex.py NOTES.md -o latex/NOTES.tex [--class extarticle|extreport] [--fontsize 12pt]
+    python3 md2tex.py NOTES.md -o latex/NOTES.tex [--class extarticle|extreport] [--fontsize 12pt] [--textwidth 17.4]
 
 Prints the suggested --title lines for build.py (from YAML title/subtitle, else the first # heading,
 which is then removed from the body).
@@ -61,6 +61,7 @@ def main():
     ap.add_argument("-o", "--out", type=Path, required=True)
     ap.add_argument("--class", dest="cls", default="extarticle", choices=["extarticle", "extreport"])
     ap.add_argument("--fontsize", default="12pt")
+    ap.add_argument("--textwidth", type=float, default=17.4, help="text width in cm (17.4 for the house .7in margins)")
     a = ap.parse_args()
 
     md = a.md.resolve()
@@ -78,7 +79,7 @@ def main():
 
     cmd = ["pandoc", "-f", "markdown+lists_without_preceding_blankline-fancy_lists-implicit_figures",
            "-t", "latex", "--wrap=none", "--lua-filter", str(HERE / "house.lua"),
-           "-M", f"house_class={a.cls}", "-M", f"house_fontsize={a.fontsize}"]
+           "-M", f"house_class={a.cls}", "-M", f"house_fontsize={a.fontsize}", "-M", f"house_textwidth={a.textwidth}"]
     r = subprocess.run(cmd, input=body, capture_output=True, text=True)
     if r.returncode:
         sys.exit(r.stderr)

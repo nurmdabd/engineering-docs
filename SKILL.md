@@ -257,6 +257,21 @@ Reserve the flexible `C`/`L`/`R` tier for the column or columns that genuinely h
 
 Preserve every row and cell exactly. Generate a meaningful caption and label if the Markdown doesn't provide them.
 
+**Table hygiene** (verified on rendered pages; the converter does all of this):
+- **Tall maths in a cell** (`\dfrac`, `\frac`, `\int`, `\sum`, `\left…\right`, matrices, `\sqrt`, `\overline`, `\boxed`): wrap the cell as `\tallcell{…}`. It pads the cell 3pt above and below, so the formula never touches the row rules. `\tallcell` only works in paragraph-type columns (`x`/`y`/`z`/`C`/`L`/`R`), so a column that holds tall maths never uses plain `l`/`c`/`r`. Don't use `cellspace` or `makecell` for this: the first breaks wrapping in `x{}` columns, the second breaks matrices.
+- **The flexible column** is the **maths-heavy** one, if a column is mostly maths, because inline maths can't wrap the way text can. Otherwise it is the column with the longest prose. When the flexible column holds maths, text columns may wrap to 3 lines, capped at 4.4 cm.
+- **Minimum width:** no fixed column is narrower than its longest single inline formula.
+- **Repeated header:** put `\endhead` right after the header row, so the header repeats when a table continues on the next page.
+- **Caption row:** put `\rowcolor{white}` on the line before `\caption{…}`, so the caption row doesn't pick up the banding. Don't use `\hiderowcolors` for this; it breaks the banding of the whole table.
+- **Heading with a table:** a heading directly followed by a table (or a figure) gets `\needspace{10\baselineskip}` before it, so the heading never sits alone at a page bottom.
+- **One item per line:** in a cell listing several items (symbols, steps), separate them with `<br>` in the Markdown, or `\newline` in LaTeX.
+
+**Dense reference sheets** (formula sheets, many-column tables):
+- **Font and margins:** use `--fontsize 11pt` and `--margin-x 0.4in` in `build.py`. Pass the matching `--textwidth 18.9` (cm) to `md2tex.py` so it sizes columns for the wider text block.
+- **Formula sheet layout:** `Title | Equation | Notation | Reference`.
+  - **Notation** is required: define every new symbol in the row, one per line.
+  - **Reference** is optional: give the lecture, plus a link to the section of the theory PDF where the formula is derived.
+
 ## 5. Code blocks
 
 ```latex

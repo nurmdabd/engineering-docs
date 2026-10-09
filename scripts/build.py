@@ -10,6 +10,7 @@ Usage:
         [--author "Nur Mohammad"]
         [--class extarticle|extreport]        # default extarticle
         [--fontsize 12pt]                      # 8pt..20pt for ext* classes; default 12pt
+        [--margin-x 0.4in]                     # narrower left/right margins for dense sheets (house default .7in)
         [--no-toc]
         [--figures DIR ...]                    # extra image folders (body dir and body_dir/figures are added automatically)
         [--cover]                              # add the bundled study-notes cover page, with:
@@ -92,6 +93,7 @@ def main():
     ap.add_argument("--class", dest="cls", default="extarticle", choices=["extarticle", "extreport"])
     ap.add_argument("--fontsize", default="12pt")
     ap.add_argument("--no-toc", action="store_true")
+    ap.add_argument("--margin-x")
     ap.add_argument("--figures", nargs="*", default=[], type=Path)
     ap.add_argument("--cover", action="store_true")
     ap.add_argument("--course-code", default="")
@@ -151,7 +153,8 @@ def main():
     for key, val in {"CLASS": a.cls, "FONTSIZE": a.fontsize, "HEADER": header, "GRAPHICSPATH": graphicspath,
                      "TITLE_LINES": title_lines, "TOC_BLOCK": toc, "AUTHOR": tex_escape(a.author),
                      "BODY_INPUTS": "\n".join(includes),
-                     "COVER_FIELDS": cover, "PDFTITLE": pdftitle}.items():
+                     "COVER_FIELDS": cover, "PDFTITLE": pdftitle,
+                     "GEOMETRY": f"\\geometry{{left={a.margin_x}, right={a.margin_x}}}" if a.margin_x else ""}.items():
         main = main.replace(f"<<{key}>>", val)
     (build / "main.tex").write_text(main)
 

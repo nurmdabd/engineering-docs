@@ -419,3 +419,12 @@ literate=
 % Figures: the house \intextsep is negative (keeps [h] tables tight), which pulls [H] figures
 % up into the preceding text/heading. Give figures their own positive spacing; tables unchanged.
 \AddToHook{env/figure/begin}{\setlength{\intextsep}{10pt plus 2pt minus 2pt}}
+
+% Table cells holding tall maths (fractions, integrals, matrices): \tallcell{...} pads the cell
+% 3pt above and below so the formula never touches the row rules. Only for x/y/z and X-type
+% (paragraph) columns; the converter never puts tall maths in plain l/c/r columns.
+\newcommand{\tallcell}[1]{\vspace*{3pt}#1\par\vspace*{3pt}}
+
+% Keep a heading on the same page as the table (or figure) right after it.
+% The converter writes \needspace{...} before such headings.
+\usepackage{needspace}
