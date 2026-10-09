@@ -415,3 +415,7 @@ literate=
 % Small clickable chip for "go to" links: \golink{label}{text}
 \newcommand{\golink}[2]{\hyperref[#1]{\tcbox[on line, arc=1.5pt, colback=BlueLagoon!12, colframe=BlueLagoon!60,
 	boxsep=0pt, left=3pt, right=3pt, top=1pt, bottom=1pt]{\small\color{BlueLagoon!70!black}#2}}}
+
+% Figures: the house \intextsep is negative (keeps [h] tables tight), which pulls [H] figures
+% up into the preceding text/heading. Give figures their own positive spacing; tables unchanged.
+\AddToHook{env/figure/begin}{\setlength{\intextsep}{10pt plus 2pt minus 2pt}}
