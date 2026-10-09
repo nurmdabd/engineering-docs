@@ -11,6 +11,7 @@ Usage:
         [--class extarticle|extreport]        # default extarticle
         [--fontsize 12pt]                      # 8pt..20pt for ext* classes; default 12pt
         [--margin-x 0.4in]                     # narrower left/right margins for dense sheets (house default .7in)
+        [--bangla]                             # Bangla text: body must wrap Bangla runs in \\bn{...} (md2tex --bangla does it)
         [--no-toc]
         [--figures DIR ...]                    # extra image folders (body dir and body_dir/figures are added automatically)
         [--cover]                              # add the bundled study-notes cover page, with:
@@ -31,6 +32,25 @@ from pathlib import Path
 
 SKILL = Path(__file__).resolve().parents[1]
 TEMPLATE = SKILL / "template"
+
+
+# Bangla font: Noto Serif Bengali (Linux/Claude), else Nirmala UI or Vrinda (Windows/MikTeX).
+# Each Bangla run is wrapped as \bn{...}; Latin text, maths and terms stay in the house font.
+BANGLA = r"""\IfFontExistsTF{Noto Serif Bengali}{\newfontfamily\bengalifont{Noto Serif Bengali}[Script=Bengali, AutoFakeSlant=0.15]}{%
+  \IfFontExistsTF{Nirmala UI}{\newfontfamily\bengalifont{Nirmala UI}[Script=Bengali, AutoFakeSlant=0.15]}{%
+    \newfontfamily\bengalifont{Vrinda}[Script=Bengali, AutoFakeSlant=0.15]}}
+\DeclareRobustCommand{\bn}[1]{{\bengalifont #1}}
+\AtBeginDocument{\pdfstringdefDisableCommands{\def\bn#1{#1}}}
+% Bangla words cannot be hyphenated and English terms carry Bangla suffixes ("transmitter-এর"),
+% so give TeX room to loosen a line instead of letting it overflow
+\setlength{\emergencystretch}{3em}"""
+
+
+BN_RUN = re.compile("[\u0980-\u09FF\u0964\u0965\u200C\u200D]+(?:[ ,;:!?']+[\u0980-\u09FF\u0964\u0965\u200C\u200D]+)*")
+
+
+def bn_wrap(text):
+    return BN_RUN.sub(lambda m: "\\bn{" + m.group(0) + "}", text)
 
 
 def tex_escape(text):
@@ -94,6 +114,7 @@ def main():
     ap.add_argument("--fontsize", default="12pt")
     ap.add_argument("--no-toc", action="store_true")
     ap.add_argument("--margin-x")
+    ap.add_argument("--bangla", action="store_true")
     ap.add_argument("--figures", nargs="*", default=[], type=Path)
     ap.add_argument("--cover", action="store_true")
     ap.add_argument("--course-code", default="")
@@ -149,11 +170,15 @@ def main():
             cover += f"\n\\newcommand{{\\CoverDate}}{{{a.date}}}"
     pdftitle = re.sub(r"[{}\\$]", "", " ".join(titles)).replace("%", "\\%").replace("#", "\\#").replace("&", "\\&")
 
+    if a.bangla:   # title lines, header and cover fields are typed on the command line, so wrap them here
+        title_lines, header, cover = bn_wrap(title_lines), bn_wrap(header), bn_wrap(cover)
+
     main = (TEMPLATE / "main.tex").read_text()
     for key, val in {"CLASS": a.cls, "FONTSIZE": a.fontsize, "HEADER": header, "GRAPHICSPATH": graphicspath,
                      "TITLE_LINES": title_lines, "TOC_BLOCK": toc, "AUTHOR": tex_escape(a.author),
                      "BODY_INPUTS": "\n".join(includes),
                      "COVER_FIELDS": cover, "PDFTITLE": pdftitle,
+                     "BANGLA": BANGLA if a.bangla else "",
                      "GEOMETRY": f"\\geometry{{left={a.margin_x}, right={a.margin_x}}}" if a.margin_x else ""}.items():
         main = main.replace(f"<<{key}>>", val)
     (build / "main.tex").write_text(main)

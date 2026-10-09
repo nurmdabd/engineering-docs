@@ -55,12 +55,29 @@ def image_width(path):
     return "0.45\\linewidth"
 
 
+BN = "\u0980-\u09FF\u0964\u0965\u200C\u200D"
+BN_RUN = re.compile(f"[{BN}]+(?:[ ,;:!?'\u2018\u2019\u201C\u201D]+[{BN}]+)*")
+
+
+def wrap_bangla(tex):
+    """Wrap every run of Bangla text (outside maths) in \\bn{...}; maths and \\label/\\ref keys untouched."""
+    out = []
+    for line in tex.split("\n"):
+        parts = re.split(r"(\$[^$]*\$|\\(?:label|ref|cref|hyperref)\b(?:\[[^\]]*\])?\{[^}]*\})", line)
+        for i, p in enumerate(parts):
+            if i % 2 == 0:
+                parts[i] = BN_RUN.sub(lambda m: "\\bn{" + m.group(0) + "}", p)
+        out.append("".join(parts))
+    return "\n".join(out)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("md", type=Path)
     ap.add_argument("-o", "--out", type=Path, required=True)
     ap.add_argument("--class", dest="cls", default="extarticle", choices=["extarticle", "extreport"])
     ap.add_argument("--fontsize", default="12pt")
+    ap.add_argument("--bangla", action="store_true", help="wrap Bangla text runs in \\bn{...} (build with build.py --bangla)")
     ap.add_argument("--textwidth", type=float, default=17.4, help="text width in cm (17.4 for the house .7in margins)")
     a = ap.parse_args()
 
@@ -90,6 +107,8 @@ def main():
         return os.path.relpath(src, out.parent).replace(os.sep, "/")
     tex = re.sub(r"@@W:(.+?)@@", lambda m: image_width((md.parent / m.group(1)).resolve()), tex)
     tex = re.sub(r"@@P:(.+?)@@", fix_path, tex)
+    if a.bangla:
+        tex = wrap_bangla(tex)
     tex = re.sub(r"\n{3,}", "\n\n", tex).strip() + "\n"
     header = f"% Generated from {md.name} by md2tex.py, then reviewed against SKILL.md.\n\n"
     out.write_text(header + tex, encoding="utf-8")

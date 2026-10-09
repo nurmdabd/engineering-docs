@@ -23,6 +23,7 @@ local function rawb(s) return pandoc.RawBlock("latex", s) end
 local used = {}
 local function slug(s)
   s = s:lower():gsub("[^%w%-_ ]", ""):gsub("[%s%-]+", "_"):gsub("_+", "_"):gsub("^_", ""):gsub("_$", "")
+  if s == "" then s = "s" end   -- e.g. a heading written only in Bangla; unique() numbers them
   return s
 end
 local function unique(lbl)
@@ -110,10 +111,21 @@ local function strip_heading_number(h)
   if last and last.t == "Str" and last.text:match(":$") then last.text = last.text:gsub(":$", "") end
 end
 
+-- visible width in "characters": Bengali vowel signs, hasanta, nukta etc. combine with the
+-- previous letter and take almost no width, so they are not counted
+local function vlen(text)
+  local n = 0
+  for _, cp in utf8.codes(text) do
+    if not ((cp >= 0x0981 and cp <= 0x0983) or cp == 0x09BC or (cp >= 0x09BE and cp <= 0x09CD)
+        or cp == 0x09D7 or cp == 0x200C or cp == 0x200D) then n = n + 1 end
+  end
+  return n
+end
+
 local function math_len(inl, mathonly)
   local n, mn = 0, 0
   inl:walk({
-    Str = function(s) n = n + utf8.len(s.text) end,
+    Str = function(s) n = n + vlen(s.text) end,
     Space = function() n = n + 1 end,
     Math = function(m)
       local t = m.text:gsub("\\[dt]?frac", ""):gsub("\\[a-zA-Z]+", "x"):gsub("[{}%^_ ]", "")
@@ -127,13 +139,18 @@ end
 
 local function table_metrics(tbl)
   local ncol = #tbl.colspecs
-  local maxl, sum, cnt, msum, tall, mmax = {}, {}, {}, {}, {}, {}
-  for j = 1, ncol do maxl[j], sum[j], cnt[j], msum[j], tall[j], mmax[j] = 0, 0, 0, 0, 0, 0 end
+  local maxl, sum, cnt, msum, tall, mmax, mword = {}, {}, {}, {}, {}, {}, {}
+  for j = 1, ncol do maxl[j], sum[j], cnt[j], msum[j], tall[j], mmax[j], mword[j] = 0, 0, 0, 0, 0, 0, 0 end
   local function scan(rows, is_head)
     for _, row in ipairs(rows) do
       for j, cell in ipairs(row.cells) do
         if j <= ncol then
           local l = math_len(pandoc.Blocks(cell.contents))
+          -- longest unbreakable word (Bangla words cannot be hyphenated)
+          pandoc.Blocks(cell.contents):walk({ Str = function(x)
+            local w = vlen(x.text)
+            if w > mword[j] then mword[j] = w end
+          end })
           if is_head then l = l + 2 end
           if l > maxl[j] then maxl[j] = l end
           if not is_head then
@@ -160,7 +177,7 @@ local function table_metrics(tbl)
     avg[j] = cnt[j] > 0 and sum[j] / cnt[j] or 0
     mshare[j] = sum[j] > 0 and msum[j] / sum[j] or 0
   end
-  return maxl, avg, mshare, tall, mmax
+  return maxl, avg, mshare, tall, mmax, mword
 end
 
 local function first_display_math_only(blk)
@@ -247,11 +264,11 @@ local structure_filter = {
     end
     local function tag_tables(blk)
       local function tag(t)
-        local maxl, avg, mshare, tall, mmax = table_metrics(t)
-        local ms, as, sh, tl, mm = {}, {}, {}, {}, {}
+        local maxl, avg, mshare, tall, mmax, mword = table_metrics(t)
+        local ms, as, sh, tl, mm, mw = {}, {}, {}, {}, {}, {}
         for j = 1, #maxl do
           ms[j] = tostring(maxl[j]); as[j] = string.format("%.1f", avg[j])
-          sh[j] = string.format("%.2f", mshare[j]); tl[j] = tostring(tall[j]); mm[j] = tostring(mmax[j])
+          sh[j] = string.format("%.2f", mshare[j]); tl[j] = tostring(tall[j]); mm[j] = tostring(mmax[j]); mw[j] = tostring(mword[j])
         end
         local cap = stringify(t.caption.long or {})
         if cap == "" then cap = cur_title ~= "" and cur_title or "Summary" end
@@ -264,6 +281,7 @@ local structure_filter = {
         at.attributes["mshare"] = table.concat(sh, ",")
         at.attributes["tall"] = table.concat(tl, ",")
         at.attributes["mmax"] = table.concat(mm, ",")
+        at.attributes["mword"] = table.concat(mw, ",")
         at.attributes["cap"] = cap
         at.attributes["lab"] = unique("tab:" .. short(cur_sec) .. (tabn[cur_sec] > 1 and ("_" .. tabn[cur_sec]) or ""))
         t.attr = at
@@ -339,9 +357,9 @@ local function is_label_strong(inls)
   local f = inls[k]
   if not f or f.t ~= "Strong" then return false end
   local s = stringify(f)
-  if s:match("[:%.%?]$") or s:match("—$") then return k end
+  if s:match("[:%.%?]$") or s:match("—$") or s:match("।$") then return k end
   local n = inls[k + 1]
-  if n and n.t == "Str" and n.text:match("^[:%.]") then return k end
+  if n and n.t == "Str" and (n.text:match("^[:%.]") or n.text:match("^।")) then return k end
   return false
 end
 
@@ -397,7 +415,7 @@ local function split_on_breaks(inls)
   for j, x in ipairs(inls) do
     local nxt = inls[j + 1]
     if x.t == "SoftBreak" and nxt and ((nxt.t == "Str" and nxt.text:match("^%(%w%)")) or
-        (nxt.t == "Strong" and stringify(nxt):match("[:%.%?]$"))) then
+        (nxt.t == "Strong" and (stringify(nxt):match("[:%.%?]$") or stringify(nxt):match("।$")))) then
       parts[#parts + 1] = cur; cur = pandoc.List()
     else cur:insert(x) end
   end
@@ -436,8 +454,9 @@ local function para(p, ctor)
   if #c == 1 and c[1].t == "Image" then return figure_block(c[1]) end
   -- worked example paragraph -> examplebox
   if c[1] and c[1].t == "Strong" and (stringify(c[1]):match("^Examples?[%s:%.—]") or stringify(c[1]):match("^Examples?$")
-      or stringify(c[1]):match("^Worked example")) then
-    local title = latex(c[1].content, true):gsub("[:%.]$", "")
+      or stringify(c[1]):match("^Worked example") or stringify(c[1]):match("^উদাহরণ")
+      or stringify(c[1]):match("^সমাধানকৃত উদাহরণ")) then
+    local title = latex(c[1].content, true):gsub("[:%.]$", ""):gsub("।$", "")
     local rest = pandoc.List(c); rest:remove(1)
     while rest[1] and (rest[1].t == "Space" or (rest[1].t == "Str" and rest[1].text == ":")) do rest:remove(1) end
     local inner = render_para(rest, ctor)
@@ -475,8 +494,9 @@ local function table_block(t)
   local mshare, tall = {}, {}
   for v in (t.attr.attributes["mshare"] or ""):gmatch("[^,]+") do mshare[#mshare + 1] = tonumber(v) end
   for v in (t.attr.attributes["tall"] or ""):gmatch("[^,]+") do tall[#tall + 1] = tonumber(v) end
-  local mmax = {}
+  local mmax, mword = {}, {}
   for v in (t.attr.attributes["mmax"] or ""):gmatch("[^,]+") do mmax[#mmax + 1] = tonumber(v) end
+  for v in (t.attr.attributes["mword"] or ""):gmatch("[^,]+") do mword[#mword + 1] = tonumber(v) end
   local ncol = #t.colspecs
   local cw = 0.0185 * FONTPT             -- cm per character, rough
   local textw = TEXTW
@@ -507,6 +527,9 @@ local function table_block(t)
       -- never narrower than the longest single formula (inline maths does not wrap well)
       local mw = (mmax[j] or 0) * cw * 1.05 + 0.4
       if w < mw then w = math.min(mw, 7.0) end
+      -- ...and never narrower than its longest single word
+      local ww = (mword[j] or 0) * cw * 1.15 + 0.4
+      if w < ww then w = math.min(ww, 7.0) end
       kind[j] = "x"; width[j] = w; fixed_total = fixed_total + w
     end
   end
@@ -611,7 +634,7 @@ local block_filter = {
         while c[1] and c[1].t == "Space" do c:remove(1) end
       end
       if c[1] and c[1].t == "RawInline" and c[1].text:match("^\\textbf{") then
-        title = c[1].text:gsub("^\\textbf{", ""):gsub("}$", ""):gsub("[:%.]$", "")
+        title = c[1].text:gsub("^\\textbf{", ""):gsub("}$", ""):gsub("[:%.]$", ""):gsub("।$", "")
         c:remove(1)
         while c[1] and c[1].t == "Space" do c:remove(1) end
       end
