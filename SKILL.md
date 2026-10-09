@@ -1,6 +1,6 @@
 ---
 name: latex-engineering-pdf
-description: Converts finalized Engineering Markdown (lecture notes, theory files, lab reports, study sheets, day-0X write-ups) into LaTeX in Nur Mohammad's house style AND compiles it to a finished PDF right here with XeLaTeX, using the bundled preamble and main.tex template — no local MikTeX step needed. Use whenever the user asks to turn Markdown/notes into a PDF, a LaTeX/.tex file, "my format", "my LaTeX style", a report section, or an exam-ready PDF — even if they never say LaTeX. Also use when asked how a Markdown element (table, code block, equation, figure, list, repo reference) should render in this style. Content is preserved exactly — structural/formatting-only conversion (grammar fixes only).
+description: Converts finalized Engineering Markdown (lecture notes, theory files, lab reports, study sheets, question banks, day-0X write-ups) into LaTeX in Nur Mohammad's house style AND compiles it to a finished, interactive PDF right here with XeLaTeX — bundled preamble, main.tex template, study-notes cover page, callout boxes, question/solution links, and a Markdown→LaTeX draft converter. No local MikTeX step needed. Use whenever the user asks to turn Markdown/notes into a PDF, a LaTeX/.tex file, "my format", "my LaTeX style", a report section, or an exam-ready PDF — even if they never say LaTeX. Also use when asked how a Markdown element (table, code block, equation, figure, list, repo reference) should render in this style. Content is preserved exactly — structural/formatting-only conversion (grammar fixes only).
 ---
 
 # Engineering Markdown → House-Style LaTeX → PDF (self-contained)
@@ -8,7 +8,7 @@ description: Converts finalized Engineering Markdown (lecture notes, theory file
 This skill does the whole job in the session:
 
 1. **Set up** XeLaTeX once (`scripts/setup.sh`).
-2. **Convert** the Markdown to LaTeX **body content** by the rules in Sections 0–10.
+2. **Convert** the Markdown to LaTeX **body content** by the rules in Sections 0–13 (draft with `scripts/md2tex.py`, then review by hand).
 3. **Check** the structure (`scripts/check_structure.py`).
 4. **Build** the PDF with the house preamble and `main.tex` template (`scripts/build.py`).
 5. **Look** at the rendered pages and fix what's wrong.
@@ -19,13 +19,15 @@ Bundled files (paths relative to this skill's folder):
 | File | What it is |
 |---|---|
 | `template/main-tex-preamble.tex` | The **live** house preamble. It is the user's own preamble with two portable changes: the header text comes from `\ReportHeader`, and the emoji font falls back to DejaVu Sans when Segoe UI Emoji is missing. |
-| `template/main.tex` | The user's main-file layout: title lines, TOC with the `toc` anchor, "Created by …", `\newpage`, then `\include` of each body file. An optional cover page is included automatically if `cover-page-preamble.tex` and `cover-page-main.tex` are present. |
+| `template/main.tex` | The user's main-file layout: title lines, TOC with the `toc` anchor, "Created by …", `\newpage`, then `\include` of each body file. A cover page is included automatically if `cover-page-preamble.tex` and `cover-page-main.tex` are present in the build. It also passes hyperref's `destlabel` option (Section 13). |
+| `template/cover-page-*.tex` | The **study-notes cover page** (course code band, document title, subtitle, note, optional "Inside" box, author and date). It is filled by `build.py --cover …`. The user's other covers are for other purposes; pass `--cover-dir` to use one of those instead. |
+| `scripts/md2tex.py` + `scripts/house.lua` | A pandoc-based **draft converter** that applies the mechanical rules: headings, labels, table tiers, equations, figures, callouts, question/solution boxes, `eqnote` and Unicode. Its output still gets the Step 3 review. |
 | `scripts/setup.sh` | Installs XeLaTeX and every package the preamble loads (Debian/Ubuntu). Re-running it is safe. |
 | `scripts/check_structure.py` | A fast check for unbalanced braces and `\begin`/`\end` pairs, with no compile. |
 | `scripts/build.py` | Fills the template, compiles with latexmk/XeLaTeX, and summarizes errors, undefined references, **missing glyphs** and wide overfull lines. |
 | `examples/example-body.tex` | A body file that uses every rule below. It compiles clean, so copy its patterns. |
 
-Never edit the bundled preamble to suit one document. If the user changes their live preamble, they send the new file and it replaces `template/main-tex-preamble.tex`. Keep the two portable changes above when you do that.
+Never edit the bundled preamble to suit one document. If the user changes their live preamble, they send the new file and it replaces `template/main-tex-preamble.tex`. Keep the two portable changes above, and the **Study-notes additions** block at its end (callout boxes, markers, `\golink`, PDF navigation), when you do that.
 
 ## Workflow
 
@@ -34,10 +36,23 @@ Never edit the bundled preamble to suit one document. If the user changes their 
 bash <skill>/scripts/setup.sh
 ```
 
-### Step 2: Convert
-Write one `.tex` body file per logical document part, for example one per lecture or day. Each file is raw body content that starts at its outermost heading. Follow Sections 0–10. Save it **next to the Markdown source**, or in a `latex/` folder beside it, so image paths resolve.
+### Step 2: Convert (draft)
+Write one `.tex` body file per logical document part, for example one per lecture or day, or one per sheet. Each file is raw body content that starts at its outermost heading. Save it in a `latex/` folder beside the Markdown so image paths resolve.
 
-### Step 3: Structure check
+For anything longer than a page, draft it with the converter instead of typing it out:
+```bash
+python3 <skill>/scripts/md2tex.py NOTES.md -o latex/NOTES.tex [--class extarticle|extreport] [--fontsize 12pt]
+```
+The converter prints the suggested `--title` lines: the YAML `title`/`subtitle`, or else the first `#` heading, which it then removes from the body.
+
+### Step 3: Review the draft, then check its structure
+The converter cannot make the judgement calls. Read the draft against Sections 0–13 and fix by hand:
+- **`\keyterm` vs plain:** the converter turns every bold span into `\keyterm`, except short all-lowercase stress words like "not" or "before", which become `\emph`.
+- **Captions** that came out generic, for example "Summary" or a repeated section title.
+- **Ambiguous callouts:** any blockquote whose box type is unclear.
+- **Columns** that the page render (Step 5) shows wrapping badly.
+
+Never re-run the converter over a body file you have hand-edited; it overwrites the file. Then run:
 ```bash
 python3 <skill>/scripts/check_structure.py body.tex
 ```
@@ -48,8 +63,14 @@ python3 <skill>/scripts/build.py body1.tex [body2.tex ...] --out path/Name.pdf \
     --title "First title line:" --title "Second title line" \
     --header "Short running header" \
     [--class extarticle|extreport] [--fontsize 12pt] [--author "Nur Mohammad"] \
-    [--figures extra/image/dir ...] [--cover-dir dir/with/cover-page-files] [--no-toc]
+    [--figures extra/image/dir ...] [--no-toc] \
+    [--cover --course-code "COM I" --course-name "Communication Engineering I" \
+     --cover-title "Formula Sheet" --cover-subtitle "Lectures 24--38" --cover-note "Term test preparation" \
+     --cover-contents "Item" --cover-contents "Item" --date "October 2026"]
 ```
+
+- **Cover page:** add `--cover` for study notes and exam material. The cover fields are raw LaTeX, so write `--` for an en-dash and `\&` for `&`. Use `--cover-dir DIR` to use another cover pair instead.
+- **Several documents:** when one project produces several PDFs, write a small `build-all.sh` next to the bodies that calls `build.py` once per document. Commit it so the PDFs can be rebuilt later.
 
 - **Defaults** match the user's latest main file: `extarticle`, `12pt`, author "Nur Mohammad". The title lines are rendered as `{\LARGE{\keyterm{…}}}`.
 - **Choosing the class:** use `--class extreport` when the source has chapter-level `#` headings, as in a multi-day report. That project used `extreport` at `14pt`, so pass `--fontsize 14pt`.
@@ -88,11 +109,15 @@ If the work is in a git repo, commit the body `.tex` files and the PDF. Add `*_b
 | `\graphicspath{{figures/}}` | already set (build.py adds the body folders); bare filenames work in `\includegraphics` |
 | custom `json` language | `language=json` in `lstlisting`, for JSON content specifically |
 | `repocard{title}` | a tool/repo/external-resource reference block (Section 9) |
-| `{\emojifont …}` | symbols Latin Modern lacks (✔ ✘ ⚠ ★) in running text (Section 10) |
+| `{\emojifont …}` | symbols Latin Modern lacks (★) in running text (Section 10) |
+| `notebox`, `examplebox`, `exambox`, `warnbox`, `selfcheckbox` `[title]` | callouts (Section 11) |
+| `questionbox{title}{solution label}`, `solutionbox{title}{question label}` | linked practice questions and solutions (Section 11) |
+| `\exammark`, `\pinmark`, `\warnmark`, `\okmark`, `\nomark` | inline markers that replace 🎯 📌 ⚠ ✔ ✘ (Section 10) |
+| `\golink{label}{text}` | a small clickable chip that jumps to a label |
+| `eqnote{<equation>}{<note>}` | an equation with a short side note, in limited cases (Section 12) |
+| `mainquestion` | previous-year exam questions only (Section 12) |
 
-The preamble also defines some commands that this style **does not map content to yet**:
-- `mainquestion` (a grey question box that starts a new page)
-- `eqnote{<equation>}{<side note>}`
+The preamble also defines these, which stay **unmapped**:
 - `\codechip{}`, `\seqtt{}`
 - `\hlblack{}`, `\grayhl{}`, `\blackhl{}`
 - `\note{}`, `\normalpath{}`
@@ -114,14 +139,14 @@ Everything else is not customized beyond this table: headings, paragraphs, lists
 
 These default fallbacks are safe to apply without asking:
 - **A standalone assignment or question prompt:** a plain paragraph with `\textbf{Question:}` as the label.
-- **A hard callout with no dedicated environment that fits:** `\textbf{}`, or plain text if nothing truly warrants emphasis. This covers callouts such as Note, Warning, Exam tip, and blockquotes marked ⚠, 🎯 or 📌. Use a matching label, for example `\textbf{Note:}`, `\textbf{Warning:}` or `\textbf{Exam Tip:}`, and keep the callout's text as a normal paragraph.
+- **A callout** (blockquote, Note, Warning, Exam tip, Example): the matching box from Section 11. Only when no box fits, use a `\textbf{Label:}` paragraph.
 - **An equation followed by a "where …" explanation:** a plain `equation` with a plain `itemize` list underneath (see Section 7).
 - **Introductory or front-matter text** that describes the whole document series rather than fitting under one heading: preserve it as a LaTeX `%` comment block near the top, with a short note explaining why it isn't its own section. Don't force it into a heading and don't drop it.
 - **A Markdown "Contents" list:** drop it. The template already builds a live table of contents.
 
 Still **stop and ask**, quoting the exact snippet and naming 2–3 concrete options, when:
 - A construct doesn't fit any mapping in this file *or* the fallbacks above.
-- You're unsure whether content wants the `repocard` treatment, a plain paragraph, or some other boxed or special formatting. That includes the unmapped preamble environments listed above.
+- You're unsure whether content wants the `repocard` treatment, a callout box, a plain paragraph, or some other boxed or special formatting. That includes the unmapped preamble commands listed above.
 - Something the user says about their live preamble contradicts `template/main-tex-preamble.tex`, such as a command that supposedly doesn't exist, different styling, or an extra environment. Confirm which is current before relying on it.
 - Getting it wrong has a real cost: it would misrepresent technical content, or duplicate or omit a cross-reference.
 
@@ -357,10 +382,113 @@ These characters **vanish silently** and must be converted:
 |---|---|
 | Greek letters other than Δ and µ (β ω π θ φ λ τ …) | inline maths: `$\beta$`, `$\omega$` … |
 | ≈ ≤ ≥ ≠ ⊕ ⇒ ↔ ∝ ∫ | `$\approx$`, `$\le$`, `$\ge$`, `$\neq$`, `$\oplus$`, `$\Rightarrow$`, `$\leftrightarrow$`, `$\propto$`, `$\int$` |
-| ✔ ✘ ⚠ ★ | `{\emojifont ✔}` and so on (DejaVu Sans / Segoe UI Emoji), or `$\checkmark$` for ✔ |
-| Pictographic emoji (🎯 📌 ➕ 💡) | drop the emoji and keep the meaning as a `\textbf{}` label (Section 0) |
+| ✔ ✅ / ✘ ❌ / ⚠ | `\okmark` / `\nomark` / `\warnmark` (coloured symbols) |
+| 🎯 / 📌 | `\exammark` / `\pinmark` (small EXAM / NOTE chips). At the start of a blockquote, these markers choose the box instead (Section 11). |
+| ★ ⭐ | `{\emojifont ★}` |
+| ¹²³⁴⁻ superscripts, ₁₂ subscripts, ⅓, ①②③ | `$^{-6}$`, `$_{12}$`, `$\tfrac13$`, `\textcircled{\scriptsize 1}` |
+| m̂ (combining hat) | `$\hat{m}$` |
+| Other pictographic emoji (💡 📝 ➕) | drop the emoji and keep the meaning in words |
+
+In headings and captions, wrap maths replacements as `\texorpdfstring{$\beta$}{β}` so the PDF bookmarks stay readable. The converter does this everywhere.
 
 The build's **"Missing glyphs"** line lists anything that slipped through. It must be empty before delivery.
+
+## 11. Callout boxes and practice questions
+
+These boxes make study material easy to scan. They share the `repocard` look (a rounded box with a coloured title bar) and break across pages. The optional `[title]` replaces the default title.
+
+| Source | Box | Default title |
+|---|---|---|
+| `> ⚠ …` (a class-note correction, a common mistake, a caution) | `warnbox` | Watch Out |
+| `> 🎯 …` (exam focus, what to write in the exam) | `exambox` | Exam Focus |
+| `> 📌 …`, or a plain `> …` blockquote (a note or notice) | `notebox` | Note |
+| A paragraph that starts with `**Example …:**` or `**Worked example.**` | `examplebox` | the bold lead-in |
+| The body of a heading containing "self-check" | `selfcheckbox` | Self-check |
+
+**Box titles:** if the callout starts with a bold lead-in label (`> ⚠ **Sign note:** …`), that label, without its colon, becomes the box title. Otherwise the box gets its default title. Remove the marker emoji, because the box colour carries its meaning.
+
+**Practice questions:**
+- **Question format:** a heading that is just an ID (`#### N1`, `#### S12`, `#### L3`) becomes `questionbox`, and `#### Solution N1` becomes `solutionbox`.
+- **Labels:** put `\phantomsection\label{q:n1}` or `\label{sol:n1}` on the line just before the box. The title bar carries the link to the partner box ("Solution →" / "← Back to question"). Drop the Markdown's own `[→ Solution](#…)` and `[← Back](#…)` links, since the title bar replaces them.
+```latex
+\phantomsection\label{q:n1}
+\begin{questionbox}{N1}{sol:n1}
+Broadcast FM uses peak deviation ...
+\end{questionbox}
+...
+\phantomsection\label{sol:n1}
+\begin{solutionbox}{Solution N1}{q:n1}
+$\beta = \Delta f/B = 75/15 = 5$ ...
+\end{solutionbox}
+```
+
+**Boxes and tables:** don't put a `tabularx` inside a callout box when the box might break across pages; leave that callout unboxed. A short table inside a solution box is fine.
+
+## 12. `mainquestion` and `eqnote`: where they may be used
+
+**`mainquestion`** starts a new page and frames one question as a grey block. It was built for solving **previous years' exam questions**.
+
+Use it only when **all** of these hold:
+- The source identifies the question as a real past-exam question, with its year or exam name and question number. For example, "Term Test 2024, Q3(b)" or "Final 2023 Q2".
+- The question gets a full worked solution, roughly half a page or more.
+
+Then lay it out as follows:
+```latex
+\begin{mainquestion}
+\textbf{Term Test 2024, Q3(b):} Draw the Armstrong modulator ... [5 marks]
+\end{mainquestion}
+\textbf{Solution:}
+...
+```
+Put the question text in the box and the solution below it as normal body text, using headings, equations, figures and callouts as usual.
+
+**Never use `mainquestion`** for:
+- practice questions, question banks or self-checks (use `questionbox`/`solutionbox`; a page break per question wastes pages);
+- short answers;
+- questions inside theory notes;
+- invented example questions.
+
+If it is unclear whether a question is a real past-exam question, ask.
+
+**`eqnote{<equation>}{<note>}`** puts the equation in the left 65% and a small side note in the right 32%. It works well, but only in a narrow case.
+
+Use it when **all** of these hold:
+- A single display equation, typically a **final or boxed result**, is immediately followed by one short comment about it: a condition, units, "also write …", or a trap.
+- The comment is at most about 3 short points (separate points with `\\`).
+- The equation fits in 65% of the line.
+
+```latex
+\begin{eqnote}{
+\begin{equation}
+    \boxed{B_{PM} = 2(\Delta f + B)}
+    \label{eq:d1_bandwidth_of_pm_1}
+\end{equation}
+}{\textit{Write also:} for FM, $\Delta f = k_f m_p/2\pi$ \\ PM bandwidth grows with message frequency}
+\end{eqnote}
+```
+
+**Don't use `eqnote`** for:
+- running derivations, multi-line `align` blocks or wide equations;
+- "where …" variable lists (Section 7 keeps those as an `itemize`);
+- notes longer than a few lines, since the note text is `\scriptsize`.
+
+In this repo's derivation sheet, the converter applies it automatically when a display equation is followed by a paragraph that starts with *Write also*.
+
+## 13. Interactivity and links across PDFs
+
+The PDFs are meant to be clicked through. The template and preamble already provide:
+- the bookmarks panel, which opens on launch and is numbered;
+- the **TOC** button in every page header;
+- a clickable table of contents and `\cref` references;
+- question ↔ solution links in the box title bars.
+
+**Linking between PDFs of one set:** hyperref's `destlabel` option is passed by `main.tex`, so every `\label` is also a named destination in the PDF. That makes another PDF in the **same folder** linkable:
+```latex
+\href{3-derivation-sheet.pdf\#sec:d1_bandwidth_of_pm}{D1}
+```
+- **Link targets:** a Markdown link `other.md#anchor` becomes `\href{other.pdf\#sec:<anchor with - → _>}{…}`. Section labels are derived the same way (`sec:` + the Markdown anchor, with `-` → `_`), so both ends agree.
+- **Check after building:** read each PDF's annotations with pypdf and confirm every internal and cross-file destination exists.
+- **Tell the user:** the PDFs must stay in one folder for these links to work.
 
 ## Quick self-check before building
 
@@ -382,6 +510,7 @@ The build's **"Missing glyphs"** line lists anything that slipped through. It mu
 6. **Diagrams as text:** trees and flow diagrams use a captioned `lstlisting` with no `language`, in ASCII.
 7. **References:** `\cref{}` for in-build references; plain prose for anything outside the build.
 8. **`repocard`:** used only for tool and repo reference blocks.
-9. **Unicode:** Section 10 is applied, so no raw Greek or relation symbols appear in running text.
-10. **Ambiguities:** anything unmapped is flagged with a specific question.
-11. **Checks:** `check_structure.py` is clean, the build log says "Log clean" (or its warnings are explained), and the rendered pages have been viewed.
+9. **Boxes:** callouts use the Section 11 boxes; `mainquestion` and `eqnote` are used only where Section 12 allows.
+10. **Unicode:** Section 10 is applied, so no raw Greek or relation symbols appear in running text.
+11. **Ambiguities:** anything unmapped is flagged with a specific question.
+12. **Checks:** `check_structure.py` is clean, the build log says "Log clean" (or its warnings are explained), the rendered pages have been viewed, and the links were verified (Section 13).

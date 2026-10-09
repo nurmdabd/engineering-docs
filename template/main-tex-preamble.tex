@@ -351,3 +351,67 @@ literate=
     title=#1,
     arc=2mm
 }
+
+% =====================================================================
+% ---------- Study-notes additions (callouts, links, PDF navigation) ----------
+% Added for exam notes. Everything above this line is the original house preamble.
+% =====================================================================
+
+% PDF navigation: bookmarks panel open on launch, numbered.
+% (main.tex passes hyperref's destlabel option so another PDF can link here with \href{file.pdf\#label}{...}.)
+\hypersetup{
+	bookmarksopen=true,
+	bookmarksopenlevel=1,
+	bookmarksnumbered=true,
+	pdfpagemode=UseOutlines
+}
+
+\colorlet{calloutnote}{black!65}
+\colorlet{calloutexample}{DeepOcean}
+\colorlet{calloutexam}{orange!80!black}
+\colorlet{calloutwarn}{red!65!black}
+\colorlet{calloutquestion}{BlueLagoon}
+\colorlet{calloutsolution}{green!40!black}
+
+% Shared look: same family as repocard (rounded, coloured title bar), breakable across pages.
+\tcbset{
+	calloutbase/.style={
+		enhanced, breakable,
+		arc=2mm, boxrule=0.6pt,
+		left=6pt, right=6pt, top=4pt, bottom=4pt,
+		toptitle=1pt, bottomtitle=1pt,
+		fonttitle=\bfseries\small, coltitle=white,
+		before skip=8pt, after skip=8pt,
+		parbox=false
+	}
+}
+
+% Note / notice (📌, plain blockquotes)
+\newtcolorbox{notebox}[1][Note]{calloutbase, colback=gray!8, colframe=calloutnote, colbacktitle=calloutnote, title={#1}}
+% Worked example
+\newtcolorbox{examplebox}[1][Example]{calloutbase, colback=DeepOcean!5, colframe=calloutexample, colbacktitle=calloutexample, title={#1}}
+% Exam focus (🎯)
+\newtcolorbox{exambox}[1][Exam Focus]{calloutbase, colback=orange!7, colframe=calloutexam, colbacktitle=calloutexam, title={#1}}
+% Mistake / correction / caution (⚠)
+\newtcolorbox{warnbox}[1][Watch Out]{calloutbase, colback=red!4, colframe=calloutwarn, colbacktitle=calloutwarn, title={#1}}
+% Practice question: {title}{label of its solution}; title bar carries a "Solution" link
+\newtcolorbox{questionbox}[2]{calloutbase, colback=white, colframe=calloutquestion, colbacktitle=calloutquestion,
+	title={#1\hfill\ifstrempty{#2}{}{\hyperref[#2]{\color{white}\normalfont\small Solution $\rightarrow$}}}}
+% Solution: {title}{label of its question}; title bar carries a "Back" link
+\newtcolorbox{solutionbox}[2]{calloutbase, colback=green!3, colframe=calloutsolution, colbacktitle=calloutsolution,
+	title={#1\hfill\ifstrempty{#2}{}{\hyperref[#2]{\color{white}\normalfont\small $\leftarrow$ Back to question}}}}
+% Self-check list at the end of a lecture
+\newtcolorbox{selfcheckbox}[1][Self-check]{calloutbase, colback=BlueLagoon!4, colframe=calloutquestion, colbacktitle=calloutquestion, title={#1}}
+
+% Inline markers that replace emoji the main font cannot draw
+\newcommand{\exammark}{\tcbox[on line, arc=1.5pt, colback=calloutexam, colframe=calloutexam, boxsep=0pt,
+	left=2pt, right=2pt, top=1pt, bottom=1pt]{\color{white}\bfseries\scriptsize EXAM}}
+\newcommand{\pinmark}{\tcbox[on line, arc=1.5pt, colback=calloutnote, colframe=calloutnote, boxsep=0pt,
+	left=2pt, right=2pt, top=1pt, bottom=1pt]{\color{white}\bfseries\scriptsize NOTE}}
+\newcommand{\warnmark}{{\color{calloutwarn}\emojifont ⚠}}
+\newcommand{\okmark}{{\color{green!45!black}\emojifont ✔}}
+\newcommand{\nomark}{{\color{red!70!black}\emojifont ✘}}
+
+% Small clickable chip for "go to" links: \golink{label}{text}
+\newcommand{\golink}[2]{\hyperref[#1]{\tcbox[on line, arc=1.5pt, colback=BlueLagoon!12, colframe=BlueLagoon!60,
+	boxsep=0pt, left=3pt, right=3pt, top=1pt, bottom=1pt]{\small\color{BlueLagoon!70!black}#2}}}

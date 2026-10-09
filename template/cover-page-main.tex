@@ -1,0 +1,36 @@
+% Study-notes cover page. Uses only fields set in cover-page-preamble.tex.
+\thispagestyle{empty}
+\begin{tikzpicture}[remember picture, overlay]
+	% top band
+	\fill[DeepOcean] (current page.north west) rectangle ($(current page.north east)+(0,-7.2cm)$);
+	\fill[BlueLagoon] ($(current page.north west)+(0,-7.2cm)$) rectangle ($(current page.north east)+(0,-7.6cm)$);
+	\node[anchor=north west, text=white, font=\fontsize{40}{44}\selectfont\bfseries]
+		at ($(current page.north west)+(1.8cm,-2.0cm)$) {\CoverCourseCode};
+	\node[anchor=north west, text=white!85!BlueLagoon, font=\LARGE]
+		at ($(current page.north west)+(1.85cm,-4.3cm)$) {\CoverCourseName};
+	% bottom band
+	\fill[DeepOcean] (current page.south west) rectangle ($(current page.south east)+(0,1.6cm)$);
+	\node[anchor=west, text=white, font=\normalsize]
+		at ($(current page.south west)+(1.8cm,0.8cm)$) {Prepared by \CoverAuthor};
+	\node[anchor=east, text=white, font=\normalsize]
+		at ($(current page.south east)+(-1.8cm,0.8cm)$) {\CoverDate};
+\end{tikzpicture}
+
+\vspace*{7.2cm}
+\begin{flushleft}
+	{\fontsize{32}{38}\selectfont\bfseries\color{DeepOcean}\CoverTitle\par}
+	\vspace{0.4cm}
+	{\color{BlueLagoon}\rule{0.35\textwidth}{2pt}\par}
+	\vspace{0.4cm}
+	\ifdefempty{\CoverSubtitle}{}{{\LARGE\color{black!75}\CoverSubtitle\par}\vspace{0.3cm}}
+	\ifdefempty{\CoverNote}{}{{\large\itshape\color{black!60}\CoverNote\par}}
+\end{flushleft}
+
+\ifdefempty{\CoverContents}{}{%
+	\vfill
+	\begin{tcolorbox}[enhanced, colback=gray!8, colframe=DeepOcean, colbacktitle=DeepOcean, coltitle=white,
+		fonttitle=\bfseries, title={Inside}, arc=2mm, width=0.75\textwidth]
+		\begingroup\def\\{\par\smallskip$\bullet$\ }$\bullet$\ \CoverContents\par\endgroup
+	\end{tcolorbox}
+	\vspace{1.2cm}}
+\clearpage

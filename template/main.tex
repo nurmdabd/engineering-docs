@@ -1,10 +1,14 @@
 % main.tex template. scripts/build.py fills every <<...>> placeholder.
 % To compile by hand, replace the placeholders and keep main-tex-preamble.tex beside this file.
 \documentclass[a4paper, <<FONTSIZE>>]{<<CLASS>>}
+% destlabel: PDF destinations named after \label, so other PDFs can link here (file.pdf#label)
+\PassOptionsToPackage{destlabel}{hyperref}
 \newcommand{\ReportHeader}{<<HEADER>>}
+<<COVER_FIELDS>>
 \input{main-tex-preamble.tex}
 \IfFileExists{cover-page-preamble.tex}{\input{cover-page-preamble.tex}}{}
 \graphicspath{<<GRAPHICSPATH>>}
+\hypersetup{pdftitle={<<PDFTITLE>>}, pdfauthor={<<AUTHOR>>}}
 
 \begin{document}
 \IfFileExists{cover-page-main.tex}{\include{cover-page-main}}{}

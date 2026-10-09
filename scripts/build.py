@@ -12,7 +12,11 @@ Usage:
         [--fontsize 12pt]                      # 8pt..20pt for ext* classes; default 12pt
         [--no-toc]
         [--figures DIR ...]                    # extra image folders (body dir and body_dir/figures are added automatically)
-        [--cover-dir DIR]                      # folder holding cover-page-preamble.tex / cover-page-main.tex
+        [--cover]                              # add the bundled study-notes cover page, with:
+        [--course-code "COM I"] [--course-name "Communication Engineering I"]
+        [--cover-title "Complete Theory"] [--cover-subtitle "Lectures 24--38"] [--cover-note "..."]
+        [--cover-contents "Item 1" --cover-contents "Item 2"] [--date "October 2026"]
+        [--cover-dir DIR]                      # use your own cover-page-preamble.tex / cover-page-main.tex instead
         [--build-dir DIR]                      # default: <OUT stem>_build next to OUT
 
 Exit code 0 = PDF built (warnings may still be printed). 1 = compile failed.
@@ -89,6 +93,14 @@ def main():
     ap.add_argument("--fontsize", default="12pt")
     ap.add_argument("--no-toc", action="store_true")
     ap.add_argument("--figures", nargs="*", default=[], type=Path)
+    ap.add_argument("--cover", action="store_true")
+    ap.add_argument("--course-code", default="")
+    ap.add_argument("--course-name", default="")
+    ap.add_argument("--cover-title")
+    ap.add_argument("--cover-subtitle", default="")
+    ap.add_argument("--cover-note", default="")
+    ap.add_argument("--cover-contents", action="append", default=[])
+    ap.add_argument("--date")
     ap.add_argument("--cover-dir", type=Path)
     ap.add_argument("--build-dir", type=Path)
     a = ap.parse_args()
@@ -97,10 +109,11 @@ def main():
     build = (a.build_dir or out.parent / f"{out.stem}_build").resolve()
     build.mkdir(parents=True, exist_ok=True)
     shutil.copy(TEMPLATE / "main-tex-preamble.tex", build)
-    if a.cover_dir:
-        for f in ("cover-page-preamble.tex", "cover-page-main.tex"):
-            if (a.cover_dir / f).exists():
-                shutil.copy(a.cover_dir / f, build)
+    for f in ("cover-page-preamble.tex", "cover-page-main.tex"):
+        (build / f).unlink(missing_ok=True)
+        src = (a.cover_dir / f) if a.cover_dir else (TEMPLATE / f if a.cover else None)
+        if src and src.exists():
+            shutil.copy(src, build)
 
     used, includes, gdirs = set(), [], []
     for body in a.bodies:
@@ -123,10 +136,22 @@ def main():
     toc = "" if a.no_toc else ("\\begingroup\n\\setstretch{1}\n\\phantomsection\n\\hypertarget{toc}{}\n"
                                "\\tableofcontents\n\\endgroup\n\\hfill")
 
+    cover = ""
+    if a.cover and not a.cover_dir:
+        fields = {"CoverCourseCode": a.course_code, "CoverCourseName": a.course_name,
+                  "CoverTitle": a.cover_title or " ".join(titles), "CoverSubtitle": a.cover_subtitle,
+                  "CoverNote": a.cover_note, "CoverAuthor": a.author,
+                  "CoverContents": " \\\\ ".join(a.cover_contents)}
+        cover = "\n".join(f"\\newcommand{{\\{k}}}{{{v}}}" for k, v in fields.items())
+        if a.date:
+            cover += f"\n\\newcommand{{\\CoverDate}}{{{a.date}}}"
+    pdftitle = re.sub(r"[{}\\$]", "", " ".join(titles))
+
     main = (TEMPLATE / "main.tex").read_text()
     for key, val in {"CLASS": a.cls, "FONTSIZE": a.fontsize, "HEADER": header, "GRAPHICSPATH": graphicspath,
                      "TITLE_LINES": title_lines, "TOC_BLOCK": toc, "AUTHOR": tex_escape(a.author),
-                     "BODY_INPUTS": "\n".join(includes)}.items():
+                     "BODY_INPUTS": "\n".join(includes),
+                     "COVER_FIELDS": cover, "PDFTITLE": pdftitle}.items():
         main = main.replace(f"<<{key}>>", val)
     (build / "main.tex").write_text(main)
 
@@ -138,6 +163,7 @@ def main():
     out.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy(build / "main.pdf", out)
     pages = re.search(r"Output written on main.pdf \((\d+) page", (build / "main.log").read_text(errors="replace"))
+    sys.stdout.flush()
     print(f"PDF: {out}" + (f" ({pages.group(1)} pages)" if pages else ""))
     print(f"Build folder (main.tex + preamble + bodies, compile-ready): {build}")
 
