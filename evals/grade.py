@@ -134,6 +134,9 @@ def grade(name, out):
         texs = tex.read_text(encoding="utf-8") if tex else ""
         inner = [re.sub(r"\s+", "", m) for m in display_maths(src_notes)]
         found = [m for m in inner if m in re.sub(r"\s+", "", texs)]
+        first = re.search(r"\\(chapter|section|subsection|subsubsection)\*?\{", texs)
+        c.append(("headings start at the first numbered level (no 0.x numbering)", bool(first) and first.group(1) == "section",
+                  f"first heading command: \\{first.group(1) if first else 'none'}"))
         c.append(("every display equation reaches the LaTeX body", tex is not None and len(found) == len(inner),
                   f"{len(found)}/{len(inner)} in {tex.name if tex else 'no .tex'}"))
     elif name == "project-report-day":
@@ -148,6 +151,14 @@ def grade(name, out):
         invented = sorted(n for n in nums if n not in log and n not in ("130",))   # sky130 appears as 130 inside names
         c.append(("no invented numbers: every number of 3+ digits in the Markdown appears in the log", not invented,
                   "none invented" if not invented else "not in the log: " + ", ".join(invented[:8])))
+        tex = next(iter(md.parent.rglob("latex/*.tex")), None)
+        texs = tex.read_text(encoding="utf-8") if tex else ""
+        labels = re.findall(r"\\label\{([^}]+)\}", texs)
+        bad = [l for l in labels if not re.search(r"d0?3", l)]
+        c.append(("every label carries the day prefix (d03 or d3)", bool(labels) and not bad,
+                  f"{len(labels) - len(bad)}/{len(labels)} prefixed" + (f"; e.g. {bad[:3]}" if bad else "")))
+        numbered = bool(re.search(r"\\setcounter\{chapter\}\{2\}", texs)) or str(meta.get("first_number")) == "3"
+        c.append(("Day 3 is numbered Chapter 3", numbered, "first_number 3 / \\setcounter{chapter}{2} found" if numbered else "Day 3 would be Chapter 1"))
         c.append(("the OpenLane repo is given as a repocard", bool(re.search(r"^:::+\s*\{\.repocard", body, re.M)),
                   "repocard div found" if re.search(r"\{\.repocard", body) else "no repocard"))
     return c
