@@ -67,5 +67,5 @@ What was learned, what went wrong and how it was fixed.
 ## Differences from the old report skill
 
 - **Unicode:** follow SKILL.md Section 10. The old skill allowed raw Greek letters and arrows in running text, but the main font (Latin Modern) drops most of them.
-- **Headings:** the house preamble adds a colon after every section title, so a trailing colon in the Markdown heading is removed. The old report skill kept headings exactly as written, with no automatic colon. Whether reports should drop the automatic colon is an open question for the user; until it is answered, reports use the house preamble unchanged.
+- **Headings:** reports use the house automatic colon like every other document (the user's choice). The old report skill had no automatic colon, so its Markdown sometimes ended headings with a colon by hand. Never write one (`## Results`, not `## Results:`); a heading that ends with `?` gets no added colon (SKILL.md Section 1).
 - **Display maths:** follow SKILL.md Section 7 (`align` for derivations, `\boxed` for final results). The old skill used a plain `equation` for every display.

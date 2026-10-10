@@ -277,7 +277,19 @@ literate=
 
 
 % Header Formatting
-\newcommand{\addcolon}[1]{#1:}
+% \addcolon adds the colon after a section title, except when the title already ends in
+% punctuation (? ! . : or the Bangla danda), so "Why modulate?" never prints as "Why modulate?:".
+% Closing braces and spaces after that mark are ignored ("\bn{...।}" counts as ending in "।").
+\ExplSyntaxOn
+\cs_new_protected:Npn \house_addcolon:n #1
+  {
+    #1
+    \str_set:Nn \l_tmpa_str {#1}
+    \regex_match:nVF { [\?\!\.\:\x{0964}] [\s\}]* \Z } \l_tmpa_str { : }
+  }
+\cs_generate_variant:Nn \regex_match:nnF { nV }
+\NewDocumentCommand{\addcolon}{m}{\house_addcolon:n {#1}}
+\ExplSyntaxOff
 % ---------- Section format ----------
 \titleformat{\section}
 {\normalfont\Large\bfseries\color{blue!80!black}}

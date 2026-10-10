@@ -4,7 +4,8 @@ run_tests.py -- regression tests for the converter and the build.
 
     python3 tests/run_tests.py            # convert every fixture, compare with tests/expected/
     python3 tests/run_tests.py --update   # accept the current output as the new expected output
-    python3 tests/run_tests.py --build    # also compile every expected body and the example; each log must be clean
+    python3 tests/run_tests.py --build    # also compile every expected body and the example; each log must be clean,
+                                          # and the PDF text must match a case's pdf_has / pdf_lacks lists
 
 Corpus check, for real notes that live in another repo (run before and after a converter change):
 
@@ -66,15 +67,20 @@ def run_cases(cases, update):
     return failed
 
 
-def build_one(body, flags, label):
+def build_one(body, flags, label, has=(), lacks=()):
+    """Compile body; the log must be clean, and the PDF text must contain every `has` and no `lacks` string."""
     with tempfile.TemporaryDirectory() as tmp:
         r = subprocess.run([sys.executable, str(BUILD), str(body), "--out", f"{tmp}/t.pdf",
                             "--build-dir", f"{tmp}/b", *flags], capture_output=True, text=True)
-        clean = r.returncode == 0 and "Log clean" in r.stdout
-        print(f"{'ok' if clean else 'FAILED':8} build {label}")
-        if not clean:
-            print("  " + (r.stdout + r.stderr).strip().replace("\n", "\n  "))
-        return 0 if clean else 1
+        problems = [] if r.returncode == 0 and "Log clean" in r.stdout else [(r.stdout + r.stderr).strip()]
+        if not problems and (has or lacks):
+            text = subprocess.run(["pdftotext", f"{tmp}/t.pdf", "-"], capture_output=True, text=True).stdout
+            problems += [f"PDF text lacks {s!r}" for s in has if s not in text]
+            problems += [f"PDF text has {s!r}" for s in lacks if s in text]
+        print(f"{'ok' if not problems else 'FAILED':8} build {label}")
+        for p in problems:
+            print("  " + p.replace("\n", "\n  "))
+        return 1 if problems else 0
 
 
 def run_builds(cases):
@@ -84,7 +90,8 @@ def run_builds(cases):
             body = FIXTURES / f".{case['name']}.tex"   # beside the fixture, so figures/ resolves
             body.write_text((EXPECTED / f"{case['name']}.tex").read_text(encoding="utf-8"), encoding="utf-8")
             try:
-                failed += build_one(body, case.get("build_flags", []), case["name"])
+                failed += build_one(body, case.get("build_flags", []), case["name"],
+                                    case.get("pdf_has", []), case.get("pdf_lacks", []))
             finally:
                 body.unlink(missing_ok=True)
     return failed

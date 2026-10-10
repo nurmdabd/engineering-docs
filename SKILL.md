@@ -174,6 +174,8 @@ Convert everything unambiguous first, then ask about the rest. Don't block the w
 | `#### Title` | `\textbf{Title:}` run-in label | `\subsubsection{Title}` |
 
 - Use the Markdown heading text exactly as written. Strip a trailing colon if there is one, because the preamble's `\addcolon` already adds a colon to every section title. Never apply manual colour or numbering; title formatting is entirely the preamble's job.
+- **The automatic colon** is skipped when the title already ends in `?`, `!`, `.`, `:` or the Bangla danda `।`, so "Why modulate digital data?" never prints as "…?:". Chapters (`extreport` `#`) and `####` run-in labels follow the same idea: the converter writes `\textbf{Title:}` for a run-in label and drops a colon the Markdown already had.
+- **When writing content** (Markdown or LaTeX), never end a heading with a colon: `## Results`, not `## Results:`. A heading may end with `?` when it is a real question. A bold lead-in label in body text is different: it is not a heading, so it always carries its own colon (`**Objective:**`, Section 2).
 - Strip manual numbering from the heading text (`## 3 Quantization` → `\subsection{Quantization}`), because LaTeX numbers the headings itself.
 - Leave the file's single **outermost** heading unlabeled, typically. Every other heading gets a label, per Section 8.
 - Don't go deeper than the table above.

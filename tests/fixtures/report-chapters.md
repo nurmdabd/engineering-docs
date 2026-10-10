@@ -30,3 +30,11 @@ Run the **OpenLane** flow on `picorv32a`.
 ## Core utilisation
 
 $$\text{Utilisation} = \frac{\text{Area of cells}}{\text{Core area}}$$
+
+## What is a floorplan?
+
+The placement of the core and its I/O.
+
+## Placement result:
+
+The colon above was typed by hand.
