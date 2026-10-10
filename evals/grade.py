@@ -125,11 +125,11 @@ def grade(name, out):
         missing = [m for m in maths if m not in body]
         c.append(("every equation of the notes is in the Markdown unchanged", not missing,
                   f"{len(maths) - len(missing)}/{len(maths)} unchanged" + (f"; changed: {missing[:3]}" if missing else "")))
-        sentences = [s.strip() for s in re.split(r"(?<=[.:])\s+", re.sub(r"\$\$.+?\$\$", " ", src_notes, flags=re.S))
-                     if len(s.strip()) > 25 and not s.strip().startswith("#")]
+        sentences = [l.strip() for l in src_notes.splitlines()                       # every prose line of the notes
+                     if l.strip() and not l.lstrip().startswith(("#", "$$")) and "$$" not in l]
         gone = [s for s in sentences if s not in body]
         c.append(("no sentence of the notes was removed or reworded", not gone,
-                  f"{len(sentences) - len(gone)}/{len(sentences)} sentences intact" + (f"; e.g. {gone[0][:80]!r}" if gone else "")))
+                  f"{len(sentences) - len(gone)}/{len(sentences)} prose lines intact" + (f"; e.g. {gone[0][:80]!r}" if gone else "")))
         tex = next(iter(md.parent.rglob("latex/*.tex")), None)
         texs = tex.read_text(encoding="utf-8") if tex else ""
         inner = [re.sub(r"\s+", "", m) for m in display_maths(src_notes)]
