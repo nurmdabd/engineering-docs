@@ -12,6 +12,8 @@ A Claude Code skill that turns engineering Markdown into LaTeX in Nur Mohammad's
 | `template/` | House preamble, `main.tex`, study-notes cover page |
 | `scripts/` | `setup.sh`, `md2tex.py` + `house.lua` (converter), `check_structure.py`, `build.py` |
 | `examples/` | A body file that uses every rule |
+| `types/` | Document types: default flags (`type.json`) and a writing and layout guide (`guide.md`) per type |
+| `tests/` | Regression tests: `python3 tests/run_tests.py --build` |
 
 ## Using it in a repo
 
@@ -34,4 +36,4 @@ Register it under `hooks.SessionStart` in the repo's `.claude/settings.json`. Se
 
 ## Improving the skill
 
-Make changes here, commit and push. Working repos pick them up at their next cloud session.
+Make changes here, run `python3 tests/run_tests.py --build`, then commit and push. Working repos pick them up at their next cloud session.

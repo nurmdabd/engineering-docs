@@ -1,0 +1,6 @@
+[
+  {"name": "core-elements"},
+  {"name": "study-callouts"},
+  {"name": "report-chapters", "md2tex": ["--type", "project-report"], "build_flags": ["--type", "project-report"]},
+  {"name": "bangla", "md2tex": ["--bangla"], "build_flags": ["--bangla"]}
+]

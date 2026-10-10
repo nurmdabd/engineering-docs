@@ -26,8 +26,20 @@ Bundled files (paths relative to this skill's folder):
 | `scripts/check_structure.py` | A fast check for unbalanced braces and `\begin`/`\end` pairs, with no compile. |
 | `scripts/build.py` | Fills the template, compiles with latexmk/XeLaTeX, and summarizes errors, undefined references, **missing glyphs** and wide overfull lines. |
 | `examples/example-body.tex` | A body file that uses every rule below. It compiles clean, so copy its patterns. |
+| `types/<name>/` | **Document types:** `type.json` (default flags) and `guide.md` (how to write and lay out that kind of document). See Document types below. |
+| `tests/run_tests.py` | Regression tests for the converter and the build. Run them after any change to the scripts or the preamble. |
 
 Never edit the bundled preamble to suit one document. If the user changes their live preamble, they send the new file and it replaces `template/main-tex-preamble.tex`. Keep the two portable changes above, and the **Study-notes additions** block at its end (callout boxes, markers, `\golink`, PDF navigation), when you do that.
+
+## Document types
+
+A type is a preset for one kind of document. `--type NAME` on `md2tex.py` and `build.py` loads `types/NAME/type.json`, and flags you pass yourself still win. Before writing or converting a document of that kind, read `types/NAME/guide.md`: it says how to write the content and which rules differ from the defaults below.
+
+| Type | For |
+|---|---|
+| `project-report` | Multi-day project or lab reports (RTL-to-GDSII flow): one chapter per day, `extreport` at 14pt |
+
+Study notes (theory, formula sheets, question banks) use the defaults and need no type yet. When the user wants a kind of document that has no type, use the closest defaults, then offer to add a type for it.
 
 ## Workflow
 
@@ -73,7 +85,7 @@ python3 <skill>/scripts/build.py body1.tex [body2.tex ...] --out path/Name.pdf \
 - **Several documents:** when one project produces several PDFs, write a small `build-all.sh` next to the bodies that calls `build.py` once per document. Commit it so the PDFs can be rebuilt later.
 
 - **Defaults** match the user's latest main file: `extarticle`, `12pt`, author "Nur Mohammad". The title lines are rendered as `{\LARGE{\keyterm{…}}}`.
-- **Choosing the class:** use `--class extreport` when the source has chapter-level `#` headings, as in a multi-day report. That project used `extreport` at `14pt`, so pass `--fontsize 14pt`.
+- **Choosing the class:** use `--class extreport` when the source has chapter-level `#` headings, as in a multi-day report; `--type project-report` sets that with `14pt`. In `extreport`, a file with several `#` headings keeps them all as chapters; otherwise the first `#` heading becomes the title.
 - **Image search path:** each body file's folder and its `figures/` subfolder are added automatically, so `\includegraphics{name.png}` works with a bare filename. Use `--figures` for images stored anywhere else.
 - **Build folder:** the build writes `<Name>_build/` next to the PDF. It holds `main.tex`, the preamble and the body files, and it compiles as-is on the user's MikTeX.
 
@@ -519,6 +531,17 @@ Use this for notes translated into Bangla, where technical terms stay in English
 - **What translates freely:** bold lead-in labels end with "।" and are still recognised as labels. Example boxes may start with "উদাহরণ".
 - **Check after translating:** compare the translation with the source mechanically. Display and inline maths must be identical, and the counts of figures, headings, table rows, callouts, numbered items and bullets must match.
 - **Column widths:** table widths count only base letters, not vowel signs or hasanta. Every column is at least as wide as its longest word, because Bangla is not hyphenated.
+
+## Changing the skill
+
+After any change to `scripts/` or `template/`, run `python3 <skill>/tests/run_tests.py --build`. Every fixture must convert to its expected output in `tests/expected/`, and every build must log clean. If an output changes on purpose, check the diff and accept it with `--update`.
+
+Before a converter change, also snapshot the user's real notes and compare afterwards, so a change meant for one document can't silently alter another:
+```bash
+python3 <skill>/tests/run_tests.py --snapshot /scratch/snap notes.md bangla.md:--bangla
+# ... change the converter ...
+python3 <skill>/tests/run_tests.py --compare /scratch/snap notes.md bangla.md:--bangla
+```
 
 ## Quick self-check before building
 

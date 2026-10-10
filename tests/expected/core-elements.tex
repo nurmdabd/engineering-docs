@@ -1,0 +1,160 @@
+% Generated from core-elements.md by md2tex.py, then reviewed against SKILL.md.
+
+\subsection{Headings and inline text}
+\label{sec:headings_and_inline_text}
+
+\textbf{Objective:} check every core mapping in one file.
+
+\keyterm{Pulse Code Modulation (PCM)} turns samples into codes. This is \emph{not} optional, and the signal \verb|data_out| leaves the module.
+
+A run-in line with \emph{italic} text and a hard line break inside the paragraph.
+
+\subsubsection{Lists}
+\label{sec:lists}
+
+\begin{itemize}
+    \item First item
+    
+    \begin{itemize}
+        \item Nested item
+        
+        \begin{itemize}
+            \item Third level
+        \end{itemize}
+    \end{itemize}
+    \item Second item
+\end{itemize}
+
+\begin{enumerate}
+    \item Step one
+    \item Step two
+\end{enumerate}
+
+\phantomsection\label{sec:deepest_heading}\textbf{Deepest heading:}
+
+Text under a level-four heading.
+
+\needspace{10\baselineskip}
+\subsection{Tables}
+\label{sec:tables}
+
+\begin{tabularx}{\textwidth}{|c|x{3.7cm}|L|}
+    \hline
+    \rowcolor{gray!15}
+    \cc{ID} &
+    \yy{Module}{3.7cm} &
+    \CC{Description} \\ \hline
+\endhead
+
+    M01 &
+    Control Unit &
+    Manages instruction sequencing, state transitions, and coordination between datapath components during execution. \\ \hline
+
+    M02 &
+    Concatenation / Replication &
+    Builds wider vectors from smaller pieces. \\ \hline
+
+\rowcolor{white}
+\caption{Tables}
+\label{tab:tables}
+\end{tabularx}
+
+\begin{tabularx}{\textwidth}{|c|L|x{2.4cm}|}
+    \hline
+    \rowcolor{gray!15}
+    \cc{Quantity} &
+    \CC{Formula} &
+    \yy{Symbols}{2.4cm} \\ \hline
+\endhead
+
+    Noise power &
+    \tallcell{$\overline{q^2} = \dfrac{\Delta v^2}{12}$} &
+    $\Delta v$ = step size\newline $q$ = error \\ \hline
+
+    SQNR &
+    $\text{SQNR} = 6.02n + 1.76$ dB &
+    $n$ = bits \\ \hline
+
+\rowcolor{white}
+\caption{Tables}
+\label{tab:tables_2}
+\end{tabularx}
+
+\subsection{Equations}
+\label{sec:equations}
+
+\begin{equation}
+    f = \frac{1}{T}
+    \label{eq:equations_1}
+\end{equation}
+
+where:
+
+\begin{itemize}
+    \item $f$ is frequency in Hz
+    \item $T$ is the period in seconds
+\end{itemize}
+
+\begin{equation}
+    \overline{q^2} = \frac{1}{\Delta v}\int_{-\Delta v/2}^{\Delta v/2} q^2\,dq
+    \label{eq:equations_2}
+\end{equation}
+
+\begin{equation}
+    = \frac{\Delta v^2}{12}
+    \label{eq:equations_3}
+\end{equation}
+
+\begin{eqnote}{
+\begin{equation}
+    \boxed{B_{PM} = 2(\Delta f + B)}
+    \label{eq:equations_4}
+\end{equation}
+}{\emph{Write also:} for FM, $\Delta f = k_f m_p/2\pi$; PM bandwidth grows with message frequency.}
+\end{eqnote}
+
+\subsection{Code}
+\label{sec:code}
+
+\begin{lstlisting}[language=bash, caption={Listing}]
+make synth TOP=kronos_core
+\end{lstlisting}
+
+\begin{lstlisting}[caption={Listing}]
+project/
++-- src/
+|   +-- top.v
++-- tb/
+\end{lstlisting}
+
+\begin{lstlisting}[language=json, caption={Listing}]
+{"design": "picorv32", "clock": 10}
+\end{lstlisting}
+
+\needspace{10\baselineskip}
+\subsection{Figures}
+\label{sec:figures}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{figures/pre_de_emphasis_chain.png}
+    \caption{Pre-emphasis and de-emphasis chain}
+    \label{fig:pre_de_emphasis_chain}
+\end{figure}
+
+\textbf{Purpose:} shows where each filter sits.
+
+\begin{figure}[H]
+    \centering
+    % TODO: insert graphic
+    % \includegraphics[width=0.8\linewidth]{figures/missing.png}
+    \caption{A figure that does not exist yet}
+    \label{fig:missing}
+\end{figure}
+
+\subsection{Unicode and links}
+\label{sec:unicode_and_links}
+
+Bandwidth \texorpdfstring{$\approx$}{≈} 2(\texorpdfstring{$\beta$}{β} + 1)B, with \texorpdfstring{$\beta$}{β} \texorpdfstring{$\ge$}{≥} 0 and \texorpdfstring{$\theta$}{θ} \texorpdfstring{$\le$}{≤} \texorpdfstring{$\pi$}{π}. Signal \texorpdfstring{$\Rightarrow$}{⇒} noise, \okmark{} done, \nomark{} wrong, \warnmark{} careful, {\emojifont ★} key. Values: 10\texorpdfstring{$^{-6}$}{⁻⁶} s, x\texorpdfstring{$_{1}$}{₁}, ½ and 25 °C.
+
+See the tables section and the \href{3-derivation-sheet.pdf\#sec:d1_bandwidth_of_pm}{derivation sheet}.

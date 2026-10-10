@@ -5,6 +5,7 @@ template, compile with XeLaTeX, and report problems from the log.
 
 Usage:
     python3 build.py BODY.tex [BODY2.tex ...] --out OUT.pdf
+        [--type NAME]                         # load the default flags of types/NAME/type.json (explicit flags win)
         [--title "Line 1" --title "Line 2"]   # title lines on page 1 (default: body file name)
         [--header "Running header text"]      # left page header (default: titles joined)
         [--author "Nur Mohammad"]
@@ -29,6 +30,8 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+import doctype
 
 SKILL = Path(__file__).resolve().parents[1]
 TEMPLATE = SKILL / "template"
@@ -126,7 +129,7 @@ def main():
     ap.add_argument("--date")
     ap.add_argument("--cover-dir", type=Path)
     ap.add_argument("--build-dir", type=Path)
-    a = ap.parse_args()
+    a = ap.parse_args(doctype.expand(sys.argv, "build")[1:])
 
     out = a.out.resolve()
     build = (a.build_dir or out.parent / f"{out.stem}_build").resolve()

@@ -1,0 +1,57 @@
+% Generated from report-chapters.md by md2tex.py, then reviewed against SKILL.md.
+
+\chapter{Day 01: RTL Analysis}
+\label{sec:day_01_rtl_analysis}
+
+\section{Objective}
+\label{sec:objective}
+
+Run the \keyterm{OpenLane} flow on \verb|picorv32a|.
+
+\section{Command and output}
+\label{sec:command_and_output}
+
+\textbf{Command:}
+
+\begin{lstlisting}[language=bash, caption={Listing}]
+./flow.tcl -design picorv32a
+\end{lstlisting}
+
+\textbf{Output Snippet:}
+
+\begin{lstlisting}[caption={Listing}]
+[INFO]: Synthesis complete
+\end{lstlisting}
+
+\needspace{10\baselineskip}
+\subsection{Results}
+\label{sec:results}
+
+\begin{tabularx}{\textwidth}{|L|c|}
+    \hline
+    \rowcolor{gray!15}
+    \CC{Metric} &
+    \cc{Value} \\ \hline
+\endhead
+
+    Cells &
+    14876 \\ \hline
+
+    Flop ratio &
+    0.108 \\ \hline
+
+\rowcolor{white}
+\caption{Results}
+\label{tab:results}
+\end{tabularx}
+
+\chapter{Day 02: Floorplan}
+\label{sec:day_02_floorplan}
+
+\section{Core utilisation}
+\label{sec:core_utilisation}
+
+\begin{equation}
+    \text{Utilisation} = \frac{\text{Area of cells}}{\text{Core area}}
+    \label{eq:core_utilisation_1}
+\end{equation}

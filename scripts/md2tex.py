@@ -8,7 +8,9 @@ equations, figures, callouts, question/solution boxes, Unicode table). The judge
 described in SKILL.md, Step 3.
 
 Usage:
-    python3 md2tex.py NOTES.md -o latex/NOTES.tex [--class extarticle|extreport] [--fontsize 12pt] [--textwidth 17.4]
+    python3 md2tex.py NOTES.md -o latex/NOTES.tex [--type NAME] [--class extarticle|extreport] [--fontsize 12pt] [--textwidth 17.4]
+
+--type NAME loads the default flags of types/NAME/type.json; flags given explicitly still win.
 
 Prints the suggested --title lines for build.py (from YAML title/subtitle, else the first # heading,
 which is then removed from the body).
@@ -21,6 +23,8 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+
+import doctype
 
 HERE = Path(__file__).resolve().parent
 
@@ -79,7 +83,7 @@ def main():
     ap.add_argument("--fontsize", default="12pt")
     ap.add_argument("--bangla", action="store_true", help="wrap Bangla text runs in \\bn{...} (build with build.py --bangla)")
     ap.add_argument("--textwidth", type=float, default=17.4, help="text width in cm (17.4 for the house .7in margins)")
-    a = ap.parse_args()
+    a = ap.parse_args(doctype.expand(sys.argv, "md2tex")[1:])
 
     md = a.md.resolve()
     out = a.out.resolve()
@@ -87,7 +91,10 @@ def main():
     text = md.read_text(encoding="utf-8")
     meta, body = front_matter(text)
     titles = [t for t in (meta.get("title"), meta.get("subtitle")) if t]
-    if not titles:
+    # Otherwise the first # heading is the title. Exception: in extreport, several # headings are chapters
+    # (day-01, day-02, ...) and all stay in the body. Lines inside code fences are not headings.
+    tops = re.findall(r"^# .+$", re.sub(r"^(```|~~~).*?^\1", "", body, flags=re.M | re.S), re.M)
+    if not titles and not (a.cls == "extreport" and len(tops) > 1):
         m = re.search(r"^# (.+)$", body, re.M)
         if m:
             t = m.group(1).strip()
@@ -102,11 +109,16 @@ def main():
         sys.exit(r.stderr)
     tex = r.stdout
 
-    def fix_path(m):
-        src = (md.parent / m.group(1)).resolve()
-        return os.path.relpath(src, out.parent).replace(os.sep, "/")
+    def rel(src):
+        return os.path.relpath((md.parent / src).resolve(), out.parent).replace(os.sep, "/")
+
+    def missing_image(m):   # SKILL.md Section 6: an image that doesn't exist yet stays commented out
+        if (md.parent / m.group(2)).exists():
+            return m.group(0)
+        return f"{m.group(1)}% TODO: insert graphic\n{m.group(1)}% \\includegraphics[width=0.8\\linewidth]{{{rel(m.group(2))}}}"
+    tex = re.sub(r"^([ \t]*)\\includegraphics\[width=@@W:(.+?)@@\]\{@@P:\2@@\}$", missing_image, tex, flags=re.M)
     tex = re.sub(r"@@W:(.+?)@@", lambda m: image_width((md.parent / m.group(1)).resolve()), tex)
-    tex = re.sub(r"@@P:(.+?)@@", fix_path, tex)
+    tex = re.sub(r"@@P:(.+?)@@", lambda m: rel(m.group(1)), tex)
     if a.bangla:
         tex = wrap_bangla(tex)
     tex = re.sub(r"\n{3,}", "\n\n", tex).strip() + "\n"
