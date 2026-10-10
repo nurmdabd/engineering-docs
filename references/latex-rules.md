@@ -4,6 +4,8 @@ The detailed conversion rules. SKILL.md has the workflow, the output rules and S
 
 ## Active custom commands
 
+The full list, with the Markdown that produces each one, is the registry: `scripts/commands.py list --type T` (`references/commands.md`). The table below explains the core ones.
+
 | Command / environment | Use for |
 |---|---|
 | `x{<w>}`, `y{<w>}`, `z{<w>}` | fixed-width table columns (left/center/right aligned) |

@@ -1,0 +1,167 @@
+# Registry of the house preamble's custom commands and environments (template/main-tex-preamble.tex).
+# A type adds its own in types/NAME/commands.yaml; a single document may add more (references/commands.md).
+#
+# Each entry:
+#   kind      command | environment
+#   args      the mandatory arguments, by name, in order
+#   optional  the name of the optional [argument], if there is one
+#   markdown  how Markdown produces it:
+#               span  [text]{.name attr="..."}  -> \name[opt]{...}{text}   (the text is the last argument)
+#               div   ::: {.name attr="..."} ... :::  -> \begin{name}[opt]{...} ... \end{name}
+#               auto  the converter makes it from ordinary Markdown (references/authoring.md)
+#               none  LaTeX only; use it only when the user asks for it
+#   use       when to use it
+#
+# scripts/commands.py lists these, checks a new name is free, and adds new commands.
+
+keyterm:
+  kind: command
+  args: [text]
+  markdown: span
+  use: "a technical term, tool name or acronym expansion on first meaningful mention (from **bold**; also [text]{.keyterm})"
+note:
+  kind: command
+  args: [text]
+  markdown: span
+  use: "a small parenthetical side remark, [text]{.note}"
+golink:
+  kind: command
+  args: [label, text]
+  markdown: span
+  use: "a small clickable chip that jumps to a label, [text]{.golink label=\"sec:x\"}"
+notebox:
+  kind: environment
+  optional: title
+  markdown: div
+  use: "a note box (also from > 📌 or a plain > quote); the div form takes several paragraphs"
+examplebox:
+  kind: environment
+  optional: title
+  markdown: div
+  use: "a worked example (also from a paragraph starting **Example …:**); the div form takes several paragraphs"
+exambox:
+  kind: environment
+  optional: title
+  markdown: div
+  use: "exam focus, what to write in the exam (also from > 🎯)"
+warnbox:
+  kind: environment
+  optional: title
+  markdown: div
+  use: "a correction of the class notes or a common mistake (also from > ⚠)"
+selfcheckbox:
+  kind: environment
+  optional: title
+  markdown: div
+  use: "self-check questions (also from a heading containing \"self-check\")"
+repocard:
+  kind: environment
+  args: [title]
+  markdown: div
+  use: "a tool, repo or external-resource reference block, ::: {.repocard title=\"OpenLane repo\"}"
+mainquestion:
+  kind: environment
+  markdown: div
+  use: "one real past-exam question on a new page (references/latex-rules.md, Section 12)"
+questionbox:
+  kind: environment
+  args: [title, solution]
+  markdown: auto
+  use: "a practice question, from #### N1"
+solutionbox:
+  kind: environment
+  args: [title, question]
+  markdown: auto
+  use: "the solution of a practice question, from #### Solution N1"
+eqnote:
+  kind: environment
+  args: [equation, note]
+  markdown: auto
+  use: "an equation with a short side note, from a *Write also:* paragraph after it"
+tallcell:
+  kind: command
+  args: [content]
+  markdown: auto
+  use: "pads a table cell holding tall maths"
+cc:
+  kind: command
+  args: [text]
+  markdown: auto
+  use: "table header cell for a plain column"
+yy:
+  kind: command
+  args: [text, width]
+  markdown: auto
+  use: "table header cell for a fixed-width column"
+CC:
+  kind: command
+  args: [text]
+  markdown: auto
+  use: "table header cell for a flexible column"
+okmark:
+  kind: command
+  markdown: auto
+  use: "the ✔ marker (from ✔ ✅)"
+nomark:
+  kind: command
+  markdown: auto
+  use: "the ✘ marker (from ✘ ❌)"
+warnmark:
+  kind: command
+  markdown: auto
+  use: "the ⚠ marker in running text"
+exammark:
+  kind: command
+  markdown: auto
+  use: "the EXAM chip (from 🎯 in running text)"
+pinmark:
+  kind: command
+  markdown: auto
+  use: "the NOTE chip (from 📌 in running text)"
+emojifont:
+  kind: command
+  markdown: auto
+  use: "a font switch for symbols the main font lacks (★)"
+addcolon:
+  kind: command
+  args: [title]
+  markdown: none
+  use: "internal; adds the colon after section titles"
+codechip:
+  kind: command
+  args: [text]
+  markdown: none
+  use: "inline code on a grey chip; only when the user asks"
+seqtt:
+  kind: command
+  args: [text]
+  markdown: none
+  use: "long monospace strings that may break anywhere; only when the user asks"
+grayhl:
+  kind: command
+  args: [text]
+  markdown: none
+  use: "grey text highlight (soul); only when the user asks"
+blackhl:
+  kind: command
+  args: [text]
+  markdown: none
+  use: "white-on-black text highlight (soul); only when the user asks"
+hlblack:
+  kind: command
+  args: [text]
+  markdown: none
+  use: "white bold text on a black rounded chip; only when the user asks"
+normalpath:
+  kind: command
+  args: [path]
+  markdown: none
+  use: "a file path in small upright type that breaks like a URL; only when the user asks"
+ReportHeader:
+  kind: command
+  markdown: none
+  use: "internal; the left page header, set by build.py"
+ReportHeaderRight:
+  kind: command
+  markdown: none
+  use: "internal; the right page header text, set by build.py"

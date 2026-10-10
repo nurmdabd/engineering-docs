@@ -8,6 +8,7 @@ Driven by md2tex.py; not meant to be called directly. Metadata options:
 local stringify = pandoc.utils.stringify
 local CLASS, FONTPT, TEXTW = "extarticle", 12, 17.4
 local GFM = {}            -- GitHub anchors of the top-level headings, in order (meta house_gfm)
+local CMDS = {}           -- registered commands usable from Markdown (meta house_cmds, scripts/commands.py)
 local STRUCT = "notes"    -- "past-paper" (meta house_structure): see types/past-paper/guide.md
 
 local function latex(blocks_or_inlines, is_inline)
@@ -95,6 +96,16 @@ local meta_filter = {
     if m.house_textwidth then TEXTW = tonumber(stringify(m.house_textwidth)) or 17.4 end
     if m.house_fontsize then FONTPT = tonumber((stringify(m.house_fontsize):gsub("pt", ""))) or 12 end
     if m.house_structure then STRUCT = stringify(m.house_structure) end
+    if m.house_cmds then
+      for entry in stringify(m.house_cmds):gmatch("[^;]+") do
+        local name, kind, args, opt = entry:match("^([^|]*)|([^|]*)|([^|]*)|([^|]*)$")
+        if name then
+          local list = {}
+          for x in args:gmatch("[^,]+") do list[#list + 1] = x end
+          CMDS[name] = { kind = kind, args = list, opt = opt ~= "" and opt or nil }
+        end
+      end
+    end
     if m.house_gfm then for w in stringify(m.house_gfm):gmatch("%S+") do GFM[#GFM + 1] = w end end
   end,
 }
@@ -411,15 +422,35 @@ local structure_filter = {
   end,
 }
 
+-- ---------- registered commands from Markdown ----------
+local RAW_ARG = { label = true, width = true, url = true, path = true }   -- passed through untouched
+local function cmd_args(spec, attrs, skip_last)
+  local function value(name)
+    local v = attrs[name]
+    if v == nil then return nil end
+    if RAW_ARG[name] then return v end
+    local doc = pandoc.read(v, "markdown")
+    return doc.blocks[1] and latex(doc.blocks[1].content, true) or ""
+  end
+  local out = ""
+  if spec.opt and attrs[spec.opt] then out = out .. "[" .. value(spec.opt) .. "]" end
+  local n = #spec.args - (skip_last and 1 or 0)
+  for k = 1, n do out = out .. "{" .. (value(spec.args[k]) or "") .. "}" end
+  return out
+end
+
 -- ---------- pass 3: inline content ----------
 local inline_filter = {
   Str = function(s) return convert_str(s.text) end,
   RawInline = function(r)
     if r.format == "html" and r.text:match("^<br%s*/?>$") then return raw("\\newline ") end
   end,
-  Span = function(sp)   -- [text]{.note}: a small side remark (\note)
-    if sp.classes[1] == "note" then
-      local out = pandoc.List({ raw("\\note{") }); out:extend(sp.content); out:insert(raw("}"))
+  Span = function(sp)   -- [text]{.name attr="..."} -> \name[opt]{attr}...{text} for a registered command
+    local spec = CMDS[sp.classes[1]]
+    if spec and spec.kind == "command" then
+      local head = "\\" .. sp.classes[1] .. cmd_args(spec, sp.attributes, #spec.args > 0)
+      if #spec.args == 0 then return raw(head) end
+      local out = pandoc.List({ raw(head .. "{") }); out:extend(sp.content); out:insert(raw("}"))
       return out
     end
   end,
@@ -795,6 +826,10 @@ local block_filter = {
       q = q or PP.qtext[d.attributes["key"]] or title
       local out = pandoc.List({ rawb("\\begin{questionblock}[" .. title .. "]{" .. soul_safe(q) .. "}") })
       out:extend(rest); out:insert(rawb("\\end{questionblock}"))
+      return out
+    elseif CMDS[cls] and CMDS[cls].kind == "environment" then   -- ::: {.name attr="..."} for a registered environment
+      local out = pandoc.List({ rawb("\\begin{" .. cls .. "}" .. cmd_args(CMDS[cls], d.attributes, false)) })
+      out:extend(d.content); out:insert(rawb("\\end{" .. cls .. "}"))
       return out
     elseif cls == "selfcheck" then
       if contains_table(d.content) then return d.content end

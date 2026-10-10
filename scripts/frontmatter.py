@@ -33,6 +33,7 @@ KEYS = {
     "cover_subtitle": ("str", "--cover-subtitle"),
     "cover_note": ("str", "--cover-note"),
     "cover_contents": ("list", "--cover-contents"),
+    "preamble": ("str", "--type-preamble"),   # this document's own commands (references/commands.md)
     "exam": ("str", None),        # past papers: exam name and year, used by the type's guide
     "year": ("str", None),
 }

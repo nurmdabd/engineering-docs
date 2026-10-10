@@ -17,6 +17,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+import commands
 import detect_type
 import doctype
 import frontmatter
@@ -29,6 +30,33 @@ MARKERS = "⚠🎯📌"
 NO_MONO = re.compile(r"[│┃└┘┌┐├┤┬┴┼─━═║╚╝╔╗▼▲►◄→←↑↓⇒✔✘✓✗]")
 PICTO = re.compile("[\U0001F300-\U0001FAFF☀-⛿✀-➿]")
 KEEP_PICTO = set("⚠✅✔✓❌✘🎯📌★⭐➕①②③④\uFE0F")      # the converter turns these into markers (house.lua TEXTCH)
+
+DIV = re.compile(r"^:::+\s*\{?\s*\.?([A-Za-z][\w-]*)([^}]*)\}?\s*$")
+SPAN = re.compile(r"\]\{\s*\.([A-Za-z][\w-]*)([^}]*)\}")
+PANDOC_SPANS = {"smallcaps", "underline", "mark"}
+
+
+def check_command(n, kind, cls, attrs, registry, say):
+    """A ::: block or [text]{.class} must name a registered command used the way the registry says."""
+    if kind == "span" and cls in PANDOC_SPANS:
+        return
+    e = registry.get(cls)
+    if not e:
+        say(n, "warning", f"{'::: ' if kind == 'div' else '{.'}{cls} is not a registered command, so it prints as "
+                          "plain text (scripts/commands.py list)")
+        return
+    if e.get("markdown") == "none":
+        say(n, "warning", f"\\{cls} is LaTeX only (registry: markdown none); use it only if the user asked for it")
+        return
+    want = "div" if e["kind"] == "environment" else "span"
+    if want != kind and e.get("markdown") != "auto":
+        say(n, "warning", f"{cls} is a{'n environment: write ::: {.' + cls + '}' if want == 'div' else ' command: write [text]{.' + cls + '}'}")
+        return
+    given = set(re.findall(r"([\w-]+)\s*=", attrs))
+    needed = (e.get("args") or [])[:-1] if want == "span" else (e.get("args") or [])
+    missing = [x for x in needed if x not in given]
+    if missing:
+        say(n, "error", f"{cls} needs {', '.join(x + '=\"…\"' for x in missing)}")
 
 
 def pandoc_ids(body):
@@ -132,6 +160,12 @@ def lint(path, as_type=None):
     if meta.get("type") and meta["type"] not in doctype.available():
         say(1, "error", f"unknown type '{meta['type']}' (available: {', '.join(doctype.available())})")
 
+    own = (path.parent / meta["preamble"]) if meta.get("preamble") else None
+    if own and not own.exists():
+        say(1, "error", f"preamble {meta['preamble']} not found")
+    registry = commands.registry(meta.get("type") if meta.get("type") in doctype.available() else None,
+                                 own.with_suffix(".yaml") if own else None)
+
     lines = body.split("\n")
     fence, fence_line = None, 0
     headings, questions, solutions, anchors = [], {}, {}, []
@@ -172,6 +206,9 @@ def lint(path, as_type=None):
             continue
         for _ in re.findall(r"(?<!\\)\$\$", line):
             open_display = None if open_display else n
+        for kind, cls, attrs in [("div", *m.groups()) for m in [DIV.match(line)] if m] + \
+                                [("span", m.group(1), m.group(2)) for m in SPAN.finditer(line)]:
+            check_command(n, kind, cls, attrs, registry, say)
         for a in re.finditer(r"\]\(#([^)\s]+)\)", line):
             anchors.append((n, a.group(1)))
         for img in re.finditer(r"!\[[^\]]*\]\(([^)\s]+)", line):

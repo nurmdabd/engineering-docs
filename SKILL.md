@@ -11,6 +11,7 @@ Read this file first. It is the workflow; the detailed rules are in `references/
 |---|---|
 | `references/authoring.md` | Writing or checking Markdown: front matter, and how each construct must be written so it converts cleanly |
 | `references/latex-rules.md` | Converting or reviewing LaTeX: custom commands, and Sections 1–12 (headings, inline text, lists, tables, code, figures, maths, cross-references, repo blocks, Unicode, callouts and questions, `mainquestion`/`eqnote`) |
+| `references/commands.md` | Using a custom command from Markdown (`::: {.name}`, `[text]{.name}`), or adding a new command for a document, a type or the core |
 | `references/pdf-links.md` | Building several PDFs that link to each other (Section 13) |
 | `references/bangla.md` | The document is in Bangla (Section 14) |
 | `types/<name>/guide.md` | Writing or converting a document of that type |
@@ -32,6 +33,7 @@ Section numbers (0–14) are shared across these files, so "Section 7" always me
 | `scripts/md2tex.py` + `scripts/house.lua` | A pandoc-based **draft converter** that applies the mechanical rules: headings, labels, table tiers, equations, figures, callouts, question/solution boxes, `eqnote` and Unicode. Its output still gets the Step 3 review. |
 | `scripts/setup.sh` | Installs XeLaTeX, every package the preamble loads, pandoc, PyYAML and Pillow (Debian/Ubuntu). Re-running it is safe. |
 | `scripts/doc.py` | One command for the whole path: `types`, `new`, `check`, `build` (see Workflow). |
+| `scripts/commands.py` + `template/commands.yaml` | The custom-command registry: `list`, `check NAME`, `add` (references/commands.md). Types and documents add their own `commands.yaml`. |
 | `scripts/lint_md.py` | Checks Markdown against `references/authoring.md` before converting: front matter, headings, questions and solutions, links, images, equations, glyphs. |
 | `scripts/check_structure.py` | A fast check for unbalanced braces and `\begin`/`\end` pairs, with no compile. |
 | `scripts/build.py` | Fills the template, compiles with latexmk/XeLaTeX, and summarizes errors, undefined references, **missing glyphs** and wide overfull lines. |
@@ -146,7 +148,7 @@ If the work is in a git repo, commit the body `.tex` files and the PDF. Add `*_b
 - The body file contains raw LaTeX **body content only**. It has no `\documentclass`, no preamble and no Markdown. The build script supplies the preamble and `main.tex`.
 - Preserve all technical content exactly. Do not summarize, remove, add or rewrite explanations; only fix grammar.
 - Do not redefine any command or environment the preamble already provides.
-- Do not invent a *custom* command or environment that isn't in the Active custom commands table or `template/main-tex-preamble.tex`. Standard LaTeX is always fine. If a natural mapping seems to need a custom command that doesn't exist, fall back to plain LaTeX (see Section 0).
+- Use only custom commands that are registered (`scripts/commands.py list --type T`). Standard LaTeX is always fine. If a document needs a custom command that doesn't exist, fall back to plain LaTeX, or propose a new command to the user and add it with `scripts/commands.py add` once they agree (`references/commands.md`). Never define a command inside a body file.
 - UTF-8 is allowed in running text **only for characters the main font (Latin Modern) has**. See Section 10. The build reports any glyph that went missing, and that report must be empty.
 
 ## 0. When to ask instead of guessing

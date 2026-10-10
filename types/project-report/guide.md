@@ -55,14 +55,16 @@ The theory needed to follow the steps, with equations where they help.
 What was learned, what went wrong and how it was fixed.
 
 ## References
-> **Repo:** link block, becomes a `repocard` (see below)
+::: {.repocard title="Project Repository References"}
+**Public Repository:** [repo-name/](https://github.com/user/repo)
+:::
 ````
 
 - **Command and output:** when the source shows a command and its output separately, keep them as two code blocks under `**Command:**` and `**Output Snippet:**`. A combined transcript stays one block.
 - **Trim long outputs** to the lines that matter and say so (`… 120 lines omitted …`). The trimmed text itself is never edited.
 - **Results** go in a table whenever there are two or more numbers to compare.
 - **Figures:** screenshots go in `figures/` beside the Markdown. A screenshot that isn't taken yet is written as a normal image link; the converter leaves it commented out with a TODO.
-- **Repos and tools:** a block that points to a repo, a tool or an external resource becomes a `repocard` (`references/latex-rules.md`, Section 9). The converter doesn't detect these, so it is set by hand in the review step.
+- **Repos and tools:** a block that points to a repo, a tool or an external resource goes in a `repocard`: `::: {.repocard title="OpenLane repo"}` … `:::` (`references/latex-rules.md`, Section 9).
 - **Study-notes boxes** (`notebox`, `exambox`, question boxes) are not used in reports unless the user asks.
 
 ## Differences from the old report skill

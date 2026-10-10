@@ -1,0 +1,7 @@
+{
+ "source": "custom-commands.md",
+ "build": [
+  ["--title", "Custom Commands: Test Notes"],
+  ["--type-preamble", "custom-commands-preamble.tex"]
+ ]
+}

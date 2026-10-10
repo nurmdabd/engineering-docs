@@ -17,6 +17,7 @@ Each corpus entry is a Markdown path, optionally followed by ':' and md2tex flag
 """
 import argparse
 import difflib
+import shutil
 import json
 import subprocess
 import sys
@@ -58,6 +59,13 @@ def check_skill():
             problems.append(f"SKILL.md description is {len(fm['description'])} characters (limit 1024)")
     except Exception as e:
         problems.append(f"SKILL.md front matter is not valid YAML: {str(e).splitlines()[0]}")
+    for reg in [SKILL / "template" / "commands.yaml", *sorted((SKILL / "types").glob("*/commands.yaml"))]:
+        try:
+            for name, e in (yaml.safe_load(reg.read_text(encoding="utf-8")) or {}).items():
+                if e.get("kind") not in ("command", "environment") or e.get("markdown") not in ("span", "div", "auto", "none"):
+                    problems.append(f"{reg.relative_to(SKILL)}: '{name}' needs kind command|environment and markdown span|div|auto|none")
+        except Exception as ex:
+            problems.append(f"{reg.relative_to(SKILL)} is not valid YAML: {str(ex).splitlines()[0]}")
     for t in sorted((SKILL / "types").iterdir()):
         for f in ("type.json", "guide.md"):
             if t.is_dir() and not (t / f).exists():
@@ -140,6 +148,36 @@ def run_templates(build):
     return failed
 
 
+def run_commands_add():
+    """commands.py add, on a scratch copy of the skill: adds, refuses a taken name, rolls back a broken definition."""
+    failed = 0
+    with tempfile.TemporaryDirectory() as tmp:
+        skill = Path(tmp) / "skill"
+        shutil.copytree(SKILL, skill, ignore=shutil.ignore_patterns(".git", "__pycache__", "tests"))
+        tool = [sys.executable, str(skill / "scripts" / "commands.py")]
+        pre = skill / "types" / "past-paper" / "preamble.tex"
+
+        def add(name, latex):
+            return subprocess.run(tool + ["add", name, "--kind", "command", "--level", "type", "--type", "past-paper",
+                                          "--latex", latex, "--args", "text", "--markdown", "span", "--use", "test"],
+                                  capture_output=True, text=True)
+        checks = []
+        r = add("marksnote", r"\newcommand{\marksnote}[1]{\hfill\textit{#1}}")
+        checks.append(("adds a new command", r.returncode == 0 and "\\marksnote" in pre.read_text()
+                       and "marksnote:" in (skill / "types" / "past-paper" / "commands.yaml").read_text()))
+        r = add("marksnote", r"\newcommand{\marksnote}[1]{#1}")
+        checks.append(("refuses a registered name", r.returncode != 0 and "taken" in r.stdout + r.stderr))
+        r = add("section", r"\newcommand{\section}[1]{#1}")
+        checks.append(("refuses a LaTeX name", r.returncode != 0 and "LaTeX or a loaded package" in r.stdout + r.stderr))
+        before = pre.read_text()
+        r = add("brokencmd", r"\newcommand{\brokencmd}[1]{\undefinedmacro{#1}}")
+        checks.append(("rolls back a definition that does not compile", r.returncode != 0 and pre.read_text() == before))
+        for what, ok in checks:
+            print(f"{'ok' if ok else 'FAILED':8} commands.py add: {what}")
+            failed += not ok
+    return failed
+
+
 def build_one(body, flags, label, has=(), lacks=()):
     """Compile body; the log must be clean, and the PDF text must contain every `has` and no `lacks` string."""
     with tempfile.TemporaryDirectory() as tmp:
@@ -214,7 +252,7 @@ def main():
         cases = json.loads((TESTS / "cases.json").read_text())
         failed = check_skill() + run_cases(cases, a.update) + run_lint(a.update) + run_templates(a.build)
         if a.build:
-            failed += run_builds(cases)
+            failed += run_builds(cases) + run_commands_add()
     print("\nAll passed." if not failed else f"\n{failed} failed.")
     sys.exit(1 if failed else 0)
 

@@ -41,6 +41,7 @@ date: "October 2026"
 | `cover` | `true` adds the study-notes cover page |
 | `course_code`, `course_name`, `cover_title`, `cover_subtitle`, `cover_note`, `cover_contents` | Cover fields; `cover_contents` is a list |
 | `exam`, `year` | For past-paper documents (`types/past-paper/guide.md`) |
+| `preamble` | This document's own commands: a `.tex` file next to it, with a registry `.yaml` of the same name (`references/commands.md`) |
 
 Values are raw LaTeX on the cover and title: write `--` for an en-dash, `---` for an em-dash and `\&` for `&`. Quote any value that contains `:`. Unknown keys are reported by the linter.
 
@@ -147,8 +148,8 @@ Broadcast FM uses Δf = 75 kHz and B = 15 kHz. Find β. [→ Solution](#solution
 
 Set `lang: bn`. Technical terms, maths, numbers, figure paths and the callout markers stay in English; sentences end with `।`. The rest is in `references/bangla.md`.
 
-## Constructs set by hand in review
+## Registered commands
 
-The converter does not produce these; mark the place in the Markdown and set them in the review step (SKILL.md, Step 3):
-- `repocard` blocks for repos and tools (`references/latex-rules.md`, Section 9);
-- `mainquestion` for a single past-exam question inside other material (Section 12); a whole past paper uses the `past-paper` type.
+Any registered command can be written directly: a box as `::: {.repocard title="OpenLane repo"}` … `:::`, an inline command as `[text]{.note}`. `scripts/commands.py list` shows every one with its syntax; `references/commands.md` explains the rules. A box written this way may hold several paragraphs.
+
+A single real past-exam question inside other material goes in `::: mainquestion` … `:::` (`references/latex-rules.md`, Section 12); a whole past paper uses the `past-paper` type.

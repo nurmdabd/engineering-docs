@@ -119,6 +119,9 @@ def with_sidecar(argv):
     if not sidecar or not sidecar.exists():
         return argv
     saved = json.loads(sidecar.read_text(encoding="utf-8")).get("build", [])
+    for item in saved:   # paths in the sidecar are relative to it
+        if item[0] == "--type-preamble":
+            item[1] = str((sidecar.parent / item[1]).resolve())
     kept = [x for item in saved if not (item[0] in REPEATED and item[0] in argv) for x in item]
     print(f"settings from {sidecar.name}: {' '.join(kept)}")
     return [argv[0], *kept, *argv[1:]]
@@ -156,10 +159,10 @@ def main():
     build.mkdir(parents=True, exist_ok=True)
     shutil.copy(TEMPLATE / "main-tex-preamble.tex", build)
     type_inputs = []
-    for old in build.glob("type-*-preamble.tex"):
+    for old in [*build.glob("type-*-preamble.tex"), *build.glob("pre-doc-*.tex")]:
         old.unlink()
     for tp in dict.fromkeys(p.resolve() for p in a.type_preamble):
-        name = f"type-{tp.parent.name}-preamble.tex"
+        name = f"type-{tp.parent.name}-preamble.tex" if tp.name == "preamble.tex" else f"pre-doc-{tp.name}"
         shutil.copy(tp, build / name)
         type_inputs.append(f"\\input{{{name}}}")
     for f in ("cover-page-preamble.tex", "cover-page-main.tex"):

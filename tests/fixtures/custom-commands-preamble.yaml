@@ -1,0 +1,5 @@
+defterm:
+  kind: command
+  args: [text]
+  markdown: span
+  use: "a term being defined, in blue italics"

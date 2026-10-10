@@ -1,0 +1,4 @@
+commands-problems.md:7: error: repocard needs title="…"
+commands-problems.md:11: warning: \grayhl is LaTeX only (registry: markdown none); use it only if the user asked for it
+commands-problems.md:11: warning: {.nosuch is not a registered command, so it prints as plain text (scripts/commands.py list)
+1 error(s), 2 warning(s)

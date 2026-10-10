@@ -1,0 +1,32 @@
+# Commands of the past-paper type (types/past-paper/preamble.tex). Format: template/commands.yaml.
+
+questionblock:
+  kind: environment
+  args: [question]
+  optional: toc
+  markdown: auto
+  use: "one solution, from \"## 1(a) Title\"; the question text comes from the paper list"
+theory:
+  kind: command
+  markdown: auto
+  use: "the Theory section, from \"### Theory\""
+answer:
+  kind: command
+  markdown: auto
+  use: "the Answer section, from \"### Answer\""
+keyword:
+  kind: command
+  markdown: auto
+  use: "the Keyword Explanation section, from \"### Keyword Explanation\""
+notes:
+  kind: command
+  markdown: auto
+  use: "the Notes and Remarks section, from \"### Notes and Remarks\""
+answersummary:
+  kind: command
+  markdown: auto
+  use: "the Final Concise Answer section, from \"### Final Concise Answer\""
+derivation:
+  kind: command
+  markdown: auto
+  use: "the Derivation / Explanation section, from \"### Derivation / Explanation\""

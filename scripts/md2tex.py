@@ -27,6 +27,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+import commands
 import detect_type
 import doctype
 import frontmatter
@@ -91,6 +92,11 @@ def main():
                   f"Add 'type: {guess[0][0]}' to its front matter to use that type's settings.", file=sys.stderr)
     argv = [sys.argv[0], *frontmatter.md2tex_flags(meta), *sys.argv[1:]]
     a = ap.parse_args(doctype.expand(argv, "md2tex")[1:])
+    type_name = [argv[i + 1] for i in range(len(argv) - 1) if argv[i] == "--type"][-1:] or [None]
+    own_pre = (first.md.parent / meta["preamble"]).resolve() if meta.get("preamble") else None
+    if own_pre and not own_pre.exists():
+        sys.exit(f"{first.md.name}: preamble {meta['preamble']} not found")
+    registry = commands.registry(type_name[0], own_pre.with_suffix(".yaml") if own_pre else None)
 
     md = a.md.resolve()
     out = a.out.resolve()
@@ -108,7 +114,7 @@ def main():
 
     cmd = ["pandoc", "-f", "markdown+lists_without_preceding_blankline-fancy_lists-implicit_figures",
            "-t", "latex", "--wrap=none", "--lua-filter", str(HERE / "house.lua"),
-           "-M", f"house_class={a.cls}", "-M", f"house_fontsize={a.fontsize}", "-M", f"house_textwidth={a.textwidth}", "-M", f"house_structure={a.structure}",
+           "-M", f"house_class={a.cls}", "-M", f"house_fontsize={a.fontsize}", "-M", f"house_textwidth={a.textwidth}", "-M", f"house_structure={a.structure}", "-M", f"house_cmds={commands.encode(registry)}",
            "-M", "house_gfm=" + " ".join(slugs.heading_slugs(body))]   # GitHub anchors, so [..](#gh-anchor) links work
     r = subprocess.run(cmd, input=body, capture_output=True, text=True)
     if r.returncode:
@@ -132,6 +138,9 @@ def main():
     out.write_text(header + tex, encoding="utf-8")
     sidecar = out.with_suffix(".build.json")
     build = frontmatter.build_flags(meta)
+    for item in build:   # the document's own preamble: a path relative to the sidecar, so the folder can move
+        if item[0] == "--type-preamble":
+            item[1] = os.path.relpath(own_pre, out.parent).replace(os.sep, "/")
     if build:
         items = ",\n  ".join(json.dumps(x, ensure_ascii=False) for x in build)   # one option per line
         sidecar.write_text(f'{{\n "source": {json.dumps(md.name, ensure_ascii=False)},\n "build": [\n  {items}\n ]\n}}\n', encoding="utf-8")
