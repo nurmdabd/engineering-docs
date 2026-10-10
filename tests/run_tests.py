@@ -44,6 +44,28 @@ def diff(expected, actual, name):
                                         f"expected/{name}", f"actual/{name}", n=2))
 
 
+def check_skill():
+    """SKILL.md front matter must parse (a bad one stops the skill loading), and every type must be complete."""
+    import yaml
+    problems = []
+    try:
+        fm = yaml.safe_load((SKILL / "SKILL.md").read_text(encoding="utf-8").split("---")[1])
+        if not fm.get("name") or not fm.get("description"):
+            problems.append("SKILL.md front matter lacks name or description")
+        elif len(fm["description"]) > 1024:
+            problems.append(f"SKILL.md description is {len(fm['description'])} characters (limit 1024)")
+    except Exception as e:
+        problems.append(f"SKILL.md front matter is not valid YAML: {str(e).splitlines()[0]}")
+    for t in sorted((SKILL / "types").iterdir()):
+        for f in ("type.json", "guide.md"):
+            if t.is_dir() and not (t / f).exists():
+                problems.append(f"types/{t.name} has no {f}")
+    print(f"{'ok' if not problems else 'FAILED':8} skill files")
+    for p in problems:
+        print("  " + p)
+    return len(problems)
+
+
 def run_cases(cases, update):
     failed = 0
     EXPECTED.mkdir(exist_ok=True)
@@ -135,7 +157,7 @@ def main():
         failed = corpus(a.corpus, a.snapshot or a.compare, "snapshot" if a.snapshot else "compare")
     else:
         cases = json.loads((TESTS / "cases.json").read_text())
-        failed = run_cases(cases, a.update)
+        failed = check_skill() + run_cases(cases, a.update)
         if a.build:
             failed += run_builds(cases)
     print("\nAll passed." if not failed else f"\n{failed} failed.")

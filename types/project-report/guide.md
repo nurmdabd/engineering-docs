@@ -61,11 +61,11 @@ What was learned, what went wrong and how it was fixed.
 - **Trim long outputs** to the lines that matter and say so (`… 120 lines omitted …`). The trimmed text itself is never edited.
 - **Results** go in a table whenever there are two or more numbers to compare.
 - **Figures:** screenshots go in `figures/` beside the Markdown. A screenshot that isn't taken yet is written as a normal image link; the converter leaves it commented out with a TODO.
-- **Repos and tools:** a block that points to a repo, a tool or an external resource becomes a `repocard` (SKILL.md Section 9). The converter doesn't detect these, so it is set by hand in the review step.
+- **Repos and tools:** a block that points to a repo, a tool or an external resource becomes a `repocard` (`references/latex-rules.md`, Section 9). The converter doesn't detect these, so it is set by hand in the review step.
 - **Study-notes boxes** (`notebox`, `exambox`, question boxes) are not used in reports unless the user asks.
 
 ## Differences from the old report skill
 
-- **Unicode:** follow SKILL.md Section 10. The old skill allowed raw Greek letters and arrows in running text, but the main font (Latin Modern) drops most of them.
-- **Headings:** reports use the house automatic colon like every other document (the user's choice). The old report skill had no automatic colon, so its Markdown sometimes ended headings with a colon by hand. Never write one (`## Results`, not `## Results:`); a heading that ends with `?` gets no added colon (SKILL.md Section 1).
-- **Display maths:** follow SKILL.md Section 7 (`align` for derivations, `\boxed` for final results). The old skill used a plain `equation` for every display.
+- **Unicode:** follow Section 10 of `references/latex-rules.md`. The old skill allowed raw Greek letters and arrows in running text, but the main font (Latin Modern) drops most of them.
+- **Headings:** reports use the house automatic colon like every other document (the user's choice). The old report skill had no automatic colon, so its Markdown sometimes ended headings with a colon by hand. Never write one (`## Results`, not `## Results:`); a heading that ends with `?` gets no added colon (`references/latex-rules.md`, Section 1).
+- **Display maths:** follow Section 7 of `references/latex-rules.md` (`align` for derivations, `\boxed` for final results). The old skill used a plain `equation` for every display.

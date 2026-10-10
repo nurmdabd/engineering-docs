@@ -2,13 +2,14 @@
 
 A Claude Code skill that turns engineering Markdown into LaTeX in Nur Mohammad's house style and compiles it to an interactive PDF with XeLaTeX. Everything it needs is inside this folder: the preamble, the `main.tex` template, cover pages, the Markdown→LaTeX converter and the build scripts.
 
-`SKILL.md` is the entry point: the workflow, the formatting rules and the custom commands.
+`SKILL.md` is the entry point: the workflow, the two ways the skill is used (convert finished Markdown, or write the content first) and when to ask. The detailed rules are in `references/`.
 
 ## Layout
 
 | Path | What it is |
 |---|---|
-| `SKILL.md` | Workflow and formatting rules |
+| `SKILL.md` | Workflow, output rules, when to ask |
+| `references/` | Detailed rules: `latex-rules.md` (Sections 1–12), `pdf-links.md` (13), `bangla.md` (14) |
 | `template/` | House preamble, `main.tex`, study-notes cover page |
 | `scripts/` | `setup.sh`, `md2tex.py` + `house.lua` (converter), `check_structure.py`, `build.py` |
 | `examples/` | A body file that uses every rule |

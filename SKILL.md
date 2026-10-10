@@ -1,20 +1,27 @@
 ---
 name: engineering-docs
-description: Converts finalized Engineering Markdown (English, or Bangla with English technical terms) (lecture notes, theory files, lab reports, study sheets, question banks, day-0X write-ups) into LaTeX in Nur Mohammad's house style AND compiles it to a finished, interactive PDF right here with XeLaTeX — bundled preamble, main.tex template, study-notes cover page, callout boxes, question/solution links, and a Markdown→LaTeX draft converter. No local MikTeX step needed. Use whenever the user asks to turn Markdown/notes into a PDF, a LaTeX/.tex file, "my format", "my LaTeX style", a report section, or an exam-ready PDF — even if they never say LaTeX. Also use when asked how a Markdown element (table, code block, equation, figure, list, repo reference) should render in this style. Content is preserved exactly — structural/formatting-only conversion (grammar fixes only).
+description: "Writes and builds engineering documents in Nur Mohammad's house LaTeX style and compiles them to interactive PDFs with XeLaTeX: lecture and theory notes, formula sheets, question banks, derivation and exam sheets, and multi-day project or lab reports, each kind with its own document type and writing guide. English, or Bangla with English technical terms. Covers the whole path: writing the Markdown content when asked, converting Markdown to house-style LaTeX (draft converter plus rules), and building the PDF with the bundled preamble, cover page, callout boxes, linked question/solution boxes and links between PDFs. Use whenever the user wants notes, solutions, a report or exam material as a PDF or .tex in \"my format\" or \"my LaTeX style\", even if they never say LaTeX, or asks how a Markdown element renders in this style. When converting the user's finished Markdown, content is preserved exactly (grammar fixes only)."
 ---
 
-# Engineering Markdown → House-Style LaTeX → PDF (self-contained)
+# Engineering documents in the house LaTeX style
 
-This skill does the whole job in the session:
+Read this file first. It is the workflow; the detailed rules are in `references/` and are read when a step needs them.
 
-1. **Set up** XeLaTeX once (`scripts/setup.sh`).
-2. **Convert** the Markdown to LaTeX **body content** by the rules in Sections 0–13 (draft with `scripts/md2tex.py`, then review by hand).
-3. **Check** the structure (`scripts/check_structure.py`).
-4. **Build** the PDF with the house preamble and `main.tex` template (`scripts/build.py`).
-5. **Look** at the rendered pages and fix what's wrong.
-6. **Deliver** the PDF plus the compile-ready source folder.
+| File | Read it when |
+|---|---|
+| `references/latex-rules.md` | Converting or reviewing LaTeX: custom commands, and Sections 1–12 (headings, inline text, lists, tables, code, figures, maths, cross-references, repo blocks, Unicode, callouts and questions, `mainquestion`/`eqnote`) |
+| `references/pdf-links.md` | Building several PDFs that link to each other (Section 13) |
+| `references/bangla.md` | The document is in Bangla (Section 14) |
+| `types/<name>/guide.md` | Writing or converting a document of that type |
 
-Bundled files (paths relative to this skill's folder):
+Section numbers (0–14) are shared across these files, so "Section 7" always means the same rules.
+
+## Two ways this skill is used
+
+1. **Convert the user's finished Markdown.** Preserve the content exactly; fix grammar only. Never summarize, trim, add or reword explanations.
+2. **Write the content, then build.** When the user asks Claude to produce the document (solutions, a report section, notes), first read the type's `guide.md`. Write the Markdown so it already follows the conventions the converter expects (headings without a trailing colon, `**Label:**` lead-ins, `> ⚠`/`> 🎯`/`> 📌` callouts, `#### N1` questions, `$$ … $$` equations; see `references/latex-rules.md`). Never invent data the user has to supply, such as measured results or exam questions. **Show the Markdown to the user and get it approved before building;** from then on it is finished Markdown and mode 1 applies.
+
+## Bundled files
 
 | File | What it is |
 |---|---|
@@ -25,15 +32,15 @@ Bundled files (paths relative to this skill's folder):
 | `scripts/setup.sh` | Installs XeLaTeX and every package the preamble loads (Debian/Ubuntu). Re-running it is safe. |
 | `scripts/check_structure.py` | A fast check for unbalanced braces and `\begin`/`\end` pairs, with no compile. |
 | `scripts/build.py` | Fills the template, compiles with latexmk/XeLaTeX, and summarizes errors, undefined references, **missing glyphs** and wide overfull lines. |
-| `examples/example-body.tex` | A body file that uses every rule below. It compiles clean, so copy its patterns. |
-| `types/<name>/` | **Document types:** `type.json` (default flags) and `guide.md` (how to write and lay out that kind of document). See Document types below. |
-| `tests/run_tests.py` | Regression tests for the converter and the build. Run them after any change to the scripts or the preamble. |
+| `examples/example-body.tex` | A body file that uses every rule. It compiles clean, so copy its patterns. |
+| `types/<name>/` | **Document types:** `type.json` (default flags) and `guide.md` (how to write and lay out that kind of document). |
+| `tests/run_tests.py` | Regression tests for the converter and the build (see Changing the skill). |
 
-Never edit the bundled preamble to suit one document. If the user changes their live preamble, they send the new file and it replaces `template/main-tex-preamble.tex`. Keep the two portable changes above, and the **Study-notes additions** block at its end (callout boxes, markers, `\golink`, PDF navigation), when you do that.
+Never edit the bundled preamble to suit one document. If the user changes their live preamble, they send the new file and it replaces `template/main-tex-preamble.tex`. Keep the two portable changes above, the **Study-notes additions** block at its end (callout boxes, markers, `\golink`, PDF navigation), and the punctuation-aware `\addcolon`, when you do that.
 
 ## Document types
 
-A type is a preset for one kind of document. `--type NAME` on `md2tex.py` and `build.py` loads `types/NAME/type.json`, and flags you pass yourself still win. Before writing or converting a document of that kind, read `types/NAME/guide.md`: it says how to write the content and which rules differ from the defaults below.
+A type is a preset for one kind of document. `--type NAME` on `md2tex.py` and `build.py` loads `types/NAME/type.json`, and flags you pass yourself still win. Before writing or converting a document of that kind, read `types/NAME/guide.md`: it says how to write the content and which rules differ from the defaults in this file and the references.
 
 | Type | For |
 |---|---|
@@ -58,7 +65,7 @@ python3 <skill>/scripts/md2tex.py NOTES.md -o latex/NOTES.tex [--class extarticl
 The converter prints the suggested `--title` lines: the YAML `title`/`subtitle`, or else the first `#` heading, which it then removes from the body.
 
 ### Step 3: Review the draft, then check its structure
-The converter cannot make the judgement calls. Read the draft against Sections 0–13 and fix by hand:
+The converter cannot make the judgement calls. Read the draft against Section 0 below and `references/latex-rules.md`, and fix by hand:
 - **`\keyterm` vs plain:** the converter turns every bold span into `\keyterm`, except short all-lowercase stress words like "not" or "before", which become `\emph`.
 - **Captions** that came out generic, for example "Summary" or a repeated section title.
 - **Ambiguous callouts:** any blockquote whose box type is unclear.
@@ -108,37 +115,6 @@ Give the user:
 
 If the work is in a git repo, commit the body `.tex` files and the PDF. Add `*_build/` (and LaTeX aux files) to `.gitignore` unless the user wants the build folder kept.
 
-## Active custom commands
-
-| Command / environment | Use for |
-|---|---|
-| `x{<w>}`, `y{<w>}`, `z{<w>}` | fixed-width table columns (left/center/right aligned) |
-| `C`, `L`, `R` | flexible-width table columns (center/left/right aligned) |
-| plain `l`, `c`, `r` | table columns for short, non-wrapping content (used with `\cc{}`) |
-| `\cc{Text}`, `\yy{Text}{width}`, `\CC{Text}` | table header cells (plain/fixed/flexible column) |
-| `\keyterm{text}` | an inline technical term, tool/framework name, acronym expansion, or a "Term = definition" pattern (including at the start of a sentence/item) |
-| `\verb\|token\|` | a short literal identifier in running prose/lists (never nested inside another command's argument) |
-| `\graphicspath{{figures/}}` | already set (build.py adds the body folders); bare filenames work in `\includegraphics` |
-| custom `json` language | `language=json` in `lstlisting`, for JSON content specifically |
-| `repocard{title}` | a tool/repo/external-resource reference block (Section 9) |
-| `{\emojifont …}` | symbols Latin Modern lacks (★) in running text (Section 10) |
-| `notebox`, `examplebox`, `exambox`, `warnbox`, `selfcheckbox` `[title]` | callouts (Section 11) |
-| `questionbox{title}{solution label}`, `solutionbox{title}{question label}` | linked practice questions and solutions (Section 11) |
-| `\exammark`, `\pinmark`, `\warnmark`, `\okmark`, `\nomark` | inline markers that replace 🎯 📌 ⚠ ✔ ✘ (Section 10) |
-| `\golink{label}{text}` | a small clickable chip that jumps to a label |
-| `eqnote{<equation>}{<note>}` | an equation with a short side note, in limited cases (Section 12) |
-| `mainquestion` | previous-year exam questions only (Section 12) |
-
-The preamble also defines these, which stay **unmapped**:
-- `\codechip{}`, `\seqtt{}`
-- `\hlblack{}`, `\grayhl{}`, `\blackhl{}`
-- `\note{}`, `\normalpath{}`
-- the `myCPP` listing style
-
-They exist and compile. Don't use them unless the user asks, or confirms a mapping when asked under Section 0.
-
-Everything else is not customized beyond this table: headings, paragraphs, lists, other code languages, equations and figures. This table lists commands unique to this house style, not the full universe of usable LaTeX. Standard LaTeX, and whatever the loaded packages provide, is always available too: `\href`, `\cref`, `\texttt`, `\textit`, `\vspace`, `\multicolumn`, `equation`, `align`, `itemize`, `\checkmark`, `physics` macros, `circuitikz`, and so on. Use them as needed.
-
 ## Output rules for the body file (non-negotiable)
 
 - The body file contains raw LaTeX **body content only**. It has no `\documentclass`, no preamble and no Markdown. The build script supplies the preamble and `main.tex`.
@@ -164,376 +140,6 @@ Still **stop and ask**, quoting the exact snippet and naming 2–3 concrete opti
 
 Convert everything unambiguous first, then ask about the rest. Don't block the whole output on one uncertain piece.
 
-## 1. Section mapping
-
-| Markdown | `extarticle` (default) | `extreport` |
-|---|---|---|
-| `# Title` | `\section{Title}` | `\chapter{Title}` |
-| `## Title` | `\subsection{Title}` | `\section{Title}` |
-| `### Title` | `\subsubsection{Title}` | `\subsection{Title}` |
-| `#### Title` | `\textbf{Title:}` run-in label | `\subsubsection{Title}` |
-
-- Use the Markdown heading text exactly as written. Strip a trailing colon if there is one, because the preamble's `\addcolon` already adds a colon to every section title. Never apply manual colour or numbering; title formatting is entirely the preamble's job.
-- **The automatic colon** is skipped when the title already ends in `?`, `!`, `.`, `:` or the Bangla danda `।`, so "Why modulate digital data?" never prints as "…?:". Chapters (`extreport` `#`) and `####` run-in labels follow the same idea: the converter writes `\textbf{Title:}` for a run-in label and drops a colon the Markdown already had.
-- **When writing content** (Markdown or LaTeX), never end a heading with a colon: `## Results`, not `## Results:`. A heading may end with `?` when it is a real question. A bold lead-in label in body text is different: it is not a heading, so it always carries its own colon (`**Objective:**`, Section 2).
-- Strip manual numbering from the heading text (`## 3 Quantization` → `\subsection{Quantization}`), because LaTeX numbers the headings itself.
-- Leave the file's single **outermost** heading unlabeled, typically. Every other heading gets a label, per Section 8.
-- Don't go deeper than the table above.
-
-## 2. Paragraph and inline text formatting
-
-### `\textbf{...}`
-Use it for a run-in phrase that works as a mini sub-heading, labelling or introducing a paragraph, list or block of explanation that follows. The preamble colours `\textbf` green, so don't use it for casual mid-sentence emphasis.
-
-- **Short field labels always take a colon:** `\textbf{Objective:}`, `\textbf{Goal:}`, `\textbf{Result:}`, `\textbf{Observation:}`, `\textbf{Command:}`, `\textbf{Output:}` / `\textbf{Output Snippet:}`, `\textbf{Purpose:}`, `\textbf{Question:}`, `\textbf{Solution:}`, `\textbf{Proof:}`.
-- **A longer descriptive lead-in** names a construct or topic before explaining it at length. It takes whatever punctuation reads naturally (colon, em-dash or period), not a colon by default.
-- **The test is function, not punctuation:** does this phrase open or label a block of explanation? If yes, use `\textbf{}`. If it is a term referenced within a single sentence or compact bullet, even as the first word, use `\keyterm{}`.
-
-### `\keyterm{...}`
-Apply it to technical terms, tool or framework names, key concepts and acronym expansions, on first meaningful mention. That includes the leading word of a sentence or bullet when it names a term within that single line, for example `\keyterm{FSM} = states + inputs + outputs + transitions.`
-
-- **Judge by content, not syntax.** Markdown's `*italic*` and `**bold**` markers are an inconsistent signal in hand-written study notes, so don't wrap every emphasized span. Ask whether the phrase would make sense as a glossary entry. If it is rhetorical emphasis instead, leave it plain.
-- **Re-apply it per context.** It's fine to use `\keyterm{}` again when a term resurfaces in a new subsection or a later paragraph.
-- **Wrap a full "Term (ACRONYM)" phrase in one call,** for example `\keyterm{Pulse Code Modulation (PCM)}`.
-
-### `` \verb|token| ``
-Use it only for short literal identifiers in running prose or lists: module and signal names, filenames, exact code tokens.
-
-- **Not for multi-word concepts;** those get `\keyterm`.
-- **`\verb` cannot appear inside the argument of another command.** That includes `\textbf{}`, `\keyterm{}`, `\caption{}` and every table cell. This is a hard LaTeX constraint, not a style preference.
-- **Inside another command, use `\texttt{}`** with special characters escaped by hand: `\&`, `\$`, `\#`, `\_`, `\%`, `\{`, `\}`, `\textasciicircum{}`, `\textasciitilde{}`.
-
-### Hard line breaks
-Two-space Markdown line breaks inside a paragraph become separate sentences or paragraphs. Don't use `\\` in running text.
-
-## 3. Lists
-
-```latex
-\begin{itemize}
-    \item ...
-\end{itemize}
-```
-```latex
-\begin{enumerate}
-    \item ...
-\end{enumerate}
-```
-
-- **Nesting:** preserve it exactly. The preamble sets the bullets (• / ➢ / ∘).
-- **Lettered items:** for `(a) (b) (c)` items, use `\begin{enumerate}[label=(\alph*)]` (from enumitem).
-
-## 4. Tables
-
-Pick a column tier per column, based on its content. Don't force one tier across a whole table.
-
-| Content | Column type | Header macro |
-|---|---|---|
-| Genuinely short *and* uniform (every entry comparably short: IDs, single words, flags, numbers) | plain `l` / `c` / `r` | `\cc{Text}` (always centered, regardless of body alignment) |
-| Varies in length, or has one or a few longer entries mixed with short ones | `x{w}` / `y{w}` / `z{w}` | `\yy{Text}{w}` (**text first, width second**) |
-| Long descriptive text that fills the remaining space | `X` / `C` / `L` / `R` (`tabularx`-based) | `\CC{Text}` |
-
-**Sizing principle:** pick the narrowest column (type and width) that doesn't truncate any entry, favouring wrapping over stretching.
-
-- **Why plain columns go wrong:** a plain `l`/`c`/`r` column sizes itself to fit its single longest entry on one line, with *no* wrapping. One long entry in an otherwise short column forces the whole column wide.
-- **The fix:** in that case use a fixed-width `x`/`y`/`z` column, sized just wide enough that the longest entry wraps to two lines.
-
-```latex
-% Avoid: plain `l` forces the column wide to fit the single longest entry
-\begin{tabularx}{\textwidth}{|l|x{3.2cm}|L|}
-
-% Prefer: a fixed width lets the long entry wrap, keeps the column narrow
-\begin{tabularx}{\textwidth}{|y{2.4cm}|x{3.2cm}|L|}
-```
-
-Reserve the flexible `C`/`L`/`R` tier for the column or columns that genuinely hold long prose. That column absorbs the space the others don't need. Avoid all-flexible tables (`|C|C|C|`) unless every column truly needs equal flex.
-
-**Maths in table cells:** maths in cells is fine (`$\Delta v^2/12$`). Use `\dfrac` sparingly, because it makes rows tall.
-
-**Row banding:** a preamble hook applies it **automatically** to every `tabularx`, starting from row 2. **Do not** add `\rowcolor` to body rows. The header row is the one exception: give it an explicit `\rowcolor{gray!15}`.
-
-**No float wrapper:** don't use `\begin{table}`. `ltablex` lets `tabularx` handle captions, labels and page breaks directly. Put each cell on its own line.
-
-```latex
-\begin{tabularx}{\textwidth}{|c|y{2.8cm}|L|}
-    \hline
-    \rowcolor{gray!15}
-    \cc{ID}            &
-    \yy{Module}{2.8cm} &
-    \CC{Description}                                                                                                    \\ \hline
-
-    M01                &
-    Control Unit       &
-    Manages instruction sequencing, state transitions, and coordination between datapath components during execution.   \\ \hline
-\caption{<caption>}
-\label{tab:<snake_case_label>}
-\end{tabularx}
-```
-
-Preserve every row and cell exactly. Generate a meaningful caption and label if the Markdown doesn't provide them.
-
-**Table hygiene** (verified on rendered pages; the converter does all of this):
-- **Tall maths in a cell** (`\dfrac`, `\frac`, `\int`, `\sum`, `\left…\right`, matrices, `\sqrt`, `\overline`, `\boxed`): wrap the cell as `\tallcell{…}`. It pads the cell 3pt above and below, so the formula never touches the row rules. `\tallcell` only works in paragraph-type columns (`x`/`y`/`z`/`C`/`L`/`R`), so a column that holds tall maths never uses plain `l`/`c`/`r`. Don't use `cellspace` or `makecell` for this: the first breaks wrapping in `x{}` columns, the second breaks matrices.
-- **The flexible column** is the **maths-heavy** one, if a column is mostly maths, because inline maths can't wrap the way text can. Otherwise it is the column with the longest prose. When the flexible column holds maths, text columns may wrap to 3 lines, capped at 4.4 cm.
-- **Minimum width:** no fixed column is narrower than its longest single inline formula.
-- **Repeated header:** put `\endhead` right after the header row, so the header repeats when a table continues on the next page.
-- **Caption row:** put `\rowcolor{white}` on the line before `\caption{…}`, so the caption row doesn't pick up the banding. Don't use `\hiderowcolors` for this; it breaks the banding of the whole table.
-- **Heading with a table:** a heading directly followed by a table (or a figure) gets `\needspace{10\baselineskip}` before it, so the heading never sits alone at a page bottom.
-- **One item per line:** in a cell listing several items (symbols, steps), separate them with `<br>` in the Markdown, or `\newline` in LaTeX.
-
-**Dense reference sheets** (formula sheets, many-column tables):
-- **Font and margins:** use `--fontsize 11pt` and `--margin-x 0.4in` in `build.py`. Pass the matching `--textwidth 18.9` (cm) to `md2tex.py` so it sizes columns for the wider text block.
-- **Formula sheet layout:** `Title | Equation | Notation | Reference`.
-  - **Notation** is required: define every new symbol in the row, one per line.
-  - **Reference** is optional: give the lecture, plus a link to the section of the theory PDF where the formula is derived.
-
-## 5. Code blocks
-
-```latex
-\begin{lstlisting}[language=<language>, caption={<caption>}]
-...
-\end{lstlisting}
-```
-
-**Styling:** the preamble's `\lstset` handles line numbers, the frame and the colours. Don't add manual style overrides. Detect the language from the content, and preserve indentation, comments and blank lines exactly. Always give a block a `caption`.
-
-What to use for each kind of block:
-- **A command the user runs:** `language=bash`, or the true language.
-- **Raw terminal output or text dumps:** omit `language` entirely, but still give a `caption`.
-- **Directory trees, flow diagrams, hierarchy diagrams:** `lstlisting` with **no `language`** but **with a `caption`**. Don't use bare `verbatim`.
-  - **Characters in listings:** the listing font is Latin Modern Mono, so box-drawing glyphs (`│└├`) and arrows like `▼` drop silently. Use the ASCII equivalents (`|`, `+--`, `->`, `v`). The build's missing-glyph report catches any you miss.
-- **JSON:** `language=json`.
-- **Verilog/SystemVerilog, Python, C++, MATLAB:** `language=Verilog` / `Python` / `C++` / `Matlab`.
-- **No `\label` by default.** Only add an `lst:` label when the prose cross-references the block.
-- **Command/Output idiom:** when the Markdown shows a command and its result as *separate* pieces, put `\textbf{Command:}` above the command listing and `\textbf{Output Snippet:}` (or `\textbf{Output:}`) above the output listing. If the Markdown already shows them combined as one transcript, keep a single `lstlisting`.
-
-## 6. Figures
-
-```latex
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.8\linewidth]{filename.png}
-    \caption{OpenLane container launch.}
-    \label{fig:openlane_container_launch}
-\end{figure}
-```
-
-- **Images that exist:** use a real `\includegraphics`. The build adds the body's folder and `figures/` to the search path, so a bare filename works. For a Markdown path like `../figures/part-01/x.png`, either pass `--figures` for that folder, or use the relative path from the body file's folder.
-- **Images that don't exist yet:** leave the `\includegraphics` line commented, with a `% TODO: insert graphic` note.
-- **Width:** start at `0.8\linewidth`. Use `0.5–0.6` for tall or portrait images and up to `\linewidth` for wide block diagrams.
-- **Caption and label:** use the Markdown alt text or the nearby heading as the caption, and generate a `fig:` label from it.
-- **After the figure:** preserve any "Purpose:"-style explanation as body text with `\textbf{Purpose:}`, per Section 2.
-
-## 7. Mathematical expressions
-
-- **Inline maths** (`$...$`) stays unchanged. Fix only broken spacing, such as `$ x $` → `$x$`.
-- **Single display equations** use plain `equation` with a label:
-  ```latex
-  \begin{equation}
-      f = \frac{1}{T}
-      \label{eq:<snake_case_label>}
-  \end{equation}
-  ```
-- **A multi-line derivation** (consecutive `$$ … $$` lines, or `=` chains) uses `align`. Label only the lines that are referenced or that are final results, and put `\nonumber` on the rest:
-  ```latex
-  \begin{align}
-      \overline{q^2} &= \frac{1}{\Delta v}\int_{-\Delta v/2}^{\Delta v/2} q^2\,dq \nonumber\\
-                     &= \frac{\Delta v^2}{12}
-      \label{eq:quantization_noise_power}
-  \end{align}
-  ```
-- **Boxed final results** (shown in bold or with a box in the Markdown) use `\boxed{…}` inside the equation (mathtools).
-- **A "where …" explanation** directly after an equation becomes a plain `itemize` list:
-  ```latex
-  \begin{equation}
-      f = \frac{1}{T}
-      \label{eq:<snake_case_label>}
-  \end{equation}
-  where:
-  \begin{itemize}
-      \item $f$ is frequency in Hz
-      \item $T$ is the period in seconds
-  \end{itemize}
-  ```
-- **Text inside maths** uses `\text{}`, for example `\text{SQNR}_{\text{dB}}`. Units go outside the maths or inside `\text{ }`.
-
-## 8. Cross-references
-
-Auto-generate a meaningful snake_case `\label{}` for every labelable element, derived from the heading or caption text (lowercased, spaces → underscores):
-
-| Element | Prefix | Example |
-|---|---|---|
-| Section | `sec:` | `\label{sec:day01_rtl_analysis}` |
-| Figure | `fig:` | `\label{fig:openlane_container}` |
-| Table | `tab:` | `\label{tab:verification_results}` |
-| Code listing | `lst:` | `\label{lst:top_module_verilog}` (only if actually cross-referenced; see Section 5) |
-| Equation | `eq:` | `\label{eq:clock_frequency}` |
-
-- **Placement:** put the `\label{}` on the line immediately after the heading, with no blank line in between.
-- **Unique labels:** labels must be unique **across all body files built together**. When building several files into one PDF, prefix the labels per file, for example `sec:l24_carson_rule`.
-- **Using `\cref`:** when the prose refers back to a labelled element in the same build ("as derived above", "see the Carson's rule section"), use `\cref{…}`. Leave references to content outside the build as plain prose.
-- **Markdown anchor links:** `[text](#anchor)` links to an in-build heading become `\hyperref[sec:…]{text}`, or `\cref{}` when the text is just a reference. Links to other files become plain prose, or `\href` if a URL exists.
-
-## 9. Tool and repo reference blocks
-
-`repocard{title}` wraps a tool, repo or external-resource reference with its own descriptive block (for example "OpenLane repo" or "PDK source"), instead of a plain paragraph:
-
-```latex
-\begin{repocard}{<title>}
-...
-\end{repocard}
-```
-
-For a block listing **multiple** resources, use `\textbf{Label:}` followed by `\href{<url>}{\textit{<display text>}}`, with `\vspace{2mm}` between entries:
-
-```latex
-\begin{repocard}{Project Repository References}
-
-\textbf{Public Repository:}
-\href{https://github.com/user/repo}{\textit{repo-name/}}
-
-\vspace{2mm}
-
-\textbf{Week-04 Assignment Directory:}
-\href{https://github.com/user/repo/tree/master/some/path}{\textit{some\_path/}}
-
-\end{repocard}
-```
-
-Escape special characters in the **display text** only, never in the URL.
-
-## 10. Unicode in running text (verified against the build)
-
-The main font is Latin Modern, because the preamble sets no `\setmainfont`, so this applies on the user's MikTeX too. These characters **render**: Δ µ → ← × ± √ ∞ Σ — ° ½ ² and accented Latin letters.
-
-These characters **vanish silently** and must be converted:
-
-| Raw | Write instead |
-|---|---|
-| Greek letters other than Δ and µ (β ω π θ φ λ τ …) | inline maths: `$\beta$`, `$\omega$` … |
-| ≈ ≤ ≥ ≠ ⊕ ⇒ ↔ ∝ ∫ | `$\approx$`, `$\le$`, `$\ge$`, `$\neq$`, `$\oplus$`, `$\Rightarrow$`, `$\leftrightarrow$`, `$\propto$`, `$\int$` |
-| ✔ ✅ / ✘ ❌ / ⚠ | `\okmark` / `\nomark` / `\warnmark` (coloured symbols) |
-| 🎯 / 📌 | `\exammark` / `\pinmark` (small EXAM / NOTE chips). At the start of a blockquote, these markers choose the box instead (Section 11). |
-| ★ ⭐ | `{\emojifont ★}` |
-| ¹²³⁴⁻ superscripts, ₁₂ subscripts, ⅓, ①②③ | `$^{-6}$`, `$_{12}$`, `$\tfrac13$`, `\textcircled{\scriptsize 1}` |
-| m̂ (combining hat) | `$\hat{m}$` |
-| Other pictographic emoji (💡 📝 ➕) | drop the emoji and keep the meaning in words |
-
-In headings and captions, wrap maths replacements as `\texorpdfstring{$\beta$}{β}` so the PDF bookmarks stay readable. The converter does this everywhere.
-
-The build's **"Missing glyphs"** line lists anything that slipped through. It must be empty before delivery.
-
-## 11. Callout boxes and practice questions
-
-These boxes make study material easy to scan. They share the `repocard` look (a rounded box with a coloured title bar) and break across pages. The optional `[title]` replaces the default title.
-
-| Source | Box | Default title |
-|---|---|---|
-| `> ⚠ …` (a class-note correction, a common mistake, a caution) | `warnbox` | Watch Out |
-| `> 🎯 …` (exam focus, what to write in the exam) | `exambox` | Exam Focus |
-| `> 📌 …`, or a plain `> …` blockquote (a note or notice) | `notebox` | Note |
-| A paragraph that starts with `**Example …:**` or `**Worked example.**` | `examplebox` | the bold lead-in |
-| The body of a heading containing "self-check" | `selfcheckbox` | Self-check |
-
-**Box titles:** if the callout starts with a bold lead-in label (`> ⚠ **Sign note:** …`), that label, without its colon, becomes the box title. Otherwise the box gets its default title. Remove the marker emoji, because the box colour carries its meaning.
-
-**Practice questions:**
-- **Question format:** a heading that is just an ID (`#### N1`, `#### S12`, `#### L3`) becomes `questionbox`, and `#### Solution N1` becomes `solutionbox`.
-- **Labels:** put `\phantomsection\label{q:n1}` or `\label{sol:n1}` on the line just before the box. The title bar carries the link to the partner box ("Solution →" / "← Back to question"). Drop the Markdown's own `[→ Solution](#…)` and `[← Back](#…)` links, since the title bar replaces them.
-```latex
-\phantomsection\label{q:n1}
-\begin{questionbox}{N1}{sol:n1}
-Broadcast FM uses peak deviation ...
-\end{questionbox}
-...
-\phantomsection\label{sol:n1}
-\begin{solutionbox}{Solution N1}{q:n1}
-$\beta = \Delta f/B = 75/15 = 5$ ...
-\end{solutionbox}
-```
-
-**Boxes and tables:** don't put a `tabularx` inside a callout box when the box might break across pages; leave that callout unboxed. A short table inside a solution box is fine.
-
-## 12. `mainquestion` and `eqnote`: where they may be used
-
-**`mainquestion`** starts a new page and frames one question as a grey block. It was built for solving **previous years' exam questions**.
-
-Use it only when **all** of these hold:
-- The source identifies the question as a real past-exam question, with its year or exam name and question number. For example, "Term Test 2024, Q3(b)" or "Final 2023 Q2".
-- The question gets a full worked solution, roughly half a page or more.
-
-Then lay it out as follows:
-```latex
-\begin{mainquestion}
-\textbf{Term Test 2024, Q3(b):} Draw the Armstrong modulator ... [5 marks]
-\end{mainquestion}
-\textbf{Solution:}
-...
-```
-Put the question text in the box and the solution below it as normal body text, using headings, equations, figures and callouts as usual.
-
-**Never use `mainquestion`** for:
-- practice questions, question banks or self-checks (use `questionbox`/`solutionbox`; a page break per question wastes pages);
-- short answers;
-- questions inside theory notes;
-- invented example questions.
-
-If it is unclear whether a question is a real past-exam question, ask.
-
-**`eqnote{<equation>}{<note>}`** puts the equation in the left 65% and a small side note in the right 32%. It works well, but only in a narrow case.
-
-Use it when **all** of these hold:
-- A single display equation, typically a **final or boxed result**, is immediately followed by one short comment about it: a condition, units, "also write …", or a trap.
-- The comment is at most about 3 short points (separate points with `\\`).
-- The equation fits in 65% of the line.
-
-```latex
-\begin{eqnote}{
-\begin{equation}
-    \boxed{B_{PM} = 2(\Delta f + B)}
-    \label{eq:d1_bandwidth_of_pm_1}
-\end{equation}
-}{\textit{Write also:} for FM, $\Delta f = k_f m_p/2\pi$ \\ PM bandwidth grows with message frequency}
-\end{eqnote}
-```
-
-**Don't use `eqnote`** for:
-- running derivations, multi-line `align` blocks or wide equations;
-- "where …" variable lists (Section 7 keeps those as an `itemize`);
-- notes longer than a few lines, since the note text is `\scriptsize`.
-
-In this repo's derivation sheet, the converter applies it automatically when a display equation is followed by a paragraph that starts with *Write also*.
-
-## 13. Interactivity and links across PDFs
-
-The PDFs are meant to be clicked through. The template and preamble already provide:
-- the bookmarks panel, which opens on launch and is numbered;
-- the **TOC** button in every page header;
-- a clickable table of contents and `\cref` references;
-- question ↔ solution links in the box title bars.
-
-**Linking between PDFs of one set:** hyperref's `destlabel` option is passed by `main.tex`, so every `\label` is also a named destination in the PDF. That makes another PDF in the **same folder** linkable:
-```latex
-\href{3-derivation-sheet.pdf\#sec:d1_bandwidth_of_pm}{D1}
-```
-- **Link targets:** a Markdown link `other.md#anchor` becomes `\href{other.pdf\#sec:<anchor with - → _>}{…}`. Section labels are derived the same way (`sec:` + the Markdown anchor, with `-` → `_`), so both ends agree.
-- **Check after building:** read each PDF's annotations with pypdf and confirm every internal and cross-file destination exists.
-- **Tell the user:** the PDFs must stay in one folder for these links to work.
-
-## 14. Bangla (বাংলা) documents
-
-Use this for notes translated into Bangla, where technical terms stay in English.
-
-- **Converter:** run `md2tex.py --bangla`. It wraps every run of Bangla text (outside maths and `\label`/`\ref` keys) as `\bn{…}`.
-- **Build:** run `build.py --bangla`. It loads the Bangla font: Noto Serif Bengali (install `fonts-noto-core` on Linux), else **Nirmala UI**, else **Vrinda**, so the same build folder compiles on Windows MikTeX. It also wraps the Bangla parts of the title, header and cover fields, and sets `\emergencystretch` so lines never overflow.
-- **Why explicit `\bn{}` wrapping:** automatic switching with `ucharclasses` breaks at group boundaries (bold labels, table headers), so Latin letters vanish. Explicit wrapping is robust.
-- **Never span hyphens or dashes in a `\bn{}` run:** LaTeX writes the em-dash as `---`, and inside the Bangla font that prints literally.
-- **What to keep in English while translating:**
-  - all technical terms (carrier, bandwidth, quantization noise, …), plus "Lecture N" and "self-check" (the self-check box is detected by that word);
-  - maths, numbers, figure paths and callout markers (⚠ 🎯 📌).
-- **What translates freely:** bold lead-in labels end with "।" and are still recognised as labels. Example boxes may start with "উদাহরণ".
-- **Check after translating:** compare the translation with the source mechanically. Display and inline maths must be identical, and the counts of figures, headings, table rows, callouts, numbered items and bullets must match.
-- **Column widths:** table widths count only base letters, not vowel signs or hasanta. Every column is at least as wide as its longest word, because Bangla is not hyphenated.
-
 ## Changing the skill
 
 After any change to `scripts/` or `template/`, run `python3 <skill>/tests/run_tests.py --build`. Every fixture must convert to its expected output in `tests/expected/`, and every build must log clean. If an output changes on purpose, check the diff and accept it with `--update`.
@@ -548,7 +154,7 @@ python3 <skill>/tests/run_tests.py --compare /scratch/snap notes.md bangla.md:--
 ## Quick self-check before building
 
 1. **Body files only:** no `\documentclass`, `\usepackage` or commentary.
-2. **Content preserved:** nothing summarized, trimmed or added; only grammar fixed.
+2. **Content:** when converting the user's Markdown, nothing summarized, trimmed or added, only grammar fixed. When Claude wrote the content, the user has reviewed it.
 3. **Labels:**
    - Every heading below the outermost one has a `\label{}` on the next line, with no blank line.
    - Every table, figure and numbered equation is labelled.
@@ -565,7 +171,7 @@ python3 <skill>/tests/run_tests.py --compare /scratch/snap notes.md bangla.md:--
 6. **Diagrams as text:** trees and flow diagrams use a captioned `lstlisting` with no `language`, in ASCII.
 7. **References:** `\cref{}` for in-build references; plain prose for anything outside the build.
 8. **`repocard`:** used only for tool and repo reference blocks.
-9. **Boxes:** callouts use the Section 11 boxes; `mainquestion` and `eqnote` are used only where Section 12 allows.
-10. **Unicode:** Section 10 is applied, so no raw Greek or relation symbols appear in running text.
+9. **Boxes:** callouts use the Section 11 boxes; `mainquestion` and `eqnote` are used only where Section 12 allows (`references/latex-rules.md`).
+10. **Unicode:** Section 10 (`references/latex-rules.md`) is applied, so no raw Greek or relation symbols appear in running text.
 11. **Ambiguities:** anything unmapped is flagged with a specific question.
-12. **Checks:** `check_structure.py` is clean, the build log says "Log clean" (or its warnings are explained), the rendered pages have been viewed, and the links were verified (Section 13).
+12. **Checks:** `check_structure.py` is clean, the build log says "Log clean" (or its warnings are explained), the rendered pages have been viewed, and the links were verified (`references/pdf-links.md`).

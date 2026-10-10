@@ -1,5 +1,5 @@
 --[[
-house.lua -- pandoc Lua filter: Markdown AST -> house-style LaTeX body (see SKILL.md Sections 1-11).
+house.lua -- pandoc Lua filter: Markdown AST -> house-style LaTeX body (see references/latex-rules.md, Sections 1-12).
 Driven by md2tex.py; not meant to be called directly. Metadata options:
   house_class     extarticle | extreport
   house_fontsize  e.g. 12pt (table width estimates)
@@ -34,7 +34,7 @@ local function unique(lbl)
 end
 local function id_to_label(id) return "sec:" .. slug(id) end
 
--- ---------- Unicode -> font-safe LaTeX (SKILL.md Section 10) ----------
+-- ---------- Unicode -> font-safe LaTeX (references/latex-rules.md, Section 10) ----------
 local MATHCH = {
   ["β"] = "\\beta", ["δ"] = "\\delta", ["θ"] = "\\theta", ["λ"] = "\\lambda", ["π"] = "\\pi",
   ["σ"] = "\\sigma", ["τ"] = "\\tau", ["φ"] = "\\varphi", ["ω"] = "\\omega", ["α"] = "\\alpha",

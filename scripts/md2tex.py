@@ -112,7 +112,7 @@ def main():
     def rel(src):
         return os.path.relpath((md.parent / src).resolve(), out.parent).replace(os.sep, "/")
 
-    def missing_image(m):   # SKILL.md Section 6: an image that doesn't exist yet stays commented out
+    def missing_image(m):   # references/latex-rules.md Section 6: an image that doesn't exist yet stays commented out
         if (md.parent / m.group(2)).exists():
             return m.group(0)
         return f"{m.group(1)}% TODO: insert graphic\n{m.group(1)}% \\includegraphics[width=0.8\\linewidth]{{{rel(m.group(2))}}}"

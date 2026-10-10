@@ -8,7 +8,7 @@ The expected files record what the converter does today, including the gaps belo
 
 Found while writing these fixtures. Each one is handled in the hand review (SKILL.md Step 3) until it is fixed.
 
-1. **Consecutive `$$` lines** become separate `equation`s, not one `align` as SKILL.md Section 7 asks (`core-elements`, Equations).
+1. **Consecutive `$$` lines** become separate `equation`s, not one `align` as Section 7 of `references/latex-rules.md` asks (`core-elements`, Equations).
 2. **In-document links whose anchor keeps the heading number** (`[…](#2-tables)`) lose the link, because the label is built from the heading without its number (`sec:tables`). The text stays (`core-elements`, Unicode and links).
 3. **Generic captions:** code listings get "Listing", and a table gets its section title, repeated when a section has two tables (`core-elements`).
 
