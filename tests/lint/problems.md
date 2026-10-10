@@ -33,6 +33,8 @@ An answer with no question.
 
 > 💡 A tip in a callout.
 
+> ⚠ **Sign note:** the text starts in lowercase.
+
 Done 💡 here. TODO: finish this.
 
 $$a = b + c$$

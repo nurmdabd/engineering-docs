@@ -11,7 +11,7 @@ header: "COURSE --- Exam Notes"
 
 *Explained in [Lecture NN](theory.md#lecture-nn--lecture-title)*
 
-> 📌 **Follows:** what came before. **Answers:** the questions this lecture answers. **Order:** topic → topic → topic.
+> 📌 **Follows:** What came before. **Answers:** the questions this lecture answers. **Order:** topic → topic → topic.
 
 ### NN.1 First topic
 

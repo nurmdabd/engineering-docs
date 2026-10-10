@@ -33,7 +33,10 @@ KEYS = {
     "cover_subtitle": ("str", "--cover-subtitle"),
     "cover_note": ("str", "--cover-note"),
     "cover_contents": ("list", "--cover-contents"),
-    "preamble": ("str", "--type-preamble"),   # this document's own commands (references/commands.md)
+    "preamble": ("str", "--type-preamble"),
+    "toc": ("bool", None),                   # false: no table of contents (build.py --no-toc)
+    "label_prefix": ("str", None),           # md2tex.py --label-prefix: d03_ makes sec:d03_objective, ...
+    "first_number": ("str", None),           # md2tex.py --first-number: number of the first chapter/section   # this document's own commands (references/commands.md)
     "exam": ("str", None),        # past papers: exam name and year, used by the type's guide
     "year": ("str", None),
 }
@@ -72,6 +75,10 @@ def split(text):
 
 def md2tex_flags(meta):
     flags = []
+    if meta.get("label_prefix"):
+        flags += ["--label-prefix", meta["label_prefix"]]
+    if meta.get("first_number"):
+        flags += ["--first-number", meta["first_number"]]
     if meta.get("type"):
         flags += ["--type", meta["type"]]
     if meta.get("lang") == "bn":
@@ -96,4 +103,6 @@ def build_flags(meta):
             flags.append([flag, v])
     if meta.get("lang") == "bn":
         flags.append(["--bangla"])
+    if meta.get("toc") is False:
+        flags.append(["--no-toc"])
     return flags

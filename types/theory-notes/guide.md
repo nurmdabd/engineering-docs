@@ -89,6 +89,9 @@ The Bangla file is a translation of the English file, not a new text. Write it t
 
 ## Review checklist
 
+For notes Claude wrote (mode 2). When converting finished notes, nothing is added to meet this list.
+
+
 - [ ] Every lecture has its 📌 opener, topic openers, a wrap-up and a self-check with answers.
 - [ ] Every figure has a `**Reading the figure.**` paragraph that matches the image.
 - [ ] No formula, number or example from the source was lost or changed.

@@ -40,7 +40,10 @@ date: "October 2026"
 | `author`, `date` | Cover and title page |
 | `cover` | `true` adds the study-notes cover page |
 | `course_code`, `course_name`, `cover_title`, `cover_subtitle`, `cover_note`, `cover_contents` | Cover fields; `cover_contents` is a list |
-| `exam`, `year` | For past-paper documents (`types/past-paper/guide.md`) |
+| `exam`, `year` | Records for past papers (which exam, which session); they don't change the PDF, so put the session in `subtitle` and `header_right` too |
+| `toc` | `false` leaves out the table of contents (a one-table sheet) |
+| `label_prefix` | A prefix for every label of this file, such as `d03_`; needed when several files are built into one PDF (a report's days) |
+| `first_number` | The number of the first chapter (or section), when a file is built on its own: `first_number: 3` for Day 3 of a report |
 | `preamble` | This document's own commands: a `.tex` file next to it, with a registry `.yaml` of the same name (`references/commands.md`) |
 
 Values are raw LaTeX on the cover and title: write `--` for an en-dash, `---` for an em-dash and `\&` for `&`. Quote any value that contains `:`. Unknown keys are reported by the linter.
@@ -56,13 +59,14 @@ Values are raw LaTeX on the cover and title: write `--` for an en-dash, `---` fo
 
 - **No colon at the end.** The colon is added automatically, and skipped for a title that ends in `?`, `!`, `.` or `।`. Write `## Results`, not `## Results:`.
 - **Numbers are fine** (`## 3 Quantization`); they are removed because LaTeX numbers headings itself.
+- **A file that starts at `##`** (an excerpt of longer notes, with no `#` heading) has its headings moved up one level, so `##` becomes the first numbered level.
 - **Don't skip levels** (`##` straight to `####`), except for question headings.
 - **Special headings:** a heading named `Contents` is dropped with its list (the PDF has its own table of contents). A heading containing `self-check` puts its section in a self-check box. `#### N1` and `#### Solution N1` are questions (below).
 
 ## Inline text
 
 - **Bold lead-in label:** a bold phrase ending in `:` (or `.`, `?`, `।`) at the start of a paragraph, such as `**Objective:**`, stays bold as a label. Labels carry their own colon.
-- **Bold term:** any other bold phrase becomes a key term (`\keyterm`). Bold only terms a reader might look up; use `*italic*` for stress.
+- **Bold term:** any other bold phrase becomes a key term (`\keyterm`), lowercase ones included (**granular noise**). Only stress words in bold (**not**, **before**, **the same**) become italics. Bold only terms a reader might look up; use `*italic*` for stress.
 - **Code:** `` `data_out` `` for identifiers, file names and exact tokens.
 - **Side remark:** `[in bits when the log is base 2]{.note}` prints a small parenthetical note.
 - **Line breaks:** a single line break inside a paragraph does nothing. Leave a blank line to start a new paragraph.
@@ -91,7 +95,7 @@ Values are raw LaTeX on the cover and title: write `--` for an en-dash, `---` fo
 ## Code blocks
 
 - Fenced with ```` ``` ````. Give the language for code (```` ```bash ````, `python`, `Verilog`, `json`); leave it out for terminal output and text diagrams.
-- **Caption:** ```` ```{.bash caption="Run synthesis"} ````. Without one, the caption is "Listing".
+- **Caption:** ```` ```{.bash caption="Run synthesis"} ````, or ```` ```{caption="Directory tree"} ```` for a block without a language. The caption is Markdown (`run_synthesis` and `$\Delta f$` come out right). Without one, the caption is "Listing".
 - **Trees and diagrams:** ASCII only (`|`, `+--`, `->`, `v`). Box-drawing characters and arrows are missing from the listing font.
 
 ## Figures
@@ -110,7 +114,7 @@ Values are raw LaTeX on the cover and title: write `--` for an en-dash, `---` fo
 | `> 📌 …`, or a plain `> …` | note |
 | a paragraph starting `**Example 2:**` or `**Worked example.**` (Bangla: `**উদাহরণ …**`) | example box |
 
-- **Box title:** a bold label right after the marker becomes the title: `> ⚠ **Sign note:** …` gives a box titled "Sign note".
+- **Box title:** a bold label right after the marker becomes the title: `> ⚠ **Sign note:** …` gives a box titled "Sign note". The text after the label then opens the box, so start it with a capital letter.
 - **One paragraph:** an example box takes only its own paragraph. Keep an example to one paragraph, or continue it as normal text after the box.
 - **No tables inside callouts** that may cross a page break; leave those unboxed.
 - Other emoji are dropped; say the meaning in words.

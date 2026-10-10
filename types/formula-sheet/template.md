@@ -4,8 +4,6 @@ subtitle: "Every formula you need, grouped by topic"
 type: formula-sheet
 ---
 
-# Formula Sheet
-
 Conventions: the units and symbol conventions used throughout.
 
 **Columns:** Title · Equation · Notation · Reference.

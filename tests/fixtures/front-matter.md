@@ -2,6 +2,7 @@
 title: "RTL-to-GDSII Flow:"
 subtitle: "Lab Report"
 type: project-report
+label_prefix: rpt_
 header: "RTL-to-GDSII Flow Report"
 cover: true
 course_code: "VLSI"

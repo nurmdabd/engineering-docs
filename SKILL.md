@@ -21,7 +21,9 @@ Section numbers (0–14) are shared across these files, so "Section 7" always me
 ## Two ways this skill is used
 
 1. **Convert the user's finished Markdown.** Preserve the content exactly; fix grammar only. Never summarize, trim, add or reword explanations.
-2. **Write the content, then build.** When the user asks Claude to produce the document (solutions, a report section, notes), first read the type's `guide.md`. Write the Markdown to `references/authoring.md` (front matter with the type, headings without a trailing colon, `**Label:**` lead-ins, `> ⚠`/`> 🎯`/`> 📌` callouts, `#### N1` questions, `$$ … $$` equations), and run the linter on it until it reports no errors. Never invent data the user has to supply, such as measured results or exam questions. **Show the Markdown to the user and get it approved before building;** from then on it is finished Markdown and mode 1 applies.
+2. **Write the content, then build.** When the user asks Claude to produce the document (solutions, a report section, notes), first read the type's `guide.md`. Write the Markdown to `references/authoring.md` (front matter with the type, headings without a trailing colon, `**Label:**` lead-ins, `> ⚠`/`> 🎯`/`> 📌` callouts, `#### N1` questions, `$$ … $$` equations), and run the linter on it until it reports no errors. Never invent data the user has to supply, such as measured results or exam questions. **Show the Markdown to the user and get it approved before building;** from then on it is finished Markdown and mode 1 applies. When the user asked for the finished PDF straight away ("make me the PDF"), build it, then hand over the Markdown and the PDF together, list the choices you made in their place, and invite changes: their review of the result is the approval.
+
+**Which rules apply in each mode:** a type's writing rules and review checklist (openers, self-checks, sections to include) are for mode 2. In mode 1, only the formatting rules apply: never add, drop or rewrite content to satisfy a type's checklist; adding front matter (type, title, cover fields) is fine.
 
 ## Bundled files
 
@@ -75,6 +77,7 @@ python3 <skill>/scripts/doc.py build notes.md         # lint, convert to latex/n
 ```bash
 bash <skill>/scripts/setup.sh
 ```
+It returns at once ("TeX setup OK") when everything is already installed, so running it is always safe.
 
 ### Step 2: Lint, then convert (draft)
 Check the Markdown first. Fix every error; for each warning, fix it or confirm the result is what the user wants:
@@ -99,7 +102,7 @@ The converter cannot make the judgement calls. Read the draft against Section 0 
 - **Ambiguous callouts:** any blockquote whose box type is unclear.
 - **Columns** that the page render (Step 5) shows wrapping badly.
 
-Never re-run the converter over a body file you have hand-edited; it overwrites the file. Then run:
+**Fix in the Markdown when you can.** Most problems (a caption, a heading, a box) are fixed in the Markdown and reconverted (`doc.py build --reconvert`), which keeps the Markdown the single source. Edit the `.tex` by hand only for what Markdown can't express (a column width, a page break), and never re-run the converter over a hand-edited body; it overwrites the file. Then run:
 ```bash
 python3 <skill>/scripts/check_structure.py body.tex
 ```
@@ -117,7 +120,7 @@ python3 <skill>/scripts/build.py body1.tex [body2.tex ...] --out path/Name.pdf \
 ```
 
 - **Settings from front matter:** if `NAME.build.json` sits beside the first body, its settings are applied first and printed. A flag you pass overrides it; your `--title` or `--cover-contents` lines replace the saved ones.
-- **Cover page:** add `--cover` for study notes and exam material. The cover fields are raw LaTeX, so write `--` for an en-dash and `\&` for `&`. Use `--cover-dir DIR` to use another cover pair instead.
+- **Cover page:** add `--cover` (or `cover: true`) for study notes, unless the type's guide says otherwise (past papers have none). The cover fields are raw LaTeX, so write `--` for an en-dash and `\&` for `&`. Use `--cover-dir DIR` to use another cover pair instead.
 - **Several documents:** when one project produces several PDFs, write a small `build-all.sh` next to the bodies that calls `build.py` once per document. Commit it so the PDFs can be rebuilt later.
 
 - **Defaults** match the user's latest main file: `extarticle`, `12pt`, author "Nur Mohammad". The title lines are rendered as `{\LARGE{\keyterm{…}}}`.

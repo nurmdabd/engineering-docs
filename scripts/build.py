@@ -188,7 +188,8 @@ def main():
 
     titles = a.title or [a.bodies[0].stem]
     title_lines = " \\\\[0.1cm]\n".join(f"\t{{\\LARGE{{\\keyterm{{{tex_escape(t)}}}}}}}" for t in titles)
-    header = tex_escape(a.header) if a.header else " ".join(tex_escape(t) for t in titles)
+    # default running header: the first title line only (both lines together wrap), without its trailing colon
+    header = tex_escape(a.header) if a.header else tex_escape(titles[0].rstrip().rstrip(":"))
     toc = "" if a.no_toc else ("\\begingroup\n\\setstretch{1}\n\\phantomsection\n\\hypertarget{toc}{}\n"
                                "\\tableofcontents\n\\endgroup\n\\hfill")
 

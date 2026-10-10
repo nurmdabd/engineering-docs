@@ -6,14 +6,14 @@
 \section{Objective}
 \label{sec:objective}
 
-Run the \keyterm{OpenLane} flow on \verb|picorv32a|.
+Run the \keyterm{OpenLane} flow on \verb|picorv32a|, then check \keyterm{standard cell rows} and \keyterm{legalization}; do \emph{not} skip it.
 
 \section{Command and output}
 \label{sec:command_and_output}
 
 \textbf{Command:}
 
-\begin{lstlisting}[language=bash, caption={Listing}]
+\begin{lstlisting}[language=bash, caption={Run run\_synthesis on picorv32a}]
 ./flow.tcl -design picorv32a
 \end{lstlisting}
 
@@ -27,11 +27,11 @@ Run the \keyterm{OpenLane} flow on \verb|picorv32a|.
 \subsection{Results}
 \label{sec:results}
 
-\begin{tabularx}{\textwidth}{|L|c|}
+\begin{tabularx}{\textwidth}{|c|L|}
     \hline
     \rowcolor{gray!15}
-    \CC{Metric} &
-    \cc{Value} \\ \hline
+    \cc{Metric} &
+    \CC{Value} \\ \hline
 \endhead
 
     Cells &
@@ -39,6 +39,9 @@ Run the \keyterm{OpenLane} flow on \verb|picorv32a|.
 
     Flop ratio &
     0.108 \\ \hline
+
+    Result DEF &
+    \texttt{runs/03-10\_09-12/results/picorv32a.def} \\ \hline
 
 \rowcolor{white}
 \caption{Results}

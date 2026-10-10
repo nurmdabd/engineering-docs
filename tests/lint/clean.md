@@ -14,7 +14,7 @@ cover_contents:
 
 **Objective:** run the flow. ⚠ careful, ✅ done.
 
-> ⚠ **Sign note:** a warning box.
+> ⚠ **Sign note:** A warning box.
 
 > 🎯 An exam box.
 

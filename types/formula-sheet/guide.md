@@ -11,8 +11,6 @@ Everything in `SKILL.md` and `references/authoring.md` applies; this guide adds 
 ## Structure
 
 ```markdown
-# Formula Sheet
-
 Conventions: the units and symbol conventions used throughout (for example "$k_f$ in rad/s per volt").
 
 **Columns:** Title · Equation · Notation · Reference.
@@ -25,11 +23,14 @@ Conventions: the units and symbol conventions used throughout (for example "$k_f
 | **Carson's rule** | $B_T \approx 2(\Delta f + B)$ | $B_T$ = transmission bandwidth | [L24 · §1.2.2](theory.md#carsons-rule) |
 ```
 
+- **No `#` heading:** the title is in the front matter, so the topics (`##`) are the numbered sections.
 - **One `##` section per topic,** with its lectures in brackets, each holding one table.
+- **A short sheet** (one or two tables) may leave out the contents page with `toc: false`.
 - **Title:** a short name. Bold the few formulas a student must know by heart (`**Carson's rule**`).
 - **Equation:** the formula in `$…$`. Use `\dfrac` for fractions; tall maths is padded automatically. Two related forms may share a cell, separated by `,\;`.
 - **Notation (required):** every symbol that is new in this row, one per line, separated by `<br>`, as `symbol = meaning (unit)`. A symbol already defined in an earlier row of the same table is not repeated.
-- **Reference (optional):** the lecture and the section where the formula is derived, as a link into the theory notes (`[L24 · §1.2.2](theory.md#anchor)`). In the PDF it becomes a link into the theory PDF, so the PDFs must sit in one folder (`references/pdf-links.md`).
+- **Reference (optional):** the lecture and the section where the formula is derived, as a link into the theory notes (`[L24 · §1.2.2](theory.md#anchor)`). In the PDF it becomes a link into the theory PDF, so the PDFs must sit in one folder (`references/pdf-links.md`). When there is no theory PDF to link to, write it as plain text (`L24 · §24.1`).
+- **Completeness:** every formula of the notes, boxed or not.
 
 ## Writing the content
 

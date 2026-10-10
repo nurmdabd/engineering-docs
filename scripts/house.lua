@@ -9,6 +9,8 @@ local stringify = pandoc.utils.stringify
 local CLASS, FONTPT, TEXTW = "extarticle", 12, 17.4
 local GFM = {}            -- GitHub anchors of the top-level headings, in order (meta house_gfm)
 local CMDS = {}           -- registered commands usable from Markdown (meta house_cmds, scripts/commands.py)
+local PREFIX = ""         -- label prefix for every label of this file (meta house_prefix), e.g. "d03_"
+local SHIFT = 0           -- heading levels to move up (meta house_shift): 1 when the file has no # heading
 local STRUCT = "notes"    -- "past-paper" (meta house_structure): see types/past-paper/guide.md
 
 local function latex(blocks_or_inlines, is_inline)
@@ -30,6 +32,7 @@ local function slug(s)
   return s
 end
 local function unique(lbl)
+  if PREFIX ~= "" then lbl = lbl:gsub("^(%a+):", "%1:" .. PREFIX, 1) end   -- sec:x -> sec:d03_x
   local base, i = lbl, 2
   while used[lbl] do lbl = base .. "_" .. i; i = i + 1 end
   used[lbl] = true
@@ -96,6 +99,8 @@ local meta_filter = {
     if m.house_textwidth then TEXTW = tonumber(stringify(m.house_textwidth)) or 17.4 end
     if m.house_fontsize then FONTPT = tonumber((stringify(m.house_fontsize):gsub("pt", ""))) or 12 end
     if m.house_structure then STRUCT = stringify(m.house_structure) end
+    if m.house_prefix then PREFIX = stringify(m.house_prefix) end
+    if m.house_shift then SHIFT = tonumber(stringify(m.house_shift)) or 0 end
     if m.house_cmds then
       for entry in stringify(m.house_cmds):gmatch("[^;]+") do
         local name, kind, args, opt = entry:match("^([^|]*)|([^|]*)|([^|]*)|([^|]*)$")
@@ -298,6 +303,9 @@ end
 local structure_filter = {
   Pandoc = function(doc)
     local blocks = doc.blocks
+    if SHIFT > 0 then   -- a file that starts at ##: its top heading level becomes the first one
+      for _, b in ipairs(blocks) do if b.t == "Header" then b.level = math.max(1, b.level - SHIFT) end end
+    end
     local out = pandoc.List()
     local cur_sec, eqn, tabn, cur_title = "doc", {}, {}, ""
     -- first, labels for every header (links may point forward)
@@ -484,6 +492,20 @@ local inline_filter = {
 
 -- ---------- pass 4: paragraphs (labels, keyterms, figures, equations, examples) ----------
 local STRESS_MAX_WORDS = 3
+-- **bold** is a key term, except stress words: "not", "before", "the same" ... become \emph
+local STRESS = {}
+for w in ([[not no never only before after up down and or but yes one two three same all both each every also very
+  more less much must always first last then now still even just here there without with why how what when where
+  which this that these those half twice double zero none the a an is are was be do does instead rather]]):gmatch("%S+") do
+  STRESS[w] = true
+end
+local function is_stress(txt)
+  if not txt:match("^[%l][%l%s']*$") then return false end
+  for w in txt:gmatch("%S+") do
+    if not STRESS[w] and #w > 1 then return false end   -- single letters (r, k) count as stress, like variables
+  end
+  return true
+end
 
 local function is_label_strong(inls)
   local k = 1
@@ -503,7 +525,7 @@ local function convert_emphasis(inls)
     Strong = function(s)
       local txt = stringify(s)
       local words = select(2, txt:gsub("%S+", ""))
-      if txt:match("^[%l][%l%s']*$") and words <= STRESS_MAX_WORDS then
+      if words <= STRESS_MAX_WORDS and is_stress(txt) then
         return raw("\\emph{" .. latex(s.content, true) .. "}")
       end
       if STRUCT == "past-paper" and txt:match("^%d*%.?%s*%(%w+%)$") then   -- a part label such as (d)
@@ -625,7 +647,12 @@ local function list_block(items, env, opts)
   return rawb(table.concat(lines, "\n"))
 end
 
-local function cell_tex(cell) return trimnl(latex(cell.contents, false)):gsub("\n+", " ") end
+local TT_ESC = { ["\\"] = "\\textbackslash{}", ["&"] = "\\&", ["%"] = "\\%", ["$"] = "\\$", ["#"] = "\\#",
+  ["_"] = "\\_", ["{"] = "\\{", ["}"] = "\\}", ["~"] = "\\textasciitilde{}", ["^"] = "\\textasciicircum{}" }
+local function verb_to_texttt(s)   -- \verb can't sit inside a table cell (or any argument); \texttt can
+  return (s:gsub("\\verb(%p)(.-)%1", function(_, t) return "\\texttt{" .. t:gsub("[\\&%%$#_{}~^]", TT_ESC) .. "}" end))
+end
+local function cell_tex(cell) return verb_to_texttt(trimnl(latex(cell.contents, false)):gsub("\n+", " ")) end
 
 local function table_block(t)
   local maxl, avg = {}, {}
@@ -784,7 +811,12 @@ local block_filter = {
   CodeBlock = function(c)
     local lang = c.classes[1]
     local opt = lang and ("language=" .. lang .. ", ") or ""
-    return rawb("\\begin{lstlisting}[" .. opt .. "caption={" .. (c.attributes["caption"] or "Listing") .. "}]\n" .. c.text .. "\n\\end{lstlisting}")
+    local cap = c.attributes["caption"]   -- Markdown, so _ and maths come out right
+    if cap then
+      local doc = pandoc.read(cap, "markdown")
+      cap = doc.blocks[1] and verb_to_texttt(latex(doc.blocks[1].content, true)) or ""
+    end
+    return rawb("\\begin{lstlisting}[" .. opt .. "caption={" .. (cap or "Listing") .. "}]\n" .. c.text .. "\n\\end{lstlisting}")
   end,
   BlockQuote = function(q)
     if contains_table(q.content) then return q.content end

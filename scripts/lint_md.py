@@ -221,6 +221,8 @@ def lint(path, as_type=None):
             src = img.group(1)
             if not re.match(r"^https?:", src) and not (path.parent / src).exists():
                 say(n, "warning", f"image {src} not found; it will be left as a TODO in the LaTeX")
+        if re.match(r"^>\s*(?:⚠|🎯|📌)?\s*\*\*[^*]+\*\*\s*[a-z]", line):
+            say(n, "warning", "the bold label becomes the box title, so the text after it opens the box: start it with a capital")
         q = re.match(r"^>\s*(\S)", line)
         if q and PICTO.match(q.group(1)) and q.group(1) not in KEEP_PICTO:
             say(n, "warning", f"callout starts with {q.group(1)}; only ⚠ 🎯 📌 choose a box, this one becomes a note")

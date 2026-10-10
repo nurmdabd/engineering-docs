@@ -80,6 +80,8 @@ def main():
     ap.add_argument("--bangla", action="store_true", help="wrap Bangla text runs in \\bn{...} (build with build.py --bangla)")
     ap.add_argument("--structure", default="notes", choices=["notes", "past-paper"],
                     help="past-paper: # = a question's paper block, ## = one solution (types/past-paper/guide.md)")
+    ap.add_argument("--label-prefix", default="", help="prefix for every label, e.g. d03_ (several files in one build)")
+    ap.add_argument("--first-number", type=int, help="number of the first chapter (extreport) or section")
     ap.add_argument("--textwidth", type=float, default=17.4, help="text width in cm (17.4 for the house .7in margins)")
     first = ap.parse_known_args()[0]          # only to find the Markdown file and read its front matter
     meta, body, problems = frontmatter.split(first.md.read_text(encoding="utf-8"))
@@ -112,9 +114,14 @@ def main():
             titles = [p.strip() + (":" if i == 0 and ": " in t else "") for i, p in enumerate(t.split(": ", 1))]
             body = body[:m.start()] + body[m.end():]
 
+    # A file that starts at ## (an excerpt of longer notes) has its headings moved up one level, so ## is the
+    # first numbered level instead of a sub-level under an empty "0".
+    shift = 1 if a.structure == "notes" and not tops and re.search(r"^## ", re.sub(r"^(```|~~~).*?^\1", "", body,
+                                                                                     flags=re.M | re.S), re.M) else 0
     cmd = ["pandoc", "-f", "markdown+lists_without_preceding_blankline-fancy_lists-implicit_figures",
            "-t", "latex", "--wrap=none", "--lua-filter", str(HERE / "house.lua"),
-           "-M", f"house_class={a.cls}", "-M", f"house_fontsize={a.fontsize}", "-M", f"house_textwidth={a.textwidth}", "-M", f"house_structure={a.structure}", "-M", f"house_cmds={commands.encode(registry)}",
+           "-M", f"house_class={a.cls}", "-M", f"house_fontsize={a.fontsize}", "-M", f"house_textwidth={a.textwidth}", "-M", f"house_structure={a.structure}", "-M", f"house_prefix={a.label_prefix}",
+           "-M", f"house_shift={shift}", "-M", f"house_cmds={commands.encode(registry)}",
            "-M", "house_gfm=" + " ".join(slugs.heading_slugs(body))]   # GitHub anchors, so [..](#gh-anchor) links work
     r = subprocess.run(cmd, input=body, capture_output=True, text=True)
     if r.returncode:
@@ -135,6 +142,8 @@ def main():
         tex = wrap_bangla(tex)
     tex = re.sub(r"\n{3,}", "\n\n", tex).strip() + "\n"
     header = f"% Generated from {md.name} by md2tex.py, then reviewed against SKILL.md.\n\n"
+    if a.first_number:
+        header += f"\\setcounter{{{'chapter' if a.cls == 'extreport' else 'section'}}}{{{a.first_number - 1}}}\n\n"
     out.write_text(header + tex, encoding="utf-8")
     sidecar = out.with_suffix(".build.json")
     build = frontmatter.build_flags(meta)

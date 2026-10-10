@@ -14,7 +14,8 @@ python3 <skill>/scripts/build.py latex/day-01.tex latex/day-02.tex --out Report.
 
 - **Front matter instead of flags:** put `type: project-report` (and `title`, `subtitle`, `header`, cover fields) at the top of the Markdown; then `md2tex.py day-01.md -o latex/day-01.tex` and `build.py latex/day-01.tex … --out Report.pdf` need no flags (`references/authoring.md`).
 - **One body file per day,** for example `day-01.tex`, `day-02.tex`, built together into one PDF.
-- **Labels:** prefix them per day (`sec:d01_…`), because labels must be unique across the whole build.
+- **Labels:** set `label_prefix: d03_` in each day's front matter; every label of that file then starts with it (`sec:d03_objective`), so labels stay unique when the days are built together.
+- **One day on its own:** set `first_number: 3` so Day 3 is numbered Chapter 3, not Chapter 1.
 - **No cover by default.** Add `--cover` with the cover fields if the report needs one.
 
 ## Writing the content
@@ -60,7 +61,9 @@ What was learned, what went wrong and how it was fixed.
 :::
 ````
 
-- **Command and output:** when the source shows a command and its output separately, keep them as two code blocks under `**Command:**` and `**Output Snippet:**`. A combined transcript stays one block.
+- **Command and output:** when the source shows a command and its output separately, keep them as two code blocks under `**Command:**` and `**Output Snippet:**`. A combined transcript stays one block. An interactive log with several commands is split into one Command / Output Snippet pair per step, each output copied verbatim.
+- **Captions:** give every code block one (```` ```{.bash caption="Run placement"} ````), or it is captioned "Listing".
+- **Things the log mentions but doesn't show** (a screenshot in Magic): an image link to the expected file name; it stays a TODO until the user adds the image.
 - **Trim long outputs** to the lines that matter and say so (`… 120 lines omitted …`). The trimmed text itself is never edited.
 - **Results** go in a table whenever there are two or more numbers to compare.
 - **Figures:** screenshots go in `figures/` beside the Markdown. A screenshot that isn't taken yet is written as a normal image link; the converter leaves it commented out with a TODO.

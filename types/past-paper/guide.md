@@ -20,7 +20,7 @@ year: "2020--21"
 ---
 ```
 
-Then `md2tex.py paper.md -o latex/paper.tex` and `build.py latex/paper.tex --out paper.pdf`. The type sets `--structure past-paper` for the converter and loads `types/past-paper/preamble.tex` (the `questionblock` environment and the section commands) in the build.
+Then `md2tex.py paper.md -o latex/paper.tex` and `build.py latex/paper.tex --out paper.pdf`. Past papers have no cover page, like the user's own. `exam` and `year` are records only; the session shows through `subtitle` and `header_right`. The type sets `--structure past-paper` for the converter and loads `types/past-paper/preamble.tex` (the `questionblock` environment and the section commands) in the build.
 
 ## Markdown structure
 

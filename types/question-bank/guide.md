@@ -60,6 +60,7 @@ $\beta = \Delta f/B = 75/15 = 5$. Carson: $B_T = 2(\Delta f + B) = \mathbf{180}$
 ```
 
 - **IDs:** `N` numericals, `S` short answers, `L` long questions, numbered in one sequence each across the whole bank.
+- **Only the parts it has:** a bank of numericals only has no Part B or C headings; give it a `header:` so the running header stays on one line.
 - **Questions** sit under topic headings (`## A1 …`); **solutions** all go at the end under `# Solutions`, in the same order.
 - **Links:** `[→ Solution](#solution-n1)` and `[← Back to N1](#n1)` are optional; the box title bars link both ways anyway.
 
