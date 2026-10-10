@@ -210,7 +210,10 @@ def main():
     main = (TEMPLATE / "main.tex").read_text()
     for key, val in {"CLASS": a.cls, "FONTSIZE": a.fontsize, "HEADER": header, "GRAPHICSPATH": graphicspath,
                      "TITLE_LINES": title_lines, "TOC_BLOCK": toc, "AUTHOR": tex_escape(a.author),
-                     "BODY_INPUTS": "\n".join(includes),
+                     # without a contents list, the body follows the title on the same page and the header's
+                     # TOC button (which would point nowhere) jumps to the title instead
+                     "BODY_INPUTS": "\n".join(includes if not a.no_toc else [i.replace("\\include{", "\\input{") for i in includes]),
+                     "AFTER_TITLE": "\\newpage" if not a.no_toc else "\\hypertarget{toc}{}",
                      "COVER_FIELDS": cover, "PDFTITLE": pdftitle,
                      "BANGLA": BANGLA if a.bangla else "",
                      "TYPE_PREAMBLE": "\n".join(type_inputs),

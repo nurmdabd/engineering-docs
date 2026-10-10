@@ -43,7 +43,7 @@ date: "October 2026"
 | `exam`, `year` | Records for past papers (which exam, which session); they don't change the PDF, so put the session in `subtitle` and `header_right` too |
 | `toc` | `false` leaves out the table of contents (a one-table sheet) |
 | `label_prefix` | A prefix for every label of this file, such as `d03_`; needed when several files are built into one PDF (a report's days) |
-| `first_number` | The number of the first chapter (or section), when a file is built on its own: `first_number: 3` for Day 3 of a report |
+| `first_number` | The number of the first chapter (or section), when a file is built on its own: `first_number: 3` for Day 3 of a report, `first_number: 24` for Lecture 24 taken out of longer notes |
 | `preamble` | This document's own commands: a `.tex` file next to it, with a registry `.yaml` of the same name (`references/commands.md`) |
 
 Values are raw LaTeX on the cover and title: write `--` for an en-dash, `---` for an em-dash and `\&` for `&`. Quote any value that contains `:`. Unknown keys are reported by the linter.
@@ -91,6 +91,8 @@ Values are raw LaTeX on the cover and title: write `--` for an en-dash, `---` fo
 - **"where" list:** a paragraph `where:` followed by a bullet list right after the equation.
 - **Side note:** a paragraph starting with `*Write also:*` right after a display equation becomes the equation's side note (`eqnote`).
 - **Inline:** `$…$`, with no spaces just inside the dollars.
+- **Numbers with units** in running text: join them with `~` (`9.995~MHz`) or write them in maths (`$9.995~\text{MHz}$`) so they never split across a line.
+- **Symbols in bold labels and box titles** go in maths: `**Units of $k_f$:**`, not `**Units of k_f:**` (that prints `k\_f`).
 
 ## Code blocks
 

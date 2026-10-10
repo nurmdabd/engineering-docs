@@ -41,7 +41,7 @@ Conventions: the units and symbol conventions used throughout (for example "$k_f
 
 ## After converting
 
-The converter sizes the columns from their content. Look at the rendered pages (SKILL.md, Step 5): Notation and Reference should be just wide enough; if they wrap badly, adjust the `x{…}` widths in the `.tex` by hand. Once the `.tex` is hand-edited, never re-run the converter over it.
+The converter sizes the columns from their content, making the Equation column the flexible one. The user's own COM sheet keeps Notation and Reference narrow (hand-edited smaller), so only widen Notation when its entries wrap badly on the rendered page. Look at the rendered pages (SKILL.md, Step 5): Notation and Reference should be just wide enough; if they wrap badly, adjust the `x{…}` widths in the `.tex` by hand. Once the `.tex` is hand-edited, never re-run the converter over it.
 
 ## Review checklist
 

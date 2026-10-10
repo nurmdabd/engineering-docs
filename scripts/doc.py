@@ -45,10 +45,16 @@ def new(kind, path):
     print(f"created {path} from types/{kind}/template.md. Read types/{kind}/guide.md before writing.")
 
 
-def build(md, rest):
-    md = Path(md).resolve()
-    reconvert = "--reconvert" in rest
-    rest = [a for a in rest if a != "--reconvert"]
+def build(args):
+    reconvert = "--reconvert" in args
+    args = [a for a in args if a != "--reconvert"]
+    mds = [a for a in args if a.endswith(".md")]
+    if len(mds) != 1:
+        sys.exit("doc.py build: give exactly one Markdown file (doc.py build notes.md [--out notes.pdf] [--reconvert] ...)")
+    md = Path(mds[0]).resolve()
+    if not md.exists():
+        sys.exit(f"doc.py build: {md} not found")
+    rest = [a for a in args if a != mds[0]]
     out = None
     if "--out" in rest:
         i = rest.index("--out")
@@ -82,8 +88,8 @@ def main():
         new(*args)
     elif cmd == "check" and args:
         sys.exit(run("lint_md.py", *args))
-    elif cmd == "build" and args:
-        build(args[0], args[1:])
+    elif cmd == "build" and args and not {"-h", "--help"} & set(args):
+        build(args)
     else:
         sys.exit(__doc__)
 
