@@ -61,6 +61,7 @@ Values are raw LaTeX on the cover and title: write `--` for an en-dash, `---` fo
 - **Numbers are fine** (`## 3 Quantization`); they are removed because LaTeX numbers headings itself.
 - **A file that starts at `##`** (an excerpt of longer notes, with no `#` heading) has its headings moved up one level, so `##` becomes the first numbered level.
 - **Don't skip levels** (`##` straight to `####`), except for question headings.
+- **Page breaks:** a heading or a lone bold label (`**Derivation:**` on its own line) is kept on the same page as the equation, box, table, figure or code block right after it. Nothing to write for it.
 - **Special headings:** a heading named `Contents` is dropped with its list (the PDF has its own table of contents). A heading containing `self-check` puts its section in a self-check box. `#### N1` and `#### Solution N1` are questions (below).
 
 ## Inline text

@@ -11,7 +11,7 @@ local GFM = {}            -- GitHub anchors of the top-level headings, in order 
 local CMDS = {}           -- registered commands usable from Markdown (meta house_cmds, scripts/commands.py)
 local PREFIX = ""         -- label prefix for every label of this file (meta house_prefix), e.g. "d03_"
 local SHIFT = 0           -- heading levels to move up (meta house_shift): 1 when the file has no # heading
-local GUARDS = false      -- page-break guards before every heading and lone label (meta house_guards; on trial)
+local GUARDS = true       -- keep a heading or lone label on the page of the equation/box/table after it (meta house_guards)
 local STRUCT = "notes"    -- "past-paper" (meta house_structure): see types/past-paper/guide.md
 
 local function latex(blocks_or_inlines, is_inline)
@@ -602,7 +602,6 @@ local function render_para(inls, ctor)
         local lab = is_label_strong(cur)
         if lab then
           cur[lab] = raw("\\textbf{" .. latex(cur[lab].content, true) .. "}")
-          if GUARDS and lab == #cur then blocks:insert(rawb("\\needspace{4\\baselineskip}")) end   -- a lone label: keep it with what follows
         end
         blocks:insert(ctor(convert_emphasis(code_to_verb(cur))))
       end
@@ -887,8 +886,7 @@ local block_filter = {
     local title = latex(h.content, true)
     if STRUCT == "past-paper" then   -- ### Answer -> \answer, other ### -> \subsection, #### -> \subsubsection*
       local name = stringify(h.content):lower():gsub("^%s+", ""):gsub("%s+$", "")
-      local guard = GUARDS and "\\needspace{5\\baselineskip}\n" or ""
-      if h.level <= 3 then return rawb(guard .. (SECTION_CMD[name] or ("\\subsection{" .. title .. "}"))) end
+      if h.level <= 3 then return rawb((SECTION_CMD[name] or ("\\subsection{" .. title .. "}"))) end
       return rawb("\\subsubsection*{" .. title .. "}")
     end
     local lbl = h.attributes["label"]
@@ -900,9 +898,53 @@ local block_filter = {
       local colon = stringify(h.content):match("[%?!%.:]%s*$") or stringify(h.content):match("।%s*$")
       return rawb("\\phantomsection\\label{" .. lbl .. "}\\textbf{" .. title .. (colon and "" or ":") .. "}")
     end
-    local keep = h.attributes["keep"] and "\\needspace{10\\baselineskip}\n" or (GUARDS and "\\needspace{5\\baselineskip}\n" or "")
+    local keep = h.attributes["keep"] and "\\needspace{10\\baselineskip}\n" or ""
     return rawb(keep .. "\\" .. cmd .. "{" .. title .. "}\n\\label{" .. lbl .. "}")
   end,
 }
 
-return { meta_filter, structure_filter, inline_filter, para_filter, block_filter }
+-- ---------- pass 6: page-break guards ----------
+-- A heading or a lone bold label followed by a block that cannot share its first lines with the text before it
+-- (equation, box, table, figure, listing) gets \needspace, so it never sits alone at the foot of a page.
+-- Before running text or a list nothing is added: those break anywhere, so the page stays full.
+-- (\chapter is left out: it starts a new page anyway.)
+local HEAD_CMDS = { section = true, subsection = true, subsubsection = true }
+for _, v in pairs(SECTION_CMD) do HEAD_CMDS[v:sub(2)] = true end
+
+local function is_head(b)
+  if not b then return false end
+  if b.t == "RawBlock" then
+    local name = b.text:match("^\\(%a+)")
+    return (name and HEAD_CMDS[name]) or b.text:match("^\\phantomsection\\label{[^}]*}\\textbf{") ~= nil
+  end
+  return (b.t == "Para" or b.t == "Plain") and #b.content == 1 and b.content[1].t == "RawInline"
+    and b.content[1].text:match("^\\textbf{") ~= nil
+end
+
+local function is_rigid(b)
+  if not b then return false end
+  if b.t == "RawBlock" then
+    local env = b.text:match("^\\begin{(%a+)}") or b.text:match("^\\phantomsection\\label{[^}]*}\n?\\begin{(%a+)}")
+    return env ~= nil and env ~= "itemize" and env ~= "enumerate" and env ~= "description"
+  end
+  return b.t == "Table" or b.t == "CodeBlock" or b.t == "Figure" or b.t == "Div"
+end
+
+local guard_filter = {
+  Blocks = function(bs)
+    if not GUARDS then return nil end
+    local out = pandoc.List()
+    for i, b in ipairs(bs) do
+      local nxt = bs[i + 1]
+      if nxt and nxt.t == "RawBlock" and nxt.text:match("^\\phantomsection\\label{[^}]*}$") then nxt = bs[i + 2] end
+      if is_head(b) and is_rigid(nxt) and not (bs[i - 1] and bs[i - 1].t == "RawBlock" and bs[i - 1].text:match("^\\needspace")) then
+        local lines = (b.t == "RawBlock" and not b.text:match("^\\phantomsection")) and 7 or 5   -- heading / label
+        out:insert(rawb("\\needspace{" .. lines .. "\\baselineskip}"))
+      end
+      out:insert(b)
+    end
+    return out
+  end,
+}
+
+return { meta_filter, structure_filter, inline_filter, para_filter, block_filter, guard_filter }

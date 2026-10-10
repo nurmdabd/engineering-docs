@@ -150,6 +150,7 @@ Preserve every row and cell exactly. Generate a meaningful caption and label if 
 - **Repeated header:** put `\endhead` right after the header row, so the header repeats when a table continues on the next page.
 - **Caption row:** put `\rowcolor{white}` on the line before `\caption{…}`, so the caption row doesn't pick up the banding. Don't use `\hiderowcolors` for this; it breaks the banding of the whole table.
 - **Heading with a table:** a heading directly followed by a table (or a figure) gets `\needspace{10\baselineskip}` before it, so the heading never sits alone at a page bottom.
+- **Page-break guards:** any other heading directly followed by an equation, a box, a table, a figure or a listing gets `\needspace{7\baselineskip}`, and a lone bold label (`\textbf{Derivation:}` on its own line) followed by one of those gets `\needspace{5\baselineskip}`. Before running text or a list nothing is added, since those break anywhere. `md2tex.py --no-guards` leaves them all out.
 - **One item per line:** in a cell listing several items (symbols, steps), separate them with `<br>` in the Markdown, or `\newline` in LaTeX.
 
 **Dense reference sheets** (formula sheets, many-column tables):

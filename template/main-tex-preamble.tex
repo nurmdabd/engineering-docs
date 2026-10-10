@@ -313,6 +313,14 @@ literate=
 {0.3em}
 {\addcolon}
 
+% ---------- Contents title ----------
+% The same size as a section title in every class (extreport would otherwise set it like a \Huge chapter).
+\renewcommand{\cfttoctitlefont}{\normalfont\Large\bfseries}
+\ifcsname chapter\endcsname
+	\setlength{\cftbeforetoctitleskip}{0.5em}
+	\setlength{\cftaftertoctitleskip}{1em}
+\fi
+
 % Custom environment for displaying equations/content with an optional side note section
 \newenvironment{eqnote}[2]
 {
