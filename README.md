@@ -2,12 +2,15 @@
 
 A Claude Code skill that turns engineering Markdown into LaTeX in Nur Mohammad's house style and compiles it to an interactive PDF with XeLaTeX. Everything it needs is inside this folder: the preamble, the `main.tex` template, cover pages, the Markdown→LaTeX converter and the build scripts.
 
+**New here? Read [USER-GUIDE.md](USER-GUIDE.md):** how to ask for each kind of document and get the best output.
+
 `SKILL.md` is the entry point: the workflow, the two ways the skill is used (convert finished Markdown, or write the content first) and when to ask. The detailed rules are in `references/`.
 
 ## Layout
 
 | Path | What it is |
 |---|---|
+| `USER-GUIDE.md` | For you: how to use every feature, with example prompts |
 | `SKILL.md` | Workflow, output rules, when to ask |
 | `references/` | `authoring.md` (how to write the Markdown), `commands.md` (custom commands: registry, adding new ones), `latex-rules.md` (Sections 1–12), `pdf-links.md` (13), `bangla.md` (14) |
 | `template/` | House preamble, `main.tex`, study-notes cover page |
