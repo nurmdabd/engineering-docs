@@ -1,0 +1,5 @@
+{
+  "description": "A dense formula sheet: one table per topic with Title, Equation, Notation and Reference columns, at 10pt with narrow margins.",
+  "md2tex": ["--fontsize", "10pt", "--textwidth", "18.9"],
+  "build": ["--fontsize", "10pt", "--margin-x", "0.4in"]
+}

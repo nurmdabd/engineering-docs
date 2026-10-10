@@ -1,6 +1,6 @@
 problems.md:1: error: lang must be one of en, bn, not 'fr'
 problems.md:1: error: unknown front matter key 'colour' (known: title, subtitle, type, lang, header, header_right, author, date, cover, course_code, course_name, cover_title, cover_subtitle, cover_note, cover_contents, exam, year)
-problems.md:1: error: unknown type 'no-such-type' (available: past-paper, project-report)
+problems.md:1: error: unknown type 'no-such-type' (available: formula-sheet, past-paper, project-report, question-bank, theory-notes)
 problems.md:8: warning: heading ends with ':'; drop it, the colon is added automatically
 problems.md:10: warning: heading jumps from level 2 to 4
 problems.md:12: warning: level-5 heading; the deepest supported is ####

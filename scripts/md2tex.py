@@ -27,6 +27,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+import detect_type
 import doctype
 import frontmatter
 import slugs
@@ -83,6 +84,11 @@ def main():
     meta, body, problems = frontmatter.split(first.md.read_text(encoding="utf-8"))
     for p in problems:
         print(f"warning: {first.md.name}: {p}", file=sys.stderr)
+    if not meta.get("type") and "--type" not in sys.argv:
+        guess = detect_type.detect(meta, body)
+        if guess:
+            print(f"note: {first.md.name} has no type; it looks like {guess[0][0]} ({guess[0][1]}). "
+                  f"Add 'type: {guess[0][0]}' to its front matter to use that type's settings.", file=sys.stderr)
     argv = [sys.argv[0], *frontmatter.md2tex_flags(meta), *sys.argv[1:]]
     a = ap.parse_args(doctype.expand(argv, "md2tex")[1:])
 

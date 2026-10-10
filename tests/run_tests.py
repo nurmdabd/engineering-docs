@@ -29,6 +29,7 @@ FIXTURES = TESTS / "fixtures"
 EXPECTED = TESTS / "expected"
 MD2TEX = SKILL / "scripts" / "md2tex.py"
 LINT = SKILL / "scripts" / "lint_md.py"
+DOC = SKILL / "scripts" / "doc.py"
 BUILD = SKILL / "scripts" / "build.py"
 
 
@@ -118,6 +119,27 @@ def run_lint(update):
     return failed
 
 
+def run_templates(build):
+    """Every types/*/template.md must lint with no findings and, with --build, go through doc.py to a clean PDF."""
+    failed = 0
+    for tpl in sorted((SKILL / "types").glob("*/template.md")):
+        name = tpl.parent.name
+        r = subprocess.run([sys.executable, str(LINT), str(tpl)], capture_output=True, text=True)
+        ok = r.returncode == 0 and r.stdout.strip().endswith("0 error(s), 0 warning(s)")
+        if ok and build:
+            with tempfile.TemporaryDirectory() as tmp:
+                md = Path(tmp) / f"{name}.md"
+                md.write_text(tpl.read_text(encoding="utf-8"), encoding="utf-8")
+                b = subprocess.run([sys.executable, str(DOC), "build", str(md)], capture_output=True, text=True)
+                ok = b.returncode == 0 and "Log clean" in b.stdout
+                r = b
+        print(f"{'ok' if ok else 'FAILED':8} template {name}{' (built)' if build and ok else ''}")
+        if not ok:
+            print("  " + (r.stdout + r.stderr).strip().replace("\n", "\n  "))
+        failed += not ok
+    return failed
+
+
 def build_one(body, flags, label, has=(), lacks=()):
     """Compile body; the log must be clean, and the PDF text must contain every `has` and no `lacks` string."""
     with tempfile.TemporaryDirectory() as tmp:
@@ -190,7 +212,7 @@ def main():
         failed = corpus(a.corpus, a.snapshot or a.compare, "snapshot" if a.snapshot else "compare")
     else:
         cases = json.loads((TESTS / "cases.json").read_text())
-        failed = check_skill() + run_cases(cases, a.update) + run_lint(a.update)
+        failed = check_skill() + run_cases(cases, a.update) + run_lint(a.update) + run_templates(a.build)
         if a.build:
             failed += run_builds(cases)
     print("\nAll passed." if not failed else f"\n{failed} failed.")

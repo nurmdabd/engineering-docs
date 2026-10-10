@@ -31,6 +31,7 @@ Section numbers (0–14) are shared across these files, so "Section 7" always me
 | `template/cover-page-*.tex` | The **study-notes cover page** (course code band, document title, subtitle, note, optional "Inside" box, author and date). It is filled by `build.py --cover …`. The user's other covers are for other purposes; pass `--cover-dir` to use one of those instead. |
 | `scripts/md2tex.py` + `scripts/house.lua` | A pandoc-based **draft converter** that applies the mechanical rules: headings, labels, table tiers, equations, figures, callouts, question/solution boxes, `eqnote` and Unicode. Its output still gets the Step 3 review. |
 | `scripts/setup.sh` | Installs XeLaTeX, every package the preamble loads, pandoc, PyYAML and Pillow (Debian/Ubuntu). Re-running it is safe. |
+| `scripts/doc.py` | One command for the whole path: `types`, `new`, `check`, `build` (see Workflow). |
 | `scripts/lint_md.py` | Checks Markdown against `references/authoring.md` before converting: front matter, headings, questions and solutions, links, images, equations, glyphs. |
 | `scripts/check_structure.py` | A fast check for unbalanced braces and `\begin`/`\end` pairs, with no compile. |
 | `scripts/build.py` | Fills the template, compiles with latexmk/XeLaTeX, and summarizes errors, undefined references, **missing glyphs** and wide overfull lines. |
@@ -42,16 +43,30 @@ Never edit the bundled preamble to suit one document. If the user changes their 
 
 ## Document types
 
-A type is a preset for one kind of document. `--type NAME` on `md2tex.py` and `build.py` (or `type:` in the front matter) loads `types/NAME/type.json`, and flags you pass yourself still win. A type may also bring its own `preamble.tex` with commands only it uses; the build loads it after the house preamble. Before writing or converting a document of that kind, read `types/NAME/guide.md`: it says how to write the content and which rules differ from the defaults in this file and the references.
+A type is a preset for one kind of document. `type:` in the front matter (or `--type NAME` on the scripts) loads `types/NAME/type.json`, and flags you pass yourself still win. A type may also bring its own `preamble.tex` with commands only it uses; the build loads it after the house preamble. Before writing or converting a document of that kind, read `types/NAME/guide.md`: it says how to write the content and which rules differ from the defaults in this file and the references. `types/NAME/template.md` is a starting file.
 
 | Type | For |
 |---|---|
+| `theory-notes` | Lecture or theory notes taught like a lesson: lecture openers, explained figures, worked examples, a self-check per lecture; Bangla versions too |
+| `formula-sheet` | Every formula of a course in Title / Equation / Notation / Reference tables, 10pt with narrow margins |
+| `question-bank` | Practice numericals, short and long questions, each linked to its solution |
+| `past-paper` | Solutions of a previous year's exam paper: the paper's questions with marks, then a solution block per sub-part (Theory, Answer, Keyword Explanation, Notes and Remarks, Final Concise Answer); tighter layout |
 | `project-report` | Multi-day project or lab reports (RTL-to-GDSII flow): one chapter per day, `extreport` at 14pt |
-| `past-paper` | Solutions of a previous year's exam paper: the paper's questions with marks, then a solution block per sub-part (Theory, Answer, Keyword Explanation, Notes and Remarks, Final Concise Answer) |
 
-Study notes (theory, formula sheets, question banks) use the defaults and need no type yet. When the user wants a kind of document that has no type, use the closest defaults, then offer to add a type for it.
+- **Choosing the type:** the user's request usually names it. For existing Markdown without `type:`, the linter and the converter suggest one from the content (`scripts/detect_type.py`); confirm it with the user before adding it to the front matter. When nothing fits (a derivation sheet, a mind map), use the house defaults with no type, then offer to add a type for that kind of document.
+- **New types:** a folder `types/NAME/` with `type.json`, `guide.md` and `template.md` (and `preamble.tex` if it needs its own commands). `tests/run_tests.py` checks that every type has them and that its template lints and builds clean.
 
 ## Workflow
+
+**Quick path:** `scripts/doc.py` runs the steps below in order for a Markdown file with front matter:
+```bash
+python3 <skill>/scripts/doc.py types                  # what each type is for
+python3 <skill>/scripts/doc.py new question-bank notes.md
+python3 <skill>/scripts/doc.py check notes.md         # Step 2's lint
+python3 <skill>/scripts/doc.py build notes.md         # lint, convert to latex/notes.tex, check, build notes.pdf
+```
+`build` reuses an existing `latex/NAME.tex` (it may hold hand edits) and stops if the Markdown is newer; `--reconvert` regenerates it. The steps still apply: review the draft (Step 3) and look at the pages (Step 5).
+
 
 ### Step 1: Setup (once per session)
 ```bash

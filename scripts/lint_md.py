@@ -3,7 +3,7 @@
 lint_md.py -- check Markdown against references/authoring.md before converting it.
 
 Usage:
-    python3 lint_md.py NOTES.md [MORE.md ...] [--strict]
+    python3 lint_md.py NOTES.md [MORE.md ...] [--strict] [--type NAME]
 
 Prints `file:line: error|warning: message`. Errors break the build or lose content (an unclosed code fence,
 a question without its solution, bad front matter); warnings change the output in a way the writer probably
@@ -17,6 +17,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+import detect_type
 import doctype
 import frontmatter
 import slugs
@@ -110,7 +111,7 @@ def past_paper_checks(lines, offset, say):
             say(g, "warning", "this question has no '### Final Concise Answer' (put it in its last solution)")
 
 
-def lint(path):
+def lint(path, as_type=None):
     text = path.read_text(encoding="utf-8")
     out = []
 
@@ -121,6 +122,13 @@ def lint(path):
     offset = text[:len(text) - len(body)].count("\n")      # body line numbers -> file line numbers
     for p in problems:
         say(1, "error", p)
+    if as_type:
+        meta["type"] = as_type
+    if not meta.get("type"):
+        guess = detect_type.detect(meta, body)
+        if guess:
+            say(1, "warning", f"no type set; this looks like {guess[0][0]} ({guess[0][1]}): add 'type: {guess[0][0]}' "
+                              "to the front matter (types/" + guess[0][0] + "/guide.md)")
     if meta.get("type") and meta["type"] not in doctype.available():
         say(1, "error", f"unknown type '{meta['type']}' (available: {', '.join(doctype.available())})")
 
@@ -207,10 +215,11 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("md", nargs="+", type=Path)
     ap.add_argument("--strict", action="store_true", help="treat warnings as errors")
+    ap.add_argument("--type", help="check as this document type, whatever the front matter says")
     a = ap.parse_args()
     errors = warnings = 0
     for md in a.md:
-        for line, level, msg in lint(md):
+        for line, level, msg in lint(md, a.type):
             print(f"{md}:{line}: {level}: {msg}")
             errors += level == "error"
             warnings += level == "warning"
