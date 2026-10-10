@@ -10,8 +10,9 @@ problems.md:30: error: 'Solution N9' has no question '#### N9'
 problems.md:34: warning: callout starts with 💡; only ⚠ 🎯 📌 choose a box, this one becomes a note
 problems.md:36: warning: TODO left in the text
 problems.md:36: warning: emoji 💡 will be dropped; say it in words
-problems.md:38: warning: image figures/plot.png not found; it will be left as a TODO in the LaTeX
-problems.md:38: warning: link to #no-such-heading matches no heading in this file, so the PDF will show plain text
-problems.md:42: warning: code block uses ─ ├, which the listing font lacks; use ASCII (| +-- -> v)
-problems.md:45: error: display equation opened with $$ is never closed
-7 error(s), 9 warning(s)
+problems.md:39: warning: two $$ blocks back to back become separate equations; for a derivation write one $$ … $$ block with \\ between lines and & before each =
+problems.md:41: warning: image figures/plot.png not found; it will be left as a TODO in the LaTeX
+problems.md:41: warning: link to #no-such-heading matches no heading in this file, so the PDF will show plain text
+problems.md:45: warning: code block uses ─ ├, which the listing font lacks; use ASCII (| +-- -> v)
+problems.md:48: error: display equation opened with $$ is never closed
+7 error(s), 10 warning(s)

@@ -70,7 +70,7 @@ Values are raw LaTeX on the cover and title: write `--` for an en-dash, `---` fo
 ## Lists
 
 - `-` bullets and `1.` numbered lists, nested by indenting.
-- **Lettered sub-parts** (`(a)`, `(b)`) are not made into lists. Put a blank line between them, or each will run into the next in the PDF.
+- **Sub-parts** written as `(a)`, `(ii)` or `(3)` at the start of a line each start a new paragraph, even without a blank line between them. They are not made into a lettered list.
 
 ## Tables
 
@@ -82,7 +82,7 @@ Values are raw LaTeX on the cover and title: write `--` for an en-dash, `---` fo
 ## Equations
 
 - **Display:** `$$ … $$`, on its own line or across several lines. Each `$$ … $$` becomes one numbered equation.
-- **Multi-line derivations:** consecutive `$$` lines currently become separate equations, not one `align` (a known converter gap). Write a derivation as one `$$ … $$` block with `\\` between lines, or accept separate equations.
+- **Multi-line derivations:** write one `$$ … $$` block with `\\` between lines and `&` before each `=`; it becomes one numbered equation with the lines aligned (`aligned`). Without `&`, the lines are centred (`gathered`). Two `$$` blocks back to back are two separate equations, and the linter warns about them.
 - **Boxed result:** `$$\boxed{…}$$`.
 - **"where" list:** a paragraph `where:` followed by a bullet list right after the equation.
 - **Side note:** a paragraph starting with `*Write also:*` right after a display equation becomes the equation's side note (`eqnote`).

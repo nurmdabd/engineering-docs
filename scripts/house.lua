@@ -215,7 +215,10 @@ local function make_equation(m, label)
     return "\\[\n    " .. t:gsub("\n", "\n    ") .. "\n\\]"
   end
   local env = "equation"
-  if t:find("\\\\") and not t:find("\\begin{") then t = "\\begin{gathered}\n" .. t .. "\n\\end{gathered}" end
+  if t:find("\\\\") and not t:find("\\begin{") then   -- several lines in one $$ block: one equation, aligned at &
+    local env = t:find("&") and "aligned" or "gathered"
+    t = "\\begin{" .. env .. "}\n" .. t .. "\n\\end{" .. env .. "}"
+  end
   return "\\begin{" .. env .. "}\n    " .. t:gsub("\n", "\n    ") .. "\n    \\label{" .. label .. "}\n\\end{" .. env .. "}"
 end
 
@@ -545,11 +548,13 @@ local function figure_block(img)
 end
 
 local function split_on_breaks(inls)
-  -- a soft break followed by "(b)"-style enumerator or a bold label starts a new paragraph
+  -- a soft break followed by an enumerator -- (b), (iv), (10) -- or a bold label starts a new paragraph
   local parts, cur = {}, pandoc.List()
   for j, x in ipairs(inls) do
     local nxt = inls[j + 1]
-    if x.t == "SoftBreak" and nxt and ((nxt.t == "Str" and nxt.text:match("^%(%w%)")) or
+    local enum = nxt and nxt.t == "Str" and (nxt.text:match("^%(%a%)") or nxt.text:match("^%([ivx]+%)")
+                                         or nxt.text:match("^%(%d+%)"))   -- (b), (iv), (10)
+    if x.t == "SoftBreak" and nxt and (enum or
         (nxt.t == "Strong" and (stringify(nxt):match("[:%.%?]$") or stringify(nxt):match("।$")))) then
       parts[#parts + 1] = cur; cur = pandoc.List()
     else cur:insert(x) end

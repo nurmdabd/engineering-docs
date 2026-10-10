@@ -170,6 +170,7 @@ def lint(path, as_type=None):
     fence, fence_line = None, 0
     headings, questions, solutions, anchors = [], {}, {}, []
     open_display = None                                    # line of an unclosed $$
+    last_display_end = None
     for n, line in enumerate(lines, start=offset + 1):
         m = re.match(r"^(```+|~~~+)", line)
         if m:
@@ -205,7 +206,12 @@ def lint(path, as_type=None):
                 solutions.setdefault(s.group(1), n)
             continue
         for _ in re.findall(r"(?<!\\)\$\$", line):
+            if not open_display and last_display_end == n - 1:
+                say(n, "warning", "two $$ blocks back to back become separate equations; for a derivation write one "
+                                  "$$ … $$ block with \\\\ between lines and & before each =")
             open_display = None if open_display else n
+            if not open_display:
+                last_display_end = n
         for kind, cls, attrs in [("div", *m.groups()) for m in [DIV.match(line)] if m] + \
                                 [("span", m.group(1), m.group(2)) for m in SPAN.finditer(line)]:
             check_command(n, kind, cls, attrs, registry, say)

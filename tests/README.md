@@ -8,14 +8,15 @@ The expected files record what the converter does today, including the gaps belo
 
 Found while writing these fixtures. Each one is handled in the hand review (SKILL.md Step 3) until it is fixed.
 
-1. **Consecutive `$$` lines** become separate `equation`s, not one `align` as Section 7 of `references/latex-rules.md` asks (`core-elements`, Equations).
+1. **Consecutive `$$` blocks** stay separate equations; they are not merged into one `align`. Writers are steered away from it instead: the linter warns, and `references/authoring.md` says to write one `$$` block with `\\` and `&`, which becomes an `aligned` equation. (The COM notes never use back-to-back `$$` blocks.)
 2. **Generic captions** when the Markdown sets none: code listings get "Listing", and a table gets its section title, repeated when a section has two tables (`core-elements`). The Markdown can set both (`references/authoring.md`).
-3. **Lettered sub-parts** (`(a)`, `(b)` on consecutive lines) run together into one paragraph; they are not made into a lettered list.
 
 Fixed so far:
 - A figure whose image is missing is commented out with a TODO instead of breaking the build.
 - In `extreport`, several `#` headings all stay as chapters instead of the first becoming the title.
 - A `####` run-in label ending in `?` no longer gets a colon after it.
+- Sub-parts `(iv)`, `(12)` at the start of a line now start a new paragraph like `(b)` did; before, only single-character labels did.
+- One `$$` block with `\\` and `&` becomes an `aligned` equation; before, its lines were centred.
 - In-file links written with GitHub's anchors (`#2-tables`, `#lecture-24--pm-bandwidth`) now reach their heading; before, they became plain text.
 
 `lint/` holds Markdown for the linter: `clean.md` must give no findings, `problems.md` one of each. Their output is compared with the `.expected` files.

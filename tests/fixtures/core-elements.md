@@ -51,6 +51,13 @@ where:
 $$\overline{q^2} = \frac{1}{\Delta v}\int_{-\Delta v/2}^{\Delta v/2} q^2\,dq$$
 $$= \frac{\Delta v^2}{12}$$
 
+$$P_{SB} &= \frac{m^2}{4} P_c \\
+&= 0.01 \times 2.08 = 0.0208~\text{W}$$
+
+(i) A roman sub-part.
+(ii) The second.
+(iv) The fourth, its own paragraph.
+
 $$\boxed{B_{PM} = 2(\Delta f + B)}$$
 
 *Write also:* for FM, $\Delta f = k_f m_p/2\pi$; PM bandwidth grows with message frequency.

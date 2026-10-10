@@ -35,6 +35,9 @@ An answer with no question.
 
 Done 💡 here. TODO: finish this.
 
+$$a = b + c$$
+$$= d$$
+
 See [missing](#no-such-heading) and ![plot](figures/plot.png).
 
 ```
