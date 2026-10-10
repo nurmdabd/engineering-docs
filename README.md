@@ -13,7 +13,7 @@ A Claude Code skill that turns engineering Markdown into LaTeX in Nur Mohammad's
 | `template/` | House preamble, `main.tex`, study-notes cover page |
 | `scripts/` | `doc.py` (one command: types, new, check, build), `commands.py` (custom-command registry), `setup.sh`, `lint_md.py` (Markdown checks), `md2tex.py` + `house.lua` (converter), `check_structure.py`, `build.py` |
 | `examples/` | A body file that uses every rule |
-| `types/` | Document types (theory-notes, formula-sheet, question-bank, past-paper, project-report): settings (`type.json`), writing and layout guide (`guide.md`), starting file (`template.md`), own commands (`preamble.tex`, optional) |
+| `types/` | Document types (theory-notes, exam-notes, formula-sheet, question-bank, past-paper, project-report): settings (`type.json`), writing and layout guide (`guide.md`), starting file (`template.md`), own commands (`preamble.tex`, optional) |
 | `tests/` | Regression tests: `python3 tests/run_tests.py --build` |
 
 ## Using it in a repo

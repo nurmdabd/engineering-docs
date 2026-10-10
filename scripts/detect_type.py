@@ -26,6 +26,9 @@ def detect(meta, body):
         found.append(("question-bank", f"{len(qs)} numbered questions with solutions"))
     if h(r"^\|\s*Title\s*\|\s*Equation\s*\|") or "formula sheet" in title:
         found.append(("formula-sheet", "a Title | Equation table" if h(r"^\|\s*Title\s*\|") else "the title says formula sheet"))
+    explained = h(r"^\*Explained in ")
+    if explained or "exam notes" in title or h(r"^# .*Exam Notes"):
+        found.append(("exam-notes", f"{len(explained)} '*Explained in' links" if explained else "the title says exam notes"))
     lectures, checks = h(r"^## Lecture \d+"), h(r"^###.*self-check")
     if lectures or checks or "theory" in title:
         found.append(("theory-notes", f"{len(lectures)} '## Lecture NN' headings, {len(checks)} self-checks"

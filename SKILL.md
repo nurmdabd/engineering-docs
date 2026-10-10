@@ -50,6 +50,7 @@ A type is a preset for one kind of document. `type:` in the front matter (or `--
 | Type | For |
 |---|---|
 | `theory-notes` | Lecture or theory notes taught like a lesson: lecture openers, explained figures, worked examples, a self-check per lecture; Bangla versions too |
+| `exam-notes` | The memorize-version of theory notes: same headings, each linked back to its full explanation; definitions, steps, labels, worked examples, exam answers |
 | `formula-sheet` | Every formula of a course in Title / Equation / Notation / Reference tables, 10pt with narrow margins |
 | `question-bank` | Practice numericals, short and long questions, each linked to its solution |
 | `past-paper` | Solutions of a previous year's exam paper: the paper's questions with marks, then a solution block per sub-part (Theory, Answer, Keyword Explanation, Notes and Remarks, Final Concise Answer); tighter layout |
