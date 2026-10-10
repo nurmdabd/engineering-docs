@@ -22,6 +22,7 @@ The detailed conversion rules. SKILL.md has the workflow, the output rules and S
 | `\golink{label}{text}` | a small clickable chip that jumps to a label |
 | `eqnote{<equation>}{<note>}` | an equation with a short side note, in limited cases (Section 12) |
 | `mainquestion` | previous-year exam questions only (Section 12) |
+| `questionblock`, `\theory`, `\answer`, `\keyword`, `\notes`, `\answersummary`, `\derivation` | past-paper solutions only; defined by `types/past-paper/preamble.tex` |
 
 The preamble also defines these, which stay **unmapped**:
 - `\codechip{}`, `\seqtt{}`
@@ -329,6 +330,8 @@ $\beta = \Delta f/B = 75/15 = 5$ ...
 Use it only when **all** of these hold:
 - The source identifies the question as a real past-exam question, with its year or exam name and question number. For example, "Term Test 2024, Q3(b)" or "Final 2023 Q2".
 - The question gets a full worked solution, roughly half a page or more.
+
+**A whole past paper** (every question of an exam, solved) uses the `past-paper` type instead: the paper's questions go in `mainquestion` as a list of sub-parts with their marks, and each sub-part's solution is a `questionblock` (`types/past-paper/guide.md`). The layout below is for a single past-exam question inside other material.
 
 Then lay it out as follows:
 ```latex

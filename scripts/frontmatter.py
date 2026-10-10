@@ -23,6 +23,7 @@ KEYS = {
     "type": ("str", "--type"),
     "lang": ("str", None),
     "header": ("str", "--header"),
+    "header_right": ("str", "--header-right"),
     "author": ("str", "--author"),
     "date": ("str", "--date"),
     "cover": ("bool", "--cover"),

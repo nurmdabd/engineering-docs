@@ -1,0 +1,102 @@
+% Generated from past-paper.md by md2tex.py, then reviewed against SKILL.md.
+
+\begin{mainquestion}
+\begin{itemize}
+    \item[1. (a)] Find the entropy of a single-bit binary memoryless source. Also draw the curve of entropy versus probability. \hfill Marks: 5
+    \item[(b)] Briefly explain the three major bands of the EM spectrum---radio waves, microwaves, and infrared waves. \hfill Marks: 6
+    \item[(c)] Write short notes on:
+    
+    \begin{itemize}
+        \item[(i)] Thermal Noise
+        \item[(ii)] Transit Time Noise \hfill Marks: 4
+    \end{itemize}
+    \item[(d)] A carrier of $10~\text{MHz}$ and $10~\text{V}$ peak is amplitude-modulated by a $5~\text{kHz}$ sine wave of $6~\text{V}$. Find the modulation index. \hfill Marks: 4
+\end{itemize}
+\end{mainquestion}
+
+\begin{questionblock}[1(a) Entropy of a Single-Bit Binary Memoryless Source]{1.(a) Find the entropy of a single-bit binary memoryless source. Also draw the curve of entropy versus probability. Marks: 5}
+
+\answer
+
+\textbf{What is the Source?}
+
+A binary memoryless source emits 0 or 1 independently. The entropy measures the average information \note{in bits when logarithms of base 2 are used} per symbol:
+
+\[
+    \boxed{H(p) = -p \log_2 p - (1-p)\log_2(1-p)}
+\]
+
+\textbf{Case $p = 0.5$:}
+
+\[
+    \begin{aligned}
+    H(0.5) &= -0.5 \log_2 0.5 - 0.5 \log_2 0.5 \\ &= 1 \text{ bit}.
+    \end{aligned}
+\]
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{figures/pre_de_emphasis_chain.png}
+    \caption{Binary entropy function H(p) vs probability p}
+    \label{fig:pre_de_emphasis_chain}
+\end{figure}
+
+\end{questionblock}
+
+\begin{questionblock}[1(b) Major Bands of the EM Spectrum]{1.(b) Briefly explain the three major bands of the EM spectrum---radio waves, microwaves, and infrared waves. Marks: 6}
+
+\answer
+
+The three bands are radio waves, microwaves and infrared.
+
+\end{questionblock}
+
+\begin{questionblock}[1(c) Thermal Noise and Transit-Time Noise]{1.(c) Write short notes on: (i) Thermal Noise (ii) Transit Time Noise Marks: 4}
+
+\theory
+
+\subsubsection*{1. What is Thermal Noise? (Core Idea)}
+
+Random voltage from the thermal motion of electrons; $v_{\text{rms}} = \sqrt{4kTRB}$.
+
+\answer
+
+\subsubsection*{i. Thermal Noise}
+
+\textbf{What it is:} noise from thermal motion of charge carriers.
+
+\subsubsection*{ii. Transit-Time Noise}
+
+\textbf{What it is:} noise when carrier transit time is comparable to the signal period.
+
+\keyword
+
+\subsubsection*{1. Bandwidth}
+
+The range of frequencies a system passes.
+
+\end{questionblock}
+
+\begin{questionblock}[(d) AM Problem]{1.(d) A carrier of $10~\text{MHz}$ and $10~\text{V}$ peak is amplitude-modulated by a $5~\text{kHz}$ sine wave of $6~\text{V}$. Find the modulation index. Marks: 4}
+
+\answer
+
+\textbf{Given:} $A_c = 10$ V, $A_m = 6$ V.
+
+\[
+    m = \frac{A_m}{A_c} = \frac{6}{10} = 0.6
+\]
+
+\answersummary
+
+\textbf{(a)} $H(0.5) = 1$ bit. \textbf{(d)} $m = 0.6$.
+
+\end{questionblock}
+
+\begin{questionblock}[1(e) A Part Missing From the Paper List]{1.(e) Explain why the modulation index must stay below 1. Marks: 2}
+
+\answer
+
+Above 1 the envelope distorts.
+
+\end{questionblock}

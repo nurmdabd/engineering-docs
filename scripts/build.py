@@ -9,6 +9,7 @@ Usage:
     Settings from front matter: BODY.build.json beside the first body (written by md2tex.py) is applied first.
         [--title "Line 1" --title "Line 2"]   # title lines on page 1 (default: body file name)
         [--header "Running header text"]      # left page header (default: titles joined)
+        [--header-right "Session 2020--21"]   # text before the TOC button on the right of the header
         [--author "Nur Mohammad"]
         [--class extarticle|extreport]        # default extarticle
         [--fontsize 12pt]                      # 8pt..20pt for ext* classes; default 12pt
@@ -129,6 +130,8 @@ def main():
     ap.add_argument("--out", required=True, type=Path)
     ap.add_argument("--title", action="append", default=[])
     ap.add_argument("--header")
+    ap.add_argument("--header-right", default="")
+    ap.add_argument("--type-preamble", action="append", default=[], type=Path)
     ap.add_argument("--author", default="Nur Mohammad")
     ap.add_argument("--class", dest="cls", default="extarticle", choices=["extarticle", "extreport"])
     ap.add_argument("--fontsize", default="12pt")
@@ -152,6 +155,13 @@ def main():
     build = (a.build_dir or out.parent / f"{out.stem}_build").resolve()
     build.mkdir(parents=True, exist_ok=True)
     shutil.copy(TEMPLATE / "main-tex-preamble.tex", build)
+    type_inputs = []
+    for old in build.glob("type-*-preamble.tex"):
+        old.unlink()
+    for tp in dict.fromkeys(p.resolve() for p in a.type_preamble):
+        name = f"type-{tp.parent.name}-preamble.tex"
+        shutil.copy(tp, build / name)
+        type_inputs.append(f"\\input{{{name}}}")
     for f in ("cover-page-preamble.tex", "cover-page-main.tex"):
         (build / f).unlink(missing_ok=True)
         src = (a.cover_dir / f) if a.cover_dir else (TEMPLATE / f if a.cover else None)
@@ -199,6 +209,8 @@ def main():
                      "BODY_INPUTS": "\n".join(includes),
                      "COVER_FIELDS": cover, "PDFTITLE": pdftitle,
                      "BANGLA": BANGLA if a.bangla else "",
+                     "TYPE_PREAMBLE": "\n".join(type_inputs),
+                     "HEADER_RIGHT": bn_wrap(tex_escape(a.header_right)) if a.bangla else tex_escape(a.header_right),
                      "GEOMETRY": f"\\geometry{{left={a.margin_x}, right={a.margin_x}}}" if a.margin_x else ""}.items():
         main = main.replace(f"<<{key}>>", val)
     (build / "main.tex").write_text(main)

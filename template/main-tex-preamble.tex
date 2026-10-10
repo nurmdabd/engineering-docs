@@ -142,7 +142,9 @@
 % Header text is set per document in main.tex with \newcommand{\ReportHeader}{...}
 \providecommand{\ReportHeader}{}
 \fancyhead[L]{\ReportHeader}
-\fancyhead[R]{\hyperlink{toc}{\fbox{\small TOC}}}
+% Right header: optional text (\ReportHeaderRight, set per document in main.tex), then the TOC button
+\providecommand{\ReportHeaderRight}{}
+\fancyhead[R]{\ifdefempty{\ReportHeaderRight}{}{\ReportHeaderRight\ }\hyperlink{toc}{\fbox{\small TOC}}}
 \fancyfoot[C]{\thepage}
 \setlength{\headheight}{0pt}
 

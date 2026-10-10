@@ -1,0 +1,6 @@
+past-paper-problems.md:5: warning: this question has no '### Final Concise Answer' (put it in its last solution)
+past-paper-problems.md:8: warning: paper item has no [Marks: N]
+past-paper-problems.md:9: warning: paper item 1(c) has no '## 1(c) ...' solution
+past-paper-problems.md:37: warning: no paper item 2(z); add it to the question list, or put the question in a > quote under this heading
+past-paper-problems.md:43: warning: solution heading should start with its part, like '## 1(a) Title'
+0 error(s), 5 warning(s)

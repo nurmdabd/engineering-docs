@@ -2,6 +2,7 @@
 doctype.py -- document types. A type is a folder types/<name>/ with:
   type.json   {"description": ..., "md2tex": [default flags], "build": [default flags]}
   guide.md    how to write and lay out that kind of document (read it before writing the content)
+  preamble.tex  optional: commands and environments only this type uses; build.py loads it after the house preamble
 
 `--type NAME` on md2tex.py or build.py puts the type's default flags in front of the command line,
 so any flag given explicitly still wins (argparse keeps the last value).
@@ -35,5 +36,7 @@ def expand(argv, tool):
         if not spec.exists():
             sys.exit(f"unknown document type '{name}'. Available: " + ", ".join(available()))
         defaults += json.loads(spec.read_text(encoding="utf-8")).get(tool, [])
+        if tool == "build" and (TYPES / name / "preamble.tex").exists():   # the type's own commands
+            defaults += ["--type-preamble", str(TYPES / name / "preamble.tex")]
         i += 2
     return [argv[0], *defaults, *rest]

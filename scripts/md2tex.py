@@ -76,6 +76,8 @@ def main():
     ap.add_argument("--class", dest="cls", default="extarticle", choices=["extarticle", "extreport"])
     ap.add_argument("--fontsize", default="12pt")
     ap.add_argument("--bangla", action="store_true", help="wrap Bangla text runs in \\bn{...} (build with build.py --bangla)")
+    ap.add_argument("--structure", default="notes", choices=["notes", "past-paper"],
+                    help="past-paper: # = a question's paper block, ## = one solution (types/past-paper/guide.md)")
     ap.add_argument("--textwidth", type=float, default=17.4, help="text width in cm (17.4 for the house .7in margins)")
     first = ap.parse_known_args()[0]          # only to find the Markdown file and read its front matter
     meta, body, problems = frontmatter.split(first.md.read_text(encoding="utf-8"))
@@ -91,7 +93,7 @@ def main():
     # Otherwise the first # heading is the title. Exception: in extreport, several # headings are chapters
     # (day-01, day-02, ...) and all stay in the body. Lines inside code fences are not headings.
     tops = re.findall(r"^# .+$", re.sub(r"^(```|~~~).*?^\1", "", body, flags=re.M | re.S), re.M)
-    if not titles and not (a.cls == "extreport" and len(tops) > 1):
+    if not titles and a.structure == "notes" and not (a.cls == "extreport" and len(tops) > 1):
         m = re.search(r"^# (.+)$", body, re.M)
         if m:
             t = m.group(1).strip()
@@ -100,7 +102,7 @@ def main():
 
     cmd = ["pandoc", "-f", "markdown+lists_without_preceding_blankline-fancy_lists-implicit_figures",
            "-t", "latex", "--wrap=none", "--lua-filter", str(HERE / "house.lua"),
-           "-M", f"house_class={a.cls}", "-M", f"house_fontsize={a.fontsize}", "-M", f"house_textwidth={a.textwidth}",
+           "-M", f"house_class={a.cls}", "-M", f"house_fontsize={a.fontsize}", "-M", f"house_textwidth={a.textwidth}", "-M", f"house_structure={a.structure}",
            "-M", "house_gfm=" + " ".join(slugs.heading_slugs(body))]   # GitHub anchors, so [..](#gh-anchor) links work
     r = subprocess.run(cmd, input=body, capture_output=True, text=True)
     if r.returncode:

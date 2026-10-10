@@ -35,11 +35,12 @@ date: "October 2026"
 | `title`, `subtitle` | The title lines on page 1 (without them, the first `#` heading is the title) |
 | `type` | A folder in `types/`; sets that type's defaults |
 | `lang` | `en` (default) or `bn` for Bangla; `bn` adds `--bangla` to both scripts |
-| `header` | The running header (default: the titles) |
+| `header` | The running header, left (default: the titles) |
+| `header_right` | Text on the right of the header, before the TOC button |
 | `author`, `date` | Cover and title page |
 | `cover` | `true` adds the study-notes cover page |
 | `course_code`, `course_name`, `cover_title`, `cover_subtitle`, `cover_note`, `cover_contents` | Cover fields; `cover_contents` is a list |
-| `exam`, `year` | For past-paper documents; used by that type's guide |
+| `exam`, `year` | For past-paper documents (`types/past-paper/guide.md`) |
 
 Values are raw LaTeX on the cover and title: write `--` for an en-dash, `---` for an em-dash and `\&` for `&`. Quote any value that contains `:`. Unknown keys are reported by the linter.
 
@@ -62,6 +63,7 @@ Values are raw LaTeX on the cover and title: write `--` for an en-dash, `---` fo
 - **Bold lead-in label:** a bold phrase ending in `:` (or `.`, `?`, `।`) at the start of a paragraph, such as `**Objective:**`, stays bold as a label. Labels carry their own colon.
 - **Bold term:** any other bold phrase becomes a key term (`\keyterm`). Bold only terms a reader might look up; use `*italic*` for stress.
 - **Code:** `` `data_out` `` for identifiers, file names and exact tokens.
+- **Side remark:** `[in bits when the log is base 2]{.note}` prints a small parenthetical note.
 - **Line breaks:** a single line break inside a paragraph does nothing. Leave a blank line to start a new paragraph.
 
 ## Lists
@@ -127,7 +129,7 @@ Broadcast FM uses Δf = 75 kHz and B = 15 kHz. Find β. [→ Solution](#solution
 - **IDs** are one or two capital letters and a number, optionally a lowercase letter: `N1`, `S12`, `L3`, `Q4a`.
 - Every question needs its `#### Solution …` and the other way round; the boxes link to each other.
 - The `[→ Solution]` and `[← Back]` links are optional; the box title bars replace them.
-- Past-exam questions (`mainquestion`) are not written this way; see that type's guide.
+- A past paper's questions are not written this way; see `types/past-paper/guide.md`.
 
 ## Links
 
@@ -149,4 +151,4 @@ Set `lang: bn`. Technical terms, maths, numbers, figure paths and the callout ma
 
 The converter does not produce these; mark the place in the Markdown and set them in the review step (SKILL.md, Step 3):
 - `repocard` blocks for repos and tools (`references/latex-rules.md`, Section 9);
-- `mainquestion` for past-exam questions (Section 12).
+- `mainquestion` for a single past-exam question inside other material (Section 12); a whole past paper uses the `past-paper` type.

@@ -1,0 +1,42 @@
+% Past-paper solutions: commands loaded after the house preamble (types/past-paper/preamble.tex).
+% Taken from the user's own past-paper preamble (EEE329, session 2020--21). The house preamble already
+% has \mainquestion, \grayhl, \note, \keyterm and eqnote; only what is new is defined here.
+
+% ---------- Section titles inside a solution ----------
+\newcommand{\theory}{\subsection{Theory}}
+\newcommand{\derivation}{\subsection{Derivation / Explanation}}
+\newcommand{\answer}{\subsection{Answer}}
+\newcommand{\keyword}{\subsection{Keyword Explanation}}
+\newcommand{\notes}{\subsection{Notes and Remarks}}
+\newcommand{\answersummary}{\subsection{Final Concise Answer}}
+
+% ---------- One solution: questionblock[TOC title]{full question text} ----------
+% The full question is printed highlighted; the TOC shows the short title. Sections inside are numbered
+% 1, 2, ... per solution. Every format change below is local to the environment, so headings outside
+% it keep the house style.
+\ifcsname c@shadowq\endcsname\else\newcounter{shadowq}\fi
+\NewDocumentEnvironment{questionblock}{o m}
+{
+	\refstepcounter{shadowq}
+	\phantomsection
+	\titleformat{name=\section,numberless}{\normalfont\normalsize\bfseries}{}{0pt}{}
+	\section*{\normalsize\grayhl{#2}}
+	\IfNoValueTF{#1}
+	{\addcontentsline{toc}{section}{#2}}
+	{\addcontentsline{toc}{section}{#1}}
+
+	\setcounter{subsection}{0}
+	\renewcommand{\theHsubsection}{shadow.\theshadowq.\arabic{subsection}}
+	\renewcommand{\thesubsection}{\arabic{subsection}}
+	\titleformat{\subsection}
+	{\Large\bfseries\color{red!85!black}}
+	{\thesubsection.}
+	{0.3em}
+	{}
+	\titleformat{\subsubsection}
+	{\large\bfseries\color{blue!90!black}}
+	{\thesubsubsection}
+	{0.3em}
+	{}
+}
+{}

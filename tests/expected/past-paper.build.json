@@ -1,0 +1,10 @@
+{
+ "source": "past-paper.md",
+ "build": [
+  ["--title", "EEE329: Basic Communication Engineering"],
+  ["--title", "Solution of Session 2020--21"],
+  ["--type", "past-paper"],
+  ["--header", "EEE329: Basic Communication Engineering"],
+  ["--header-right", "Solution of Session 2020--21"]
+ ]
+}

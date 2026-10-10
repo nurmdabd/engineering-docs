@@ -51,6 +51,65 @@ def pandoc_ids(body):
     return ids
 
 
+def past_paper_checks(lines, offset, say):
+    """types/past-paper: the paper list and the ## solutions must match; marks and summaries present."""
+    num, paper, solved, group, fence, in_paper = None, {}, {}, None, False, False
+    summaries, item_line, item_text = {}, None, ""
+
+    def close_item():
+        if item_line and paper and not re.search(r"\[\s*(marks:?\s*\d+|\d+\s*marks?)\s*\]", item_text, re.I):
+            say(item_line, "warning", "paper item has no [Marks: N]")
+
+    for n, line in enumerate(lines, start=offset + 1):
+        if re.match(r"^(```|~~~)", line):
+            fence = not fence
+            continue
+        if fence:
+            continue
+        h = re.match(r"^(#{1,6})\s+(.*?)\s*$", line)
+        if h:
+            level, title = len(h.group(1)), h.group(2)
+            if level == 1:
+                close_item(); item_line = None
+                group, in_paper = n, True
+                summaries[group] = False
+            elif level == 2:
+                close_item(); item_line = None
+                in_paper = False
+                m = re.match(r"^(\d+)?\s*\.?\s*\((\w+)\)", title)
+                if not m:
+                    say(n, "warning", "solution heading should start with its part, like '## 1(a) Title'")
+                    continue
+                num = m.group(1) or num
+                key = f"{num}({m.group(2)})"
+                nxt = next((l for l in lines[n - offset:] if l.strip()), "")
+                if key not in paper and not nxt.startswith(">"):
+                    say(n, "warning", f"no paper item {key}; add it to the question list, or put the question in a > quote under this heading")
+                solved.setdefault(key, n)
+            elif level == 3 and title.strip().lower() == "final concise answer" and group:
+                summaries[group] = True
+            continue
+        it = re.match(r"^- \*\*(.+?)\*\*", line)          # a top-level paper item
+        if it and in_paper:
+            close_item()
+            label = it.group(1)
+            lead = re.match(r"^(\d+)", label)
+            num = lead.group(1) if lead else num
+            letter = re.search(r"\((\w+)\)", label)
+            if letter and num:
+                paper[f"{num}({letter.group(1)})"] = n
+            item_line, item_text = n, line
+        elif item_line and (line.startswith(" ") or line.startswith("\t")) and line.strip():
+            item_text += line
+    close_item()
+    for key, n in paper.items():
+        if key not in solved:
+            say(n, "warning", f"paper item {key} has no '## {key} ...' solution")
+    for g, ok in summaries.items():
+        if not ok:
+            say(g, "warning", "this question has no '### Final Concise Answer' (put it in its last solution)")
+
+
 def lint(path):
     text = path.read_text(encoding="utf-8")
     out = []
@@ -137,6 +196,8 @@ def lint(path):
         if a not in ids:
             say(n, "warning", f"link to #{a} matches no heading in this file, so the PDF will show plain text")
 
+    if meta.get("type") == "past-paper":
+        past_paper_checks(lines, offset, say)
     if meta.get("type") == "project-report" and not any(l == 1 for _, l, _ in headings):
         say(offset + 1, "warning", "project-report expects one '# Day NN: ...' chapter per day")
     return sorted(out)

@@ -8,6 +8,7 @@ Driven by md2tex.py; not meant to be called directly. Metadata options:
 local stringify = pandoc.utils.stringify
 local CLASS, FONTPT, TEXTW = "extarticle", 12, 17.4
 local GFM = {}            -- GitHub anchors of the top-level headings, in order (meta house_gfm)
+local STRUCT = "notes"    -- "past-paper" (meta house_structure): see types/past-paper/guide.md
 
 local function latex(blocks_or_inlines, is_inline)
   local doc
@@ -93,6 +94,7 @@ local meta_filter = {
     if m.house_class then CLASS = stringify(m.house_class) end
     if m.house_textwidth then TEXTW = tonumber(stringify(m.house_textwidth)) or 17.4 end
     if m.house_fontsize then FONTPT = tonumber((stringify(m.house_fontsize):gsub("pt", ""))) or 12 end
+    if m.house_structure then STRUCT = stringify(m.house_structure) end
     if m.house_gfm then for w in stringify(m.house_gfm):gmatch("%S+") do GFM[#GFM + 1] = w end end
   end,
 }
@@ -194,9 +196,89 @@ end
 
 local function make_equation(m, label)
   local t = m.text:gsub("^%s+", ""):gsub("%s+$", "")
+  if STRUCT == "past-paper" then   -- solutions use unnumbered display maths, like the user's own files
+    if t:find("\\\\") and not t:find("\\begin{") then
+      local env = t:find("&") and "aligned" or "gathered"
+      t = "\\begin{" .. env .. "}\n" .. t .. "\n\\end{" .. env .. "}"
+    end
+    return "\\[\n    " .. t:gsub("\n", "\n    ") .. "\n\\]"
+  end
   local env = "equation"
   if t:find("\\\\") and not t:find("\\begin{") then t = "\\begin{gathered}\n" .. t .. "\n\\end{gathered}" end
   return "\\begin{" .. env .. "}\n    " .. t:gsub("\n", "\n    ") .. "\n    \\label{" .. label .. "}\n\\end{" .. env .. "}"
+end
+
+-- ---------- past papers (STRUCT == "past-paper") ----------
+-- "# Question 1" + a list of sub-parts -> the paper block (mainquestion);
+-- "## 1(a) Title" ... -> questionblock[Title]{full question text, taken from the paper list}.
+local PP = { qtext = {}, num = nil }
+
+local function strip_marks(inls)   -- remove a trailing "[Marks: 5]" or "[5 marks]"; return the number
+  local acc = ""
+  for k = #inls, 1, -1 do
+    acc = stringify(pandoc.Inlines({ inls[k] })) .. acc
+    if acc:match("^%[") then
+      local m = acc:match("^%[%s*[Mm]arks:?%s*(%d+)%s*%]%s*$") or acc:match("^%[%s*(%d+)%s*[Mm]arks?%s*%]%s*$")
+      if not m then return nil end
+      for _ = k, #inls do inls:remove(k) end
+      while #inls > 0 and inls[#inls].t == "Space" do inls:remove(#inls) end
+      return m
+    end
+  end
+end
+
+local function mark_items(list, top)
+  for _, item in ipairs(list.content) do
+    local first = item[1]
+    if first and (first.t == "Plain" or first.t == "Para") and first.content[1] and first.content[1].t == "Strong" then
+      local c = first.content
+      local label = stringify(c[1])
+      c:remove(1)
+      while c[1] and c[1].t == "Space" do c:remove(1) end
+      c:insert(1, raw("@@ITEM:" .. label .. "@@"))
+      if top then
+        PP.num = label:match("^(%d+)") or PP.num
+        local letter = label:match("%((%a+)%)")
+        if letter and PP.num then
+          c:insert(2, raw("@@Q:" .. PP.num .. "(" .. letter .. ")@@"))
+          item:insert(rawb("@@/Q@@"))
+        end
+      end
+    end
+    for _, blk in ipairs(item) do
+      if blk.t == "Plain" or blk.t == "Para" then
+        local m = strip_marks(blk.content)
+        if m then blk.content:insert(raw(" \\hfill Marks: " .. m)) end
+      elseif blk.t == "BulletList" or blk.t == "OrderedList" then
+        mark_items(blk, false)
+      end
+    end
+  end
+end
+
+local function past_paper_group(blocks, i, out)
+  local h = blocks[i]; i = i + 1
+  local body = pandoc.List()
+  while i <= #blocks and not (blocks[i].t == "Header" and blocks[i].level <= 2) do body:insert(blocks[i]); i = i + 1 end
+  if h.level == 1 then
+    for _, blk in ipairs(body) do
+      if blk.t == "BulletList" or blk.t == "OrderedList" then mark_items(blk, true) end
+    end
+    out:insert(pandoc.Div(body, pandoc.Attr("", { "paper" })))
+  else
+    local txt = header_text(h)
+    PP.num = txt:match("^(%d+)") or PP.num
+    local letter = txt:match("^%d*%s*%.?%s*%((%a+)%)")
+    local key = (PP.num or "?") .. "(" .. (letter or "?") .. ")"
+    local content = pandoc.List({ pandoc.Div({ pandoc.Plain(h.content) }, pandoc.Attr("", { "qtitle" })) })
+    if body[1] and body[1].t == "BlockQuote" then   -- the question written out, for a part not in the paper list
+      content:insert(pandoc.Div(body[1].content, pandoc.Attr("", { "qtext" })))
+      body:remove(1)
+    end
+    content:extend(body)
+    out:insert(pandoc.Div(content, pandoc.Attr("", { "qblock" }, { key = key })))
+  end
+  return i
 end
 
 local structure_filter = {
@@ -231,6 +313,8 @@ local structure_filter = {
       elseif b.t == "Header" and header_text(b):lower() == "contents" then
         local lvl = b.level; i = i + 1
         while i <= #blocks and not (blocks[i].t == "Header" and blocks[i].level <= lvl) do i = i + 1 end
+      elseif STRUCT == "past-paper" and b.t == "Header" then
+        if b.level <= 2 then i = past_paper_group(blocks, i, out) else out:insert(b); i = i + 1 end
       elseif b.t == "Header" then
         local txt = header_text(b)
         local q, s = txt:match(Q_PAT), txt:match(S_PAT)
@@ -303,7 +387,7 @@ local structure_filter = {
     while k <= #out do
       local b = out[k]
       if b.t == "Header" then
-        cur_sec = b.attributes["label"]:gsub("^sec:", ""); cur_title = stringify(b.content)
+        cur_sec = (b.attributes["label"] or ("sec:" .. cur_sec)):gsub("^sec:", ""); cur_title = stringify(b.content)
         local nxt = out[k + 1]
         if nxt and (nxt.t == "Table" or (nxt.t == "Para" and #nxt.content == 1 and nxt.content[1].t == "Image")) then
           b.attributes["keep"] = "1"
@@ -332,6 +416,12 @@ local inline_filter = {
   Str = function(s) return convert_str(s.text) end,
   RawInline = function(r)
     if r.format == "html" and r.text:match("^<br%s*/?>$") then return raw("\\newline ") end
+  end,
+  Span = function(sp)   -- [text]{.note}: a small side remark (\note)
+    if sp.classes[1] == "note" then
+      local out = pandoc.List({ raw("\\note{") }); out:extend(sp.content); out:insert(raw("}"))
+      return out
+    end
   end,
   Math = function(m)
     if m.mathtype == "InlineMath" then return raw("$" .. m.text:gsub("^%s+", ""):gsub("%s+$", "") .. "$") end
@@ -368,6 +458,7 @@ local function is_label_strong(inls)
   if not f or f.t ~= "Strong" then return false end
   local s = stringify(f)
   if s:match("[:%.%?]$") or s:match("—$") or s:match("।$") then return k end
+  if STRUCT == "past-paper" and s:match("^%d*%.?%s*%(%w+%)$") then return k end   -- a part label: **(a)**, **1.(b)**
   local n = inls[k + 1]
   if n and n.t == "Str" and (n.text:match("^[:%.]") or n.text:match("^।")) then return k end
   return false
@@ -380,6 +471,9 @@ local function convert_emphasis(inls)
       local words = select(2, txt:gsub("%S+", ""))
       if txt:match("^[%l][%l%s']*$") and words <= STRESS_MAX_WORDS then
         return raw("\\emph{" .. latex(s.content, true) .. "}")
+      end
+      if STRUCT == "past-paper" and txt:match("^%d*%.?%s*%(%w+%)$") then   -- a part label such as (d)
+        return raw("\\textbf{" .. latex(s.content, true) .. "}")
       end
       return raw("\\keyterm{" .. latex(s.content, true) .. "}")
     end,
@@ -614,6 +708,29 @@ local function contains_table(blocks)
   return found
 end
 
+-- past papers: section names -> the type preamble's commands (types/past-paper/preamble.tex)
+local SECTION_CMD = { ["theory"] = "\\theory", ["answer"] = "\\answer", ["keyword explanation"] = "\\keyword",
+  ["keywords"] = "\\keyword", ["notes and remarks"] = "\\notes", ["notes"] = "\\notes",
+  ["final concise answer"] = "\\answersummary", ["derivation / explanation"] = "\\derivation",
+  ["derivation"] = "\\derivation" }
+
+local function question_text(key, body)   -- a paper item's LaTeX -> "1.(a) text (i) ... Marks: 5"
+  local marks
+  body = body:gsub("\\hfill Marks: (%d+)", function(m) marks = m; return "" end)
+  body = body:gsub("\\begin{%a+}", ""):gsub("\\end{%a+}", "")
+  body = body:gsub("\\item @@ITEM:(.-)@@", "%1 "):gsub("\\item%s*", "")
+  body = body:gsub("%s+", " "):gsub("^%s+", ""):gsub("%s+$", "")
+  return key:gsub("^(%d+)%(", "%1.(") .. " " .. body .. (marks and (" Marks: " .. marks) or "")
+end
+
+local function soul_safe(s)   -- the question is highlighted with soul, which drops these UTF-8 characters
+  s = s:gsub("\\texorpdfstring(%b{})(%b{})", function(a) return a:sub(2, -2) end)
+  for from, to in pairs({ ["—"] = "---", ["–"] = "--", ["‘"] = "`", ["’"] = "'", ["“"] = "``", ["”"] = "''" }) do
+    s = s:gsub(from, to)
+  end
+  return s
+end
+
 local MARK_ENV = { ["\\warnmark{}"] = "warnbox", ["\\exammark{}"] = "exambox", ["\\pinmark{}"] = "notebox" }
 
 local block_filter = {
@@ -659,6 +776,26 @@ local block_filter = {
         rawb("\\begin{" .. env .. "}{" .. d.attributes["title"] .. "}{" .. d.attributes["other"] .. "}") })
       out:extend(d.content); out:insert(rawb("\\end{" .. env .. "}"))
       return out
+    elseif cls == "paper" then
+      local tex = trimnl(latex(d.content, false))
+      for key, body in tex:gmatch("@@Q:(.-)@@(.-)@@/Q@@") do PP.qtext[key] = question_text(key, body) end
+      tex = tex:gsub("@@Q:.-@@", ""):gsub("%s*@@/Q@@", ""):gsub("\\item @@ITEM:(.-)@@%s*", "\\item[%1] ")
+      return rawb("\\begin{mainquestion}\n" .. tex .. "\n\\end{mainquestion}")
+    elseif cls == "qblock" then
+      local title = trimnl(latex(d.content[1].content, false)):gsub("\n+", " ")
+      local rest = pandoc.List()
+      for k = 2, #d.content do rest:insert(d.content[k]) end
+      local q
+      if rest[1] and rest[1].t == "Div" and rest[1].classes[1] == "qtext" then
+        q = trimnl(latex(rest[1].content, false)):gsub("\n+", " ")
+        rest:remove(1)
+        local key = d.attributes["key"]
+        if not key:find("?", 1, true) and not q:match("^%s*%d") then q = key:gsub("^(%d+)%(", "%1.(") .. " " .. q end
+      end
+      q = q or PP.qtext[d.attributes["key"]] or title
+      local out = pandoc.List({ rawb("\\begin{questionblock}[" .. title .. "]{" .. soul_safe(q) .. "}") })
+      out:extend(rest); out:insert(rawb("\\end{questionblock}"))
+      return out
     elseif cls == "selfcheck" then
       if contains_table(d.content) then return d.content end
       return box("selfcheckbox", nil, d.content)
@@ -670,6 +807,11 @@ local block_filter = {
   end,
   Header = function(h)
     local title = latex(h.content, true)
+    if STRUCT == "past-paper" then   -- ### Answer -> \answer, other ### -> \subsection, #### -> \subsubsection*
+      local name = stringify(h.content):lower():gsub("^%s+", ""):gsub("%s+$", "")
+      if h.level <= 3 then return rawb(SECTION_CMD[name] or ("\\subsection{" .. title .. "}")) end
+      return rawb("\\subsubsection*{" .. title .. "}")
+    end
     local lbl = h.attributes["label"]
     local cmds
     if CLASS == "extreport" then cmds = { "chapter", "section", "subsection", "subsubsection" }

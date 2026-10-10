@@ -1,6 +1,6 @@
 ---
 name: engineering-docs
-description: "Writes and builds engineering documents in Nur Mohammad's house LaTeX style and compiles them to interactive PDFs with XeLaTeX: lecture and theory notes, formula sheets, question banks, derivation and exam sheets, and multi-day project or lab reports, each kind with its own document type and writing guide. English, or Bangla with English technical terms. Covers the whole path: writing the Markdown content when asked, converting Markdown to house-style LaTeX (draft converter plus rules), and building the PDF with the bundled preamble, cover page, callout boxes, linked question/solution boxes and links between PDFs. Use whenever the user wants notes, solutions, a report or exam material as a PDF or .tex in \"my format\" or \"my LaTeX style\", even if they never say LaTeX, or asks how a Markdown element renders in this style. When converting the user's finished Markdown, content is preserved exactly (grammar fixes only)."
+description: "Writes and builds engineering documents in Nur Mohammad's house LaTeX style and compiles them to interactive PDFs with XeLaTeX: lecture and theory notes, formula sheets, question banks, derivation and exam sheets, full solutions of previous years' exam papers, and multi-day project or lab reports, each kind with its own document type and writing guide. English, or Bangla with English technical terms. Covers the whole path: writing the Markdown content when asked, converting Markdown to house-style LaTeX (draft converter plus rules), and building the PDF with the bundled preamble, cover page, callout boxes, linked question/solution boxes and links between PDFs. Use whenever the user wants notes, solutions, a report or exam material as a PDF or .tex in \"my format\" or \"my LaTeX style\", even if they never say LaTeX, or asks how a Markdown element renders in this style. When converting the user's finished Markdown, content is preserved exactly (grammar fixes only)."
 ---
 
 # Engineering documents in the house LaTeX style
@@ -42,11 +42,12 @@ Never edit the bundled preamble to suit one document. If the user changes their 
 
 ## Document types
 
-A type is a preset for one kind of document. `--type NAME` on `md2tex.py` and `build.py` loads `types/NAME/type.json`, and flags you pass yourself still win. Before writing or converting a document of that kind, read `types/NAME/guide.md`: it says how to write the content and which rules differ from the defaults in this file and the references.
+A type is a preset for one kind of document. `--type NAME` on `md2tex.py` and `build.py` (or `type:` in the front matter) loads `types/NAME/type.json`, and flags you pass yourself still win. A type may also bring its own `preamble.tex` with commands only it uses; the build loads it after the house preamble. Before writing or converting a document of that kind, read `types/NAME/guide.md`: it says how to write the content and which rules differ from the defaults in this file and the references.
 
 | Type | For |
 |---|---|
 | `project-report` | Multi-day project or lab reports (RTL-to-GDSII flow): one chapter per day, `extreport` at 14pt |
+| `past-paper` | Solutions of a previous year's exam paper: the paper's questions with marks, then a solution block per sub-part (Theory, Answer, Keyword Explanation, Notes and Remarks, Final Concise Answer) |
 
 Study notes (theory, formula sheets, question banks) use the defaults and need no type yet. When the user wants a kind of document that has no type, use the closest defaults, then offer to add a type for it.
 
