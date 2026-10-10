@@ -1,0 +1,4 @@
+EEE329: Basic Communication Engineering — Term Final, Session 2021-22
+
+1. (a) A carrier wave of frequency 10 MHz and peak value 10 V is amplitude-modulated by a 5 kHz sine wave of amplitude 6 V. Determine the modulation index, the side frequencies and the amplitude of the side frequencies.   Marks: 4
+   (b) Five channels, each with 100 kHz bandwidth, are frequency-division multiplexed. What is the minimum bandwidth of the link if a guard band of 10 kHz is needed between the channels?   Marks: 5

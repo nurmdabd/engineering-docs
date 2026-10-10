@@ -1,0 +1,21 @@
+Day 3 — placement, picorv32a, OpenLane (sky130A)
+
+$ ./flow.tcl -interactive
+% prep -design picorv32a
+[INFO]: Using design configuration at /openLANE_flow/designs/picorv32a/config.tcl
+% run_synthesis
+[INFO]: Synthesis was successful
+% run_floorplan
+[INFO]: Core area: 0 0 551.17 562.85 (um)
+% run_placement
+[INFO]: Running global placement...
+[INFO]: Overflow 0.0995 at iteration 512
+[INFO]: Global placement done
+[INFO]: Running detailed placement...
+[INFO]: Detailed placement done. Legalized 13850 cells.
+
+Notes I took:
+- placement first global (overflow must drop below 0.1), then detailed (legalization onto rows)
+- result DEF: runs/03-10_09-12/results/placement/picorv32a.placement.def
+- viewed it in magic: cells sit on standard cell rows, no overlaps
+- repo: https://github.com/The-OpenROAD-Project/OpenLane

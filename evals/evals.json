@@ -1,0 +1,84 @@
+{
+  "skill_name": "engineering-docs",
+  "evals": [
+    {
+      "id": 0,
+      "name": "past-paper-solutions",
+      "prompt": "here is question 1 of my EEE329 term final, session 2021-22 (eee329-2021-q1.txt). make me the full solution pdf in my past paper format, like my 2020-21 solutions",
+      "expected_output": "A past-paper Markdown (type past-paper) with the paper block copied exactly with marks, one solution block per part with Answer sections, a Final Concise Answer, correct numbers, and a clean PDF.",
+      "files": ["evals/files/eee329-2021-q1.txt"],
+      "assertions": [
+        "front matter sets type: past-paper",
+        "linter reports no errors",
+        "PDF builds with a clean log",
+        "paper block keeps both parts with Marks 4 and Marks 5",
+        "question text copied exactly (key phrase of 1(b) present)",
+        "one solution heading per part: 1(a) and 1(b)",
+        "a Final Concise Answer section exists",
+        "1(a) results correct: m = 0.6, 9.995 and 10.005 MHz, 3 V",
+        "1(b) result correct: 540 kHz"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "formula-sheet",
+      "prompt": "Can you make a formula sheet PDF in my format from my FM notes (fm-theory.md)? Every formula, with what each symbol means.",
+      "expected_output": "A formula-sheet Markdown (type formula-sheet) with Title | Equation | Notation | Reference tables holding every formula of the notes unchanged, and a clean PDF.",
+      "files": ["evals/files/fm-theory.md"],
+      "assertions": [
+        "front matter sets type: formula-sheet",
+        "linter reports no errors",
+        "PDF builds with a clean log",
+        "uses the Title | Equation | Notation | Reference table",
+        "every display formula of the notes appears on the sheet",
+        "every table row has a non-empty Notation cell"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "question-bank",
+      "prompt": "write 3 practice numericals on FM peak deviation and Carson's rule with full solutions, based on my notes fm-theory.md, as a question bank pdf in my style",
+      "expected_output": "A question-bank Markdown (type question-bank) with N1-N3 and their linked solutions, results in bold with units, and a clean PDF.",
+      "files": ["evals/files/fm-theory.md"],
+      "assertions": [
+        "front matter sets type: question-bank",
+        "linter reports no errors",
+        "PDF builds with a clean log",
+        "three numericals N1, N2, N3, each with its #### Solution",
+        "every solution states a bold result",
+        "solutions use Carson's rule as written in the notes (2(Δf + B))"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "convert-finished-notes",
+      "prompt": "fm-theory.md is a finished part of my COM notes. Turn it into a PDF in my LaTeX style, don't change my content.",
+      "expected_output": "The notes converted unchanged (only front matter or a title added), every equation preserved, and a clean PDF.",
+      "files": ["evals/files/fm-theory.md"],
+      "assertions": [
+        "PDF builds with a clean log",
+        "linter reports no errors",
+        "every equation of the notes is in the Markdown unchanged",
+        "no sentence of the notes was removed or reworded",
+        "every display equation reaches the LaTeX body"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "project-report-day",
+      "prompt": "Turn my day 3 log (day-03-log.txt) into the Day 3 chapter of my RTL-to-GDSII lab report and build the pdf.",
+      "expected_output": "A project-report Markdown (type project-report) with a Day 03 chapter, Command/Output Snippet blocks taken from the log, the log's real numbers only, the repo as a repocard, and a clean PDF.",
+      "files": ["evals/files/day-03-log.txt"],
+      "assertions": [
+        "front matter sets type: project-report",
+        "linter reports no errors",
+        "PDF builds with a clean log",
+        "a '# Day 03' (or Day 3) chapter heading",
+        "Command and Output Snippet labels used for the flow commands",
+        "the log's results are reported: 13850 cells, overflow 0.0995, core area 551.17 x 562.85",
+        "no invented numbers: every number of 3+ digits in the Markdown appears in the log",
+        "the OpenLane repo is given as a repocard"
+      ]
+    }
+  ]
+}
