@@ -146,6 +146,8 @@
 \providecommand{\ReportHeaderRight}{}
 \fancyhead[R]{\ifdefempty{\ReportHeaderRight}{}{\ReportHeaderRight\ }\hyperlink{toc}{\fbox{\small TOC}}}
 \fancyfoot[C]{\thepage}
+% Keep the header as wide as the text when a type or --margin-x changes the margins after this point
+\AtBeginDocument{\setlength{\headwidth}{\textwidth}}
 \setlength{\headheight}{0pt}
 
 % ---------- Question box ----------
