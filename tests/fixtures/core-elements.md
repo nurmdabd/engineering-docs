@@ -23,6 +23,10 @@ line break inside the paragraph.
 
 Text under a level-four heading.
 
+#### Is this a question?
+
+A run-in label that ends with a question mark gets no colon.
+
 ## 2 Tables
 
 | ID | Module | Description |

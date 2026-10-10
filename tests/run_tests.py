@@ -2,7 +2,7 @@
 """
 run_tests.py -- regression tests for the converter and the build.
 
-    python3 tests/run_tests.py            # convert every fixture, compare with tests/expected/
+    python3 tests/run_tests.py            # convert every fixture, compare with tests/expected/; lint tests/lint/*.md
     python3 tests/run_tests.py --update   # accept the current output as the new expected output
     python3 tests/run_tests.py --build    # also compile every expected body and the example; each log must be clean,
                                           # and the PDF text must match a case's pdf_has / pdf_lacks lists
@@ -28,6 +28,7 @@ SKILL = TESTS.parent
 FIXTURES = TESTS / "fixtures"
 EXPECTED = TESTS / "expected"
 MD2TEX = SKILL / "scripts" / "md2tex.py"
+LINT = SKILL / "scripts" / "lint_md.py"
 BUILD = SKILL / "scripts" / "build.py"
 
 
@@ -73,19 +74,47 @@ def run_cases(cases, update):
         name = case["name"]
         # Convert next to the fixture so relative figure paths come out exactly as in expected/
         out = FIXTURES / f".{name}.out.tex"
+        side = out.with_suffix(".build.json")   # build settings md2tex writes from front matter, if any
         try:
-            actual = convert(FIXTURES / f"{name}.md", out, case.get("md2tex", []))
+            results = {".tex": convert(FIXTURES / f"{name}.md", out, case.get("md2tex", []))}
+            if side.exists():
+                results[".build.json"] = side.read_text(encoding="utf-8")
         finally:
             out.unlink(missing_ok=True)
-        exp = EXPECTED / f"{name}.tex"
+            side.unlink(missing_ok=True)
+        for ext in (".tex", ".build.json"):
+            exp, actual = EXPECTED / f"{name}{ext}", results.get(ext)
+            if actual is None:
+                if exp.exists():
+                    failed += 1
+                    print(f"CHANGED  {name}{ext}: no longer produced")
+                continue
+            if update or not exp.exists():
+                exp.write_text(actual, encoding="utf-8")
+                print(f"updated  {name}{ext}")
+            elif exp.read_text(encoding="utf-8") == actual:
+                print(f"ok       {name}{ext}")
+            else:
+                failed += 1
+                print(f"CHANGED  {name}{ext}\n{diff(exp.read_text(encoding='utf-8'), actual, name + ext)}")
+    return failed
+
+
+def run_lint(update):
+    """lint_md.py on each tests/lint/*.md must print exactly tests/lint/NAME.expected."""
+    failed = 0
+    for md in sorted((TESTS / "lint").glob("*.md")):
+        r = subprocess.run([sys.executable, str(LINT), md.name], cwd=md.parent, capture_output=True, text=True)
+        actual = r.stdout + r.stderr
+        exp = md.with_suffix(".expected")
         if update or not exp.exists():
             exp.write_text(actual, encoding="utf-8")
-            print(f"updated  {name}")
+            print(f"updated  lint {md.name}")
         elif exp.read_text(encoding="utf-8") == actual:
-            print(f"ok       {name}")
+            print(f"ok       lint {md.name}")
         else:
             failed += 1
-            print(f"CHANGED  {name}\n{diff(exp.read_text(encoding='utf-8'), actual, name + '.tex')}")
+            print(f"CHANGED  lint {md.name}\n{diff(exp.read_text(encoding='utf-8'), actual, md.stem + '.expected')}")
     return failed
 
 
@@ -110,12 +139,16 @@ def run_builds(cases):
     for case in cases:
         if case.get("build", True):
             body = FIXTURES / f".{case['name']}.tex"   # beside the fixture, so figures/ resolves
+            side = body.with_suffix(".build.json")
             body.write_text((EXPECTED / f"{case['name']}.tex").read_text(encoding="utf-8"), encoding="utf-8")
+            if (EXPECTED / f"{case['name']}.build.json").exists():
+                side.write_text((EXPECTED / f"{case['name']}.build.json").read_text(encoding="utf-8"), encoding="utf-8")
             try:
                 failed += build_one(body, case.get("build_flags", []), case["name"],
                                     case.get("pdf_has", []), case.get("pdf_lacks", []))
             finally:
                 body.unlink(missing_ok=True)
+                side.unlink(missing_ok=True)
     return failed
 
 
@@ -157,7 +190,7 @@ def main():
         failed = corpus(a.corpus, a.snapshot or a.compare, "snapshot" if a.snapshot else "compare")
     else:
         cases = json.loads((TESTS / "cases.json").read_text())
-        failed = check_skill() + run_cases(cases, a.update)
+        failed = check_skill() + run_cases(cases, a.update) + run_lint(a.update)
         if a.build:
             failed += run_builds(cases)
     print("\nAll passed." if not failed else f"\n{failed} failed.")

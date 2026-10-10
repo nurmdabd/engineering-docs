@@ -6,6 +6,7 @@ template, compile with XeLaTeX, and report problems from the log.
 Usage:
     python3 build.py BODY.tex [BODY2.tex ...] --out OUT.pdf
         [--type NAME]                         # load the default flags of types/NAME/type.json (explicit flags win)
+    Settings from front matter: BODY.build.json beside the first body (written by md2tex.py) is applied first.
         [--title "Line 1" --title "Line 2"]   # title lines on page 1 (default: body file name)
         [--header "Running header text"]      # left page header (default: titles joined)
         [--author "Nur Mohammad"]
@@ -32,6 +33,7 @@ import sys
 from pathlib import Path
 
 import doctype
+import json
 
 SKILL = Path(__file__).resolve().parents[1]
 TEMPLATE = SKILL / "template"
@@ -106,6 +108,21 @@ def report(log_path):
     print("\n".join(lines) if lines else "Log clean: no errors, undefined references, missing glyphs or big overfull lines.")
 
 
+REPEATED = ("--title", "--cover-contents")   # options that collect values; the user's replace the sidecar's
+
+
+def with_sidecar(argv):
+    """Put the first body's NAME.build.json settings (written by md2tex.py from front matter) before argv."""
+    body = next((Path(x) for x in argv[1:] if x.endswith(".tex")), None)
+    sidecar = body.with_suffix(".build.json") if body else None
+    if not sidecar or not sidecar.exists():
+        return argv
+    saved = json.loads(sidecar.read_text(encoding="utf-8")).get("build", [])
+    kept = [x for item in saved if not (item[0] in REPEATED and item[0] in argv) for x in item]
+    print(f"settings from {sidecar.name}: {' '.join(kept)}")
+    return [argv[0], *kept, *argv[1:]]
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("bodies", nargs="+", type=Path)
@@ -129,7 +146,7 @@ def main():
     ap.add_argument("--date")
     ap.add_argument("--cover-dir", type=Path)
     ap.add_argument("--build-dir", type=Path)
-    a = ap.parse_args(doctype.expand(sys.argv, "build")[1:])
+    a = ap.parse_args(doctype.expand(with_sidecar(sys.argv), "build")[1:])
 
     out = a.out.resolve()
     build = (a.build_dir or out.parent / f"{out.stem}_build").resolve()

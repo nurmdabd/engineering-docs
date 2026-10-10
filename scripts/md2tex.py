@@ -14,6 +14,9 @@ Usage:
 
 Prints the suggested --title lines for build.py (from YAML title/subtitle, else the first # heading,
 which is then removed from the body).
+
+Front matter (scripts/frontmatter.py): `type` and `lang: bn` set this script's flags; every build setting
+(type, cover fields, header, ...) is written to OUT.build.json, which build.py reads. Explicit flags win.
 Needs pandoc >= 3.0 and Pillow (image sizes).
 """
 import argparse
@@ -25,19 +28,10 @@ import sys
 from pathlib import Path
 
 import doctype
+import frontmatter
+import slugs
 
 HERE = Path(__file__).resolve().parent
-
-
-def front_matter(text):
-    m = re.match(r"^---\n(.*?)\n---\n", text, re.S)
-    meta = {}
-    if m:
-        for line in m.group(1).splitlines():
-            k, _, v = line.partition(":")
-            meta[k.strip()] = v.strip().strip('"').strip("'")
-        return meta, text[m.end():]
-    return meta, text
 
 
 def image_width(path):
@@ -83,13 +77,16 @@ def main():
     ap.add_argument("--fontsize", default="12pt")
     ap.add_argument("--bangla", action="store_true", help="wrap Bangla text runs in \\bn{...} (build with build.py --bangla)")
     ap.add_argument("--textwidth", type=float, default=17.4, help="text width in cm (17.4 for the house .7in margins)")
-    a = ap.parse_args(doctype.expand(sys.argv, "md2tex")[1:])
+    first = ap.parse_known_args()[0]          # only to find the Markdown file and read its front matter
+    meta, body, problems = frontmatter.split(first.md.read_text(encoding="utf-8"))
+    for p in problems:
+        print(f"warning: {first.md.name}: {p}", file=sys.stderr)
+    argv = [sys.argv[0], *frontmatter.md2tex_flags(meta), *sys.argv[1:]]
+    a = ap.parse_args(doctype.expand(argv, "md2tex")[1:])
 
     md = a.md.resolve()
     out = a.out.resolve()
     out.parent.mkdir(parents=True, exist_ok=True)
-    text = md.read_text(encoding="utf-8")
-    meta, body = front_matter(text)
     titles = [t for t in (meta.get("title"), meta.get("subtitle")) if t]
     # Otherwise the first # heading is the title. Exception: in extreport, several # headings are chapters
     # (day-01, day-02, ...) and all stay in the body. Lines inside code fences are not headings.
@@ -103,7 +100,8 @@ def main():
 
     cmd = ["pandoc", "-f", "markdown+lists_without_preceding_blankline-fancy_lists-implicit_figures",
            "-t", "latex", "--wrap=none", "--lua-filter", str(HERE / "house.lua"),
-           "-M", f"house_class={a.cls}", "-M", f"house_fontsize={a.fontsize}", "-M", f"house_textwidth={a.textwidth}"]
+           "-M", f"house_class={a.cls}", "-M", f"house_fontsize={a.fontsize}", "-M", f"house_textwidth={a.textwidth}",
+           "-M", "house_gfm=" + " ".join(slugs.heading_slugs(body))]   # GitHub anchors, so [..](#gh-anchor) links work
     r = subprocess.run(cmd, input=body, capture_output=True, text=True)
     if r.returncode:
         sys.exit(r.stderr)
@@ -124,6 +122,13 @@ def main():
     tex = re.sub(r"\n{3,}", "\n\n", tex).strip() + "\n"
     header = f"% Generated from {md.name} by md2tex.py, then reviewed against SKILL.md.\n\n"
     out.write_text(header + tex, encoding="utf-8")
+    sidecar = out.with_suffix(".build.json")
+    build = frontmatter.build_flags(meta)
+    if build:
+        items = ",\n  ".join(json.dumps(x, ensure_ascii=False) for x in build)   # one option per line
+        sidecar.write_text(f'{{\n "source": {json.dumps(md.name, ensure_ascii=False)},\n "build": [\n  {items}\n ]\n}}\n', encoding="utf-8")
+    else:
+        sidecar.unlink(missing_ok=True)
     print(json.dumps({"titles": titles}, ensure_ascii=False))
 
 

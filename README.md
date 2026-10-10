@@ -9,9 +9,9 @@ A Claude Code skill that turns engineering Markdown into LaTeX in Nur Mohammad's
 | Path | What it is |
 |---|---|
 | `SKILL.md` | Workflow, output rules, when to ask |
-| `references/` | Detailed rules: `latex-rules.md` (Sections 1–12), `pdf-links.md` (13), `bangla.md` (14) |
+| `references/` | `authoring.md` (how to write the Markdown), `latex-rules.md` (Sections 1–12), `pdf-links.md` (13), `bangla.md` (14) |
 | `template/` | House preamble, `main.tex`, study-notes cover page |
-| `scripts/` | `setup.sh`, `md2tex.py` + `house.lua` (converter), `check_structure.py`, `build.py` |
+| `scripts/` | `setup.sh`, `lint_md.py` (Markdown checks), `md2tex.py` + `house.lua` (converter), `check_structure.py`, `build.py` |
 | `examples/` | A body file that uses every rule |
 | `types/` | Document types: default flags (`type.json`) and a writing and layout guide (`guide.md`) per type |
 | `tests/` | Regression tests: `python3 tests/run_tests.py --build` |

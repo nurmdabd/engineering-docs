@@ -7,6 +7,7 @@ Driven by md2tex.py; not meant to be called directly. Metadata options:
 
 local stringify = pandoc.utils.stringify
 local CLASS, FONTPT, TEXTW = "extarticle", 12, 17.4
+local GFM = {}            -- GitHub anchors of the top-level headings, in order (meta house_gfm)
 
 local function latex(blocks_or_inlines, is_inline)
   local doc
@@ -92,11 +93,12 @@ local meta_filter = {
     if m.house_class then CLASS = stringify(m.house_class) end
     if m.house_textwidth then TEXTW = tonumber(stringify(m.house_textwidth)) or 17.4 end
     if m.house_fontsize then FONTPT = tonumber((stringify(m.house_fontsize):gsub("pt", ""))) or 12 end
+    if m.house_gfm then for w in stringify(m.house_gfm):gmatch("%S+") do GFM[#GFM + 1] = w end end
   end,
 }
 
 -- ---------- pass 2: document structure ----------
-local idmap = {}          -- md anchor id -> latex label
+local idmap = {}          -- md anchor id -> latex label (pandoc's ids, and GitHub's anchors from md2tex.py)
 local Q_PAT = "^%u%u?%d+%a?$"            -- N1, S12, L3, Q4a
 local S_PAT = "^Solution%s+(%u%u?%d+%a?)$"
 
@@ -211,6 +213,14 @@ local structure_filter = {
         if q then idmap[b.identifier] = unique("q:" .. slug(q))
         elseif s then idmap[b.identifier] = unique("sol:" .. slug(s))
         else idmap[b.identifier] = unique(id_to_label(b.identifier)) end
+      end
+    end
+    -- GitHub anchors: the n-th heading md2tex.py saw is the n-th top-level Header, if the counts agree
+    local heads = {}
+    for _, b in ipairs(blocks) do if b.t == "Header" then heads[#heads + 1] = b end end
+    if #heads == #GFM then
+      for n, b in ipairs(heads) do
+        if not idmap[GFM[n]] then idmap[GFM[n]] = idmap[b.identifier] end
       end
     end
     local i = 1
@@ -665,8 +675,9 @@ local block_filter = {
     if CLASS == "extreport" then cmds = { "chapter", "section", "subsection", "subsubsection" }
     else cmds = { "section", "subsection", "subsubsection" } end
     local cmd = cmds[h.level]
-    if not cmd then
-      return rawb("\\phantomsection\\label{" .. lbl .. "}\\textbf{" .. title .. ":}")
+    if not cmd then   -- run-in label; like \addcolon, no colon after a title that ends in punctuation
+      local colon = stringify(h.content):match("[%?!%.:]%s*$") or stringify(h.content):match("।%s*$")
+      return rawb("\\phantomsection\\label{" .. lbl .. "}\\textbf{" .. title .. (colon and "" or ":") .. "}")
     end
     local keep = h.attributes["keep"] and "\\needspace{10\\baselineskip}\n" or ""
     return rawb(keep .. "\\" .. cmd .. "{" .. title .. "}\n\\label{" .. lbl .. "}")

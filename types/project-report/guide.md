@@ -12,6 +12,7 @@ python3 <skill>/scripts/build.py latex/day-01.tex latex/day-02.tex --out Report.
     --title "RTL-to-GDSII Flow:" --title "Lab Report" --header "RTL-to-GDSII Flow Report"
 ```
 
+- **Front matter instead of flags:** put `type: project-report` (and `title`, `subtitle`, `header`, cover fields) at the top of the Markdown; then `md2tex.py day-01.md -o latex/day-01.tex` and `build.py latex/day-01.tex … --out Report.pdf` need no flags (`references/authoring.md`).
 - **One body file per day,** for example `day-01.tex`, `day-02.tex`, built together into one PDF.
 - **Labels:** prefix them per day (`sec:d01_…`), because labels must be unique across the whole build.
 - **No cover by default.** Add `--cover` with the cover fields if the report needs one.

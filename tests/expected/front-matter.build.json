@@ -1,0 +1,17 @@
+{
+ "source": "front-matter.md",
+ "build": [
+  ["--title", "RTL-to-GDSII Flow:"],
+  ["--title", "Lab Report"],
+  ["--type", "project-report"],
+  ["--header", "RTL-to-GDSII Flow Report"],
+  ["--date", "October 2026"],
+  ["--cover"],
+  ["--course-code", "VLSI"],
+  ["--course-name", "Physical Design Lab"],
+  ["--cover-title", "Lab Report"],
+  ["--cover-subtitle", "Days 1--2"],
+  ["--cover-contents", "Synthesis and floorplan"],
+  ["--cover-contents", "Commands, outputs and results"]
+ ]
+}

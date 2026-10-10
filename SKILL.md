@@ -9,6 +9,7 @@ Read this file first. It is the workflow; the detailed rules are in `references/
 
 | File | Read it when |
 |---|---|
+| `references/authoring.md` | Writing or checking Markdown: front matter, and how each construct must be written so it converts cleanly |
 | `references/latex-rules.md` | Converting or reviewing LaTeX: custom commands, and Sections 1–12 (headings, inline text, lists, tables, code, figures, maths, cross-references, repo blocks, Unicode, callouts and questions, `mainquestion`/`eqnote`) |
 | `references/pdf-links.md` | Building several PDFs that link to each other (Section 13) |
 | `references/bangla.md` | The document is in Bangla (Section 14) |
@@ -19,7 +20,7 @@ Section numbers (0–14) are shared across these files, so "Section 7" always me
 ## Two ways this skill is used
 
 1. **Convert the user's finished Markdown.** Preserve the content exactly; fix grammar only. Never summarize, trim, add or reword explanations.
-2. **Write the content, then build.** When the user asks Claude to produce the document (solutions, a report section, notes), first read the type's `guide.md`. Write the Markdown so it already follows the conventions the converter expects (headings without a trailing colon, `**Label:**` lead-ins, `> ⚠`/`> 🎯`/`> 📌` callouts, `#### N1` questions, `$$ … $$` equations; see `references/latex-rules.md`). Never invent data the user has to supply, such as measured results or exam questions. **Show the Markdown to the user and get it approved before building;** from then on it is finished Markdown and mode 1 applies.
+2. **Write the content, then build.** When the user asks Claude to produce the document (solutions, a report section, notes), first read the type's `guide.md`. Write the Markdown to `references/authoring.md` (front matter with the type, headings without a trailing colon, `**Label:**` lead-ins, `> ⚠`/`> 🎯`/`> 📌` callouts, `#### N1` questions, `$$ … $$` equations), and run the linter on it until it reports no errors. Never invent data the user has to supply, such as measured results or exam questions. **Show the Markdown to the user and get it approved before building;** from then on it is finished Markdown and mode 1 applies.
 
 ## Bundled files
 
@@ -29,7 +30,8 @@ Section numbers (0–14) are shared across these files, so "Section 7" always me
 | `template/main.tex` | The user's main-file layout: title lines, TOC with the `toc` anchor, "Created by …", `\newpage`, then `\include` of each body file. A cover page is included automatically if `cover-page-preamble.tex` and `cover-page-main.tex` are present in the build. It also passes hyperref's `destlabel` option (Section 13). |
 | `template/cover-page-*.tex` | The **study-notes cover page** (course code band, document title, subtitle, note, optional "Inside" box, author and date). It is filled by `build.py --cover …`. The user's other covers are for other purposes; pass `--cover-dir` to use one of those instead. |
 | `scripts/md2tex.py` + `scripts/house.lua` | A pandoc-based **draft converter** that applies the mechanical rules: headings, labels, table tiers, equations, figures, callouts, question/solution boxes, `eqnote` and Unicode. Its output still gets the Step 3 review. |
-| `scripts/setup.sh` | Installs XeLaTeX and every package the preamble loads (Debian/Ubuntu). Re-running it is safe. |
+| `scripts/setup.sh` | Installs XeLaTeX, every package the preamble loads, pandoc, PyYAML and Pillow (Debian/Ubuntu). Re-running it is safe. |
+| `scripts/lint_md.py` | Checks Markdown against `references/authoring.md` before converting: front matter, headings, questions and solutions, links, images, equations, glyphs. |
 | `scripts/check_structure.py` | A fast check for unbalanced braces and `\begin`/`\end` pairs, with no compile. |
 | `scripts/build.py` | Fills the template, compiles with latexmk/XeLaTeX, and summarizes errors, undefined references, **missing glyphs** and wide overfull lines. |
 | `examples/example-body.tex` | A body file that uses every rule. It compiles clean, so copy its patterns. |
@@ -55,7 +57,12 @@ Study notes (theory, formula sheets, question banks) use the defaults and need n
 bash <skill>/scripts/setup.sh
 ```
 
-### Step 2: Convert (draft)
+### Step 2: Lint, then convert (draft)
+Check the Markdown first. Fix every error; for each warning, fix it or confirm the result is what the user wants:
+```bash
+python3 <skill>/scripts/lint_md.py NOTES.md
+```
+
 Write one `.tex` body file per logical document part, for example one per lecture or day, or one per sheet. Each file is raw body content that starts at its outermost heading. Save it in a `latex/` folder beside the Markdown so image paths resolve.
 
 For anything longer than a page, draft it with the converter instead of typing it out:
@@ -64,10 +71,12 @@ python3 <skill>/scripts/md2tex.py NOTES.md -o latex/NOTES.tex [--class extarticl
 ```
 The converter prints the suggested `--title` lines: the YAML `title`/`subtitle`, or else the first `#` heading, which it then removes from the body.
 
+**Front matter** (`references/authoring.md`) does the flag work: `type` and `lang: bn` set the converter's flags, and every build setting (type, cover fields, header, titles) is saved to `latex/NOTES.build.json`, which Step 4 applies automatically. For a document with front matter, `md2tex.py NOTES.md -o latex/NOTES.tex` and `build.py latex/NOTES.tex --out NOTES.pdf` are enough.
+
 ### Step 3: Review the draft, then check its structure
 The converter cannot make the judgement calls. Read the draft against Section 0 below and `references/latex-rules.md`, and fix by hand:
 - **`\keyterm` vs plain:** the converter turns every bold span into `\keyterm`, except short all-lowercase stress words like "not" or "before", which become `\emph`.
-- **Captions** that came out generic, for example "Summary" or a repeated section title.
+- **Captions** that came out generic, for example "Listing" or a repeated section title. Better: set them in the Markdown (`Table:` lines, `caption=` on code blocks; `references/authoring.md`).
 - **Ambiguous callouts:** any blockquote whose box type is unclear.
 - **Columns** that the page render (Step 5) shows wrapping badly.
 
@@ -88,6 +97,7 @@ python3 <skill>/scripts/build.py body1.tex [body2.tex ...] --out path/Name.pdf \
      --cover-contents "Item" --cover-contents "Item" --date "October 2026"]
 ```
 
+- **Settings from front matter:** if `NAME.build.json` sits beside the first body, its settings are applied first and printed. A flag you pass overrides it; your `--title` or `--cover-contents` lines replace the saved ones.
 - **Cover page:** add `--cover` for study notes and exam material. The cover fields are raw LaTeX, so write `--` for an en-dash and `\&` for `&`. Use `--cover-dir DIR` to use another cover pair instead.
 - **Several documents:** when one project produces several PDFs, write a small `build-all.sh` next to the bodies that calls `build.py` once per document. Commit it so the PDFs can be rebuilt later.
 

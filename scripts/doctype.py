@@ -18,16 +18,22 @@ def available():
 
 
 def expand(argv, tool):
-    """Return argv with --type NAME replaced by that type's default flags for `tool` ('md2tex' or 'build')."""
-    if "--type" not in argv:
-        return argv
-    i = argv.index("--type")
-    if i + 1 >= len(argv):
-        sys.exit("--type needs a name: " + ", ".join(available()))
-    name = argv[i + 1]
-    spec = TYPES / name / "type.json"
-    if not spec.exists():
-        sys.exit(f"unknown document type '{name}'. Available: " + ", ".join(available()))
-    defaults = json.loads(spec.read_text(encoding="utf-8")).get(tool, [])
-    rest = argv[1:i] + argv[i + 2:]
+    """Return argv with each --type NAME replaced by that type's default flags for `tool` ('md2tex' or 'build').
+
+    The defaults go in front of everything else, in order, so a later --type (the user's) beats an earlier one
+    (from front matter) and any flag given explicitly beats them all.
+    """
+    defaults, rest, i = [], [], 1
+    while i < len(argv):
+        if argv[i] != "--type":
+            rest.append(argv[i]); i += 1
+            continue
+        if i + 1 >= len(argv):
+            sys.exit("--type needs a name: " + ", ".join(available()))
+        name = argv[i + 1]
+        spec = TYPES / name / "type.json"
+        if not spec.exists():
+            sys.exit(f"unknown document type '{name}'. Available: " + ", ".join(available()))
+        defaults += json.loads(spec.read_text(encoding="utf-8")).get(tool, [])
+        i += 2
     return [argv[0], *defaults, *rest]

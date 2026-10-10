@@ -1,6 +1,7 @@
 [
-  {"name": "core-elements"},
+  {"name": "core-elements", "pdf_has": ["Is this a question?\n", "Deepest heading:"], "pdf_lacks": ["question?:"]},
   {"name": "study-callouts"},
   {"name": "report-chapters", "md2tex": ["--type", "project-report"], "build_flags": ["--type", "project-report"], "pdf_has": ["What is a floorplan?\n", "Placement result:\n", "Objective:\n"], "pdf_lacks": ["floorplan?:", "result::"]},
-  {"name": "bangla", "md2tex": ["--bangla"], "build_flags": ["--bangla"]}
+  {"name": "bangla", "md2tex": ["--bangla"], "build_flags": ["--bangla"]},
+  {"name": "front-matter", "pdf_has": ["Physical Design Lab", "Synthesis and floorplan", "Why does the flop ratio matter?\n", "Day 01: Synthesis"], "pdf_lacks": ["matter?:"]}
 ]
