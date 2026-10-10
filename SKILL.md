@@ -1,5 +1,5 @@
 ---
-name: latex-engineering-pdf
+name: engineering-docs
 description: Converts finalized Engineering Markdown (English, or Bangla with English technical terms) (lecture notes, theory files, lab reports, study sheets, question banks, day-0X write-ups) into LaTeX in Nur Mohammad's house style AND compiles it to a finished, interactive PDF right here with XeLaTeX — bundled preamble, main.tex template, study-notes cover page, callout boxes, question/solution links, and a Markdown→LaTeX draft converter. No local MikTeX step needed. Use whenever the user asks to turn Markdown/notes into a PDF, a LaTeX/.tex file, "my format", "my LaTeX style", a report section, or an exam-ready PDF — even if they never say LaTeX. Also use when asked how a Markdown element (table, code block, equation, figure, list, repo reference) should render in this style. Content is preserved exactly — structural/formatting-only conversion (grammar fixes only).
 ---
 

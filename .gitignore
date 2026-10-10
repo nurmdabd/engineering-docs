@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*_build/
+*.aux
+*.log
+*.fdb_latexmk
+*.fls
+*.out
+*.toc
+*.xdv
