@@ -104,10 +104,9 @@ def main():
     out = a.out.resolve()
     out.parent.mkdir(parents=True, exist_ok=True)
     titles = [t for t in (meta.get("title"), meta.get("subtitle")) if t]
-    # Otherwise the first # heading is the title. Exception: in extreport, several # headings are chapters
-    # (day-01, day-02, ...) and all stay in the body. Lines inside code fences are not headings.
-    tops = re.findall(r"^# .+$", re.sub(r"^(```|~~~).*?^\1", "", body, flags=re.M | re.S), re.M)
-    if not titles and a.structure == "notes" and not (a.cls == "extreport" and len(tops) > 1):
+    # Otherwise the first # heading is the title, except in extreport, where every # heading is a chapter
+    # (day-01, day-02, ...) and stays in the body. Lines inside code fences are not headings.
+    if not titles and a.structure == "notes" and a.cls != "extreport":   # in extreport every # is a chapter
         m = re.search(r"^# (.+)$", body, re.M)
         if m:
             t = m.group(1).strip()
@@ -116,8 +115,9 @@ def main():
 
     # A file that starts at ## (an excerpt of longer notes) has its headings moved up one level, so ## is the
     # first numbered level instead of a sub-level under an empty "0".
-    shift = 1 if a.structure == "notes" and not tops and re.search(r"^## ", re.sub(r"^(```|~~~).*?^\1", "", body,
-                                                                                     flags=re.M | re.S), re.M) else 0
+    # (decided after the title is taken out: "# Title" + "## Sections" also starts at ##)
+    left = re.sub(r"^(```|~~~).*?^\1", "", body, flags=re.M | re.S)
+    shift = 1 if a.structure == "notes" and not re.search(r"^# ", left, re.M) and re.search(r"^## ", left, re.M) else 0
     cmd = ["pandoc", "-f", "markdown+lists_without_preceding_blankline-fancy_lists-implicit_figures",
            "-t", "latex", "--wrap=none", "--lua-filter", str(HERE / "house.lua"),
            "-M", f"house_class={a.cls}", "-M", f"house_fontsize={a.fontsize}", "-M", f"house_textwidth={a.textwidth}", "-M", f"house_structure={a.structure}", "-M", f"house_prefix={a.label_prefix}",

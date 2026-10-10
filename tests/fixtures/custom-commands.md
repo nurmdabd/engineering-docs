@@ -21,7 +21,7 @@ An example box with its default title.
 
 ## Registered spans
 
-The [carrier]{.keyterm} sits at $f_c$, the deviation is small [for NBFM]{.note}, and [jump back]{.golink label="sec:registered_boxes_from_markdown"} works.
+The [carrier]{.keyterm} sits at $f_c$, the deviation is small [for NBFM]{.note}, and [jump back]{.golink label="sec:registered_boxes_from_markdown"} works. The result is in [runs/03-10_09-12/results/placement/picorv32a.placement.def]{.normalpath}.
 
 ## This document's own command
 

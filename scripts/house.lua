@@ -461,6 +461,9 @@ local inline_filter = {
     if spec and spec.kind == "command" then
       local head = "\\" .. sp.classes[1] .. cmd_args(spec, sp.attributes, #spec.args > 0)
       if #spec.args == 0 then return raw(head) end
+      if RAW_ARG[spec.args[#spec.args]] then   -- a path or url: the command takes the text as typed, unescaped
+        return raw(head .. "{" .. stringify(sp.content) .. "}")
+      end
       local out = pandoc.List({ raw(head .. "{") }); out:extend(sp.content); out:insert(raw("}"))
       return out
     end

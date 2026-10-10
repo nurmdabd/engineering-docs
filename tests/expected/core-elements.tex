@@ -1,6 +1,6 @@
 % Generated from core-elements.md by md2tex.py, then reviewed against SKILL.md.
 
-\subsection{Headings and inline text}
+\section{Headings and inline text}
 \label{sec:headings_and_inline_text}
 
 \textbf{Objective:} check every core mapping in one file.
@@ -9,7 +9,7 @@
 
 A run-in line with \emph{italic} text and a hard line break inside the paragraph.
 
-\subsubsection{Lists}
+\subsection{Lists}
 \label{sec:lists}
 
 \begin{itemize}
@@ -30,16 +30,18 @@ A run-in line with \emph{italic} text and a hard line break inside the paragraph
     \item Step two
 \end{enumerate}
 
-\phantomsection\label{sec:deepest_heading}\textbf{Deepest heading:}
+\subsubsection{Deepest heading}
+\label{sec:deepest_heading}
 
 Text under a level-four heading.
 
-\phantomsection\label{sec:is_this_a_question}\textbf{Is this a question?}
+\subsubsection{Is this a question?}
+\label{sec:is_this_a_question}
 
 A run-in label that ends with a question mark gets no colon.
 
 \needspace{10\baselineskip}
-\subsection{Tables}
+\section{Tables}
 \label{sec:tables}
 
 \begin{tabularx}{\textwidth}{|c|x{3.7cm}|L|}
@@ -84,7 +86,7 @@ A run-in label that ends with a question mark gets no colon.
 \label{tab:tables_2}
 \end{tabularx}
 
-\subsection{Equations}
+\section{Equations}
 \label{sec:equations}
 
 \begin{equation}
@@ -131,7 +133,7 @@ where:
 }{\emph{Write also:} for FM, $\Delta f = k_f m_p/2\pi$; PM bandwidth grows with message frequency.}
 \end{eqnote}
 
-\subsection{Code}
+\section{Code}
 \label{sec:code}
 
 \begin{lstlisting}[language=bash, caption={Listing}]
@@ -150,7 +152,7 @@ project/
 \end{lstlisting}
 
 \needspace{10\baselineskip}
-\subsection{Figures}
+\section{Figures}
 \label{sec:figures}
 
 \begin{figure}[H]
@@ -170,7 +172,7 @@ project/
     \label{fig:missing}
 \end{figure}
 
-\subsection{Unicode and links}
+\section{Unicode and links}
 \label{sec:unicode_and_links}
 
 Bandwidth \texorpdfstring{$\approx$}{≈} 2(\texorpdfstring{$\beta$}{β} + 1)B, with \texorpdfstring{$\beta$}{β} \texorpdfstring{$\ge$}{≥} 0 and \texorpdfstring{$\theta$}{θ} \texorpdfstring{$\le$}{≤} \texorpdfstring{$\pi$}{π}. Signal \texorpdfstring{$\Rightarrow$}{⇒} noise, \okmark{} done, \nomark{} wrong, \warnmark{} careful, {\emojifont ★} key. Values: 10\texorpdfstring{$^{-6}$}{⁻⁶} s, x\texorpdfstring{$_{1}$}{₁}, ½ and 25 °C.

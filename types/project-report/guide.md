@@ -64,6 +64,7 @@ What was learned, what went wrong and how it was fixed.
 - **Command and output:** when the source shows a command and its output separately, keep them as two code blocks under `**Command:**` and `**Output Snippet:**`. A combined transcript stays one block. An interactive log with several commands is split into one Command / Output Snippet pair per step, each output copied verbatim.
 - **Captions:** give every code block one (```` ```{.bash caption="Run placement"} ````), or it is captioned "Listing".
 - **Things the log mentions but doesn't show** (a screenshot in Magic): an image link to the expected file name; it stays a TODO until the user adds the image.
+- **Long file paths** in prose or a table go in `[runs/03-10_09-12/results/placement/top.def]{.normalpath}`: small upright type that breaks at `/` and `_`, so it never runs past the margin. Short names stay in backticks. Inside a code block, paths are fine as they are.
 - **Trim long outputs** to the lines that matter and say so (`… 120 lines omitted …`). The trimmed text itself is never edited.
 - **Results** go in a table whenever there are two or more numbers to compare.
 - **Figures:** screenshots go in `figures/` beside the Markdown. A screenshot that isn't taken yet is written as a normal image link; the converter leaves it commented out with a TODO.

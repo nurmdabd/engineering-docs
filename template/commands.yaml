@@ -155,8 +155,8 @@ hlblack:
 normalpath:
   kind: command
   args: [path]
-  markdown: none
-  use: "a file path in small upright type that breaks like a URL; only when the user asks"
+  markdown: span
+  use: "a long file path that may break at / and _ like a web address, [runs/03-10/results/top.def]{.normalpath}; mainly in reports"
 ReportHeader:
   kind: command
   markdown: none
