@@ -11,6 +11,7 @@ local GFM = {}            -- GitHub anchors of the top-level headings, in order 
 local CMDS = {}           -- registered commands usable from Markdown (meta house_cmds, scripts/commands.py)
 local PREFIX = ""         -- label prefix for every label of this file (meta house_prefix), e.g. "d03_"
 local SHIFT = 0           -- heading levels to move up (meta house_shift): 1 when the file has no # heading
+local GUARDS = false      -- page-break guards before every heading and lone label (meta house_guards; on trial)
 local STRUCT = "notes"    -- "past-paper" (meta house_structure): see types/past-paper/guide.md
 
 local function latex(blocks_or_inlines, is_inline)
@@ -100,6 +101,7 @@ local meta_filter = {
     if m.house_fontsize then FONTPT = tonumber((stringify(m.house_fontsize):gsub("pt", ""))) or 12 end
     if m.house_structure then STRUCT = stringify(m.house_structure) end
     if m.house_prefix then PREFIX = stringify(m.house_prefix) end
+    if m.house_guards then GUARDS = stringify(m.house_guards) == "1" end
     if m.house_shift then SHIFT = tonumber(stringify(m.house_shift)) or 0 end
     if m.house_cmds then
       for entry in stringify(m.house_cmds):gmatch("[^;]+") do
@@ -600,6 +602,7 @@ local function render_para(inls, ctor)
         local lab = is_label_strong(cur)
         if lab then
           cur[lab] = raw("\\textbf{" .. latex(cur[lab].content, true) .. "}")
+          if GUARDS and lab == #cur then blocks:insert(rawb("\\needspace{4\\baselineskip}")) end   -- a lone label: keep it with what follows
         end
         blocks:insert(ctor(convert_emphasis(code_to_verb(cur))))
       end
@@ -884,7 +887,8 @@ local block_filter = {
     local title = latex(h.content, true)
     if STRUCT == "past-paper" then   -- ### Answer -> \answer, other ### -> \subsection, #### -> \subsubsection*
       local name = stringify(h.content):lower():gsub("^%s+", ""):gsub("%s+$", "")
-      if h.level <= 3 then return rawb(SECTION_CMD[name] or ("\\subsection{" .. title .. "}")) end
+      local guard = GUARDS and "\\needspace{5\\baselineskip}\n" or ""
+      if h.level <= 3 then return rawb(guard .. (SECTION_CMD[name] or ("\\subsection{" .. title .. "}"))) end
       return rawb("\\subsubsection*{" .. title .. "}")
     end
     local lbl = h.attributes["label"]
@@ -896,7 +900,7 @@ local block_filter = {
       local colon = stringify(h.content):match("[%?!%.:]%s*$") or stringify(h.content):match("।%s*$")
       return rawb("\\phantomsection\\label{" .. lbl .. "}\\textbf{" .. title .. (colon and "" or ":") .. "}")
     end
-    local keep = h.attributes["keep"] and "\\needspace{10\\baselineskip}\n" or ""
+    local keep = h.attributes["keep"] and "\\needspace{10\\baselineskip}\n" or (GUARDS and "\\needspace{5\\baselineskip}\n" or "")
     return rawb(keep .. "\\" .. cmd .. "{" .. title .. "}\n\\label{" .. lbl .. "}")
   end,
 }
