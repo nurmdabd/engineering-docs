@@ -75,7 +75,7 @@ Claude first reads the type's guide (`types/NAME/guide.md`), which sets how the 
 6. **One big document per session.** If a session runs long and gets summarized, `RESUME.md` and `CLAUDE.md` let the next session carry on.
 
 **Example prompt (past paper):**
-> Use the engineering-docs skill (past-paper type) for `past-papers/questions/2022-23-term-final.pdf`. First transcribe the paper and stop for me to check. Then solve one main question at a time and wait for my OK before the next. Work on branch `claude/new-session-bbfb7p`.
+> Use the engineering-docs skill (past-paper type) for `past-papers/questions/2022-23-term-final.pdf`. First transcribe the paper and stop for me to check. Then solve one main question at a time and wait for my OK before the next.
 
 ---
 
