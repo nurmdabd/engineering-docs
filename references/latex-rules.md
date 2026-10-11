@@ -131,11 +131,11 @@ Reserve the flexible `C`/`L`/`R` tier for the column or columns that genuinely h
     \rowcolor{gray!15}
     \cc{ID}            &
     \multicolumn{1}{y{2.8cm}|}{\textbf{Module}} &
-    \multicolumn{1}{C|}{\textbf{Description}}                                                                        \\* \hline
+    \multicolumn{1}{C|}{\textbf{Description}}                                                                        \\ \hline
 
     M01                &
     Control Unit       &
-    Manages instruction sequencing, state transitions, and coordination between datapath components during execution.   \\* \hline
+    Manages instruction sequencing, state transitions, and coordination between datapath components during execution.   \\ \hline
 \caption{<caption>}
 \label{tab:<snake_case_label>}
 \end{tabularx}
@@ -149,7 +149,7 @@ Preserve every row and cell exactly. Generate a meaningful caption and label if 
 - **Minimum width:** no fixed column is narrower than its longest single inline formula.
 - **Header rules:** the first header cell is `\cc`/`\yy`/`\CC` (rules on both sides); every later one is `\multicolumn{1}{c|}{\textbf{…}}` (`C|`, `y{w}|`) with only its right rule. Using the macros for every cell draws two rules side by side between header cells.
 - **Repeated header:** put `\endhead` right after the header row, so the header repeats when a table continues on the next page.
-- **Short tables stay whole:** in a table of up to 6 body rows every row ends with `\\*` instead of `\\`, which forbids a page break after it. Such a table moves to the next page whole instead of leaving one row behind. Longer tables end rows with `\\` and may continue.
+- **Short tables stay whole:** a table of up to 6 body rows gets `\needspace{Npt}` before it, N being its estimated height (rows by wrapped lines, plus header and caption; a little generous). Such a table moves to the next page whole instead of leaving one row behind. A heading or bold label right above it reserves the table's height plus its own lines, so it moves with the table. Longer tables may continue on the next page. Don't end rows with `\\*` for this: longtable then puts the repeated header on the next page ahead of the text before the table.
 - **Line spacing in cells:** a type whose body text is tighter than 0.8 (past-paper: 0.7) sets `\AddToHook{env/tabularx/begin}{\setstretch{0.8}}`, so wrapped lines in a cell don't touch.
 - **Caption row:** put `\rowcolor{white}` on the line before `\caption{…}`, so the caption row doesn't pick up the banding. Don't use `\hiderowcolors` for this; it breaks the banding of the whole table.
 - **Heading with a table:** a heading directly followed by a table (or a figure) gets `\needspace{10\baselineskip}` before it, so the heading never sits alone at a page bottom.

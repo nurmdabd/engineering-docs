@@ -751,12 +751,40 @@ local function table_block(t)
   end
   lines[#lines + 1] = "\\endhead"   -- repeat the header row when the table continues on the next page
   lines[#lines + 1] = ""
-  -- a short table never splits across pages: \\* forbids a break after a row (longtable). A table that
-  -- doesn't fit moves to the next page whole; a longer one may still continue, repeating its header.
-  local nrows = 0
-  for _, body in ipairs(t.bodies) do nrows = nrows + #body.body end
-  local rowend = nrows <= SHORT_TABLE and " \\\\* \\hline" or " \\\\ \\hline"
-  if nrows <= SHORT_TABLE then lines[#lines - 2] = lines[#lines - 2]:gsub(" \\\\ \\hline$", rowend) end
+  -- a short table never splits across pages: \needspace before it reserves its estimated height, so a
+  -- table that doesn't fit moves to the next page whole (the guard pass adds a heading or label above it).
+  -- A longer one may still continue, repeating its header. (\\* rows would forbid the break too, but
+  -- longtable then puts the header on the next page ahead of the text before the table.)
+  local nrows, height = 0, 0
+  local L = FONTPT * 1.2                        -- pt per text line in a cell (stretch 1, the widest case)
+  local colw = {}
+  local flexw = textw - 0.45 * ncol
+  for j = 1, ncol do
+    if kind[j] == "x" then colw[j] = tonumber((width[j]:gsub("cm", "")))
+    elseif kind[j] == "c" then colw[j] = maxl[j] * cw + 0.5 end
+    if colw[j] then flexw = flexw - colw[j] end
+  end
+  local nflex = 0
+  for j = 1, ncol do if kind[j] == "L" then nflex = nflex + 1 end end
+  for j = 1, ncol do if kind[j] == "L" then colw[j] = math.max(flexw / nflex, 2) end end
+  for _, body in ipairs(t.bodies) do
+    for _, row in ipairs(body.body) do
+      nrows = nrows + 1
+      local rl, tallrow = 1, false
+      for j, cell in ipairs(row.cells) do
+        if j <= ncol then
+          local n = math_len(pandoc.Blocks(cell.contents))
+          local per = math.max((colw[j] - 0.3) / cw, 1)
+          rl = math.max(rl, math.ceil(n / per))
+          if (tall[j] or 0) == 1 then tallrow = true end
+        end
+      end
+      height = height + (rl + 0.45) * L + (tallrow and 10 or 0)
+    end
+  end
+  height = height + 1.6 * L + 2.6 * L           -- header row, caption
+  local keep = nrows <= SHORT_TABLE and height < 40 * L
+  local rowend = " \\\\ \\hline"
   for _, body in ipairs(t.bodies) do
     for _, row in ipairs(body.body) do
       local cells = {}
@@ -780,6 +808,9 @@ local function table_block(t)
   lines[#lines + 1] = "\\caption{" .. cap .. "}"
   lines[#lines + 1] = "\\label{" .. (t.attr.attributes["lab"] or unique("tab:table")) .. "}"
   lines[#lines + 1] = "\\end{tabularx}"
+  if keep then
+    return pandoc.Blocks({ rawb(string.format("\\needspace{%dpt}", math.ceil(height))), rawb(table.concat(lines, "\n")) })
+  end
   return rawb(table.concat(lines, "\n"))
 end
 
@@ -953,14 +984,28 @@ local guard_filter = {
   Blocks = function(bs)
     if not GUARDS then return nil end
     local out = pandoc.List()
+    local skip
     for i, b in ipairs(bs) do
-      local nxt = bs[i + 1]
-      if nxt and nxt.t == "RawBlock" and nxt.text:match("^\\phantomsection\\label{[^}]*}$") then nxt = bs[i + 2] end
-      if is_head(b) and is_rigid(nxt) and not (bs[i - 1] and bs[i - 1].t == "RawBlock" and bs[i - 1].text:match("^\\needspace")) then
+      local k = i + 1
+      if bs[k] and bs[k].t == "RawBlock" and bs[k].text:match("^\\phantomsection\\label{[^}]*}$") then k = k + 1 end
+      local nxt = bs[k]
+      -- a short table brings its own \needspace{Npt}; the heading or label above it reserves that too
+      local tablekeep = nxt and nxt.t == "RawBlock" and tonumber(nxt.text:match("^\\needspace{(%d+)pt}$") or "")
+      if tablekeep then nxt = bs[k + 1] end
+      if skip == i then
+        -- this table's \needspace was merged into the guard before the heading
+      elseif is_head(b) and is_rigid(nxt) and not (bs[i - 1] and bs[i - 1].t == "RawBlock" and bs[i - 1].text:match("^\\needspace")) then
         local lines = (b.t == "RawBlock" and not b.text:match("^\\phantomsection")) and 7 or 5   -- heading / label
-        out:insert(rawb("\\needspace{" .. lines .. "\\baselineskip}"))
+        if tablekeep then
+          out:insert(rawb(string.format("\\needspace{%dpt}", math.ceil(tablekeep + (lines - 2) * FONTPT * 1.2))))
+          skip = k
+        else
+          out:insert(rawb("\\needspace{" .. lines .. "\\baselineskip}"))
+        end
+        out:insert(b)
+      else
+        out:insert(b)
       end
-      out:insert(b)
     end
     return out
   end,
