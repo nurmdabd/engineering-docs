@@ -130,12 +130,12 @@ Reserve the flexible `C`/`L`/`R` tier for the column or columns that genuinely h
     \hline
     \rowcolor{gray!15}
     \cc{ID}            &
-    \yy{Module}{2.8cm} &
-    \CC{Description}                                                                                                    \\ \hline
+    \multicolumn{1}{y{2.8cm}|}{\textbf{Module}} &
+    \multicolumn{1}{C|}{\textbf{Description}}                                                                        \\* \hline
 
     M01                &
     Control Unit       &
-    Manages instruction sequencing, state transitions, and coordination between datapath components during execution.   \\ \hline
+    Manages instruction sequencing, state transitions, and coordination between datapath components during execution.   \\* \hline
 \caption{<caption>}
 \label{tab:<snake_case_label>}
 \end{tabularx}
@@ -145,9 +145,12 @@ Preserve every row and cell exactly. Generate a meaningful caption and label if 
 
 **Table hygiene** (verified on rendered pages; the converter does all of this):
 - **Tall maths in a cell** (`\dfrac`, `\frac`, `\int`, `\sum`, `\left…\right`, matrices, `\sqrt`, `\overline`, `\boxed`): wrap the cell as `\tallcell{…}`. It pads the cell 3pt above and below, so the formula never touches the row rules. `\tallcell` only works in paragraph-type columns (`x`/`y`/`z`/`C`/`L`/`R`), so a column that holds tall maths never uses plain `l`/`c`/`r`. Don't use `cellspace` or `makecell` for this: the first breaks wrapping in `x{}` columns, the second breaks matrices.
-- **The flexible column** is the **maths-heavy** one, if a column is mostly maths, because inline maths can't wrap the way text can. Otherwise it is the column with the longest prose. When the flexible column holds maths, text columns may wrap to 3 lines, capped at 4.4 cm.
+- **The flexible column** is the **maths-heavy** one, if a column is mostly maths and holds a real formula (10+ characters, or as long as the other columns' typical text), because inline maths can't wrap the way text can. Otherwise it is the column with the longest prose. A column of short symbols (`$R$`, `$\frac{1}{1+r}$`) is never flexible: it gets a narrow fixed column and the prose column takes the spare width. When the flexible column holds maths, text columns may wrap to 3 lines, capped at 4.4 cm.
 - **Minimum width:** no fixed column is narrower than its longest single inline formula.
+- **Header rules:** the first header cell is `\cc`/`\yy`/`\CC` (rules on both sides); every later one is `\multicolumn{1}{c|}{\textbf{…}}` (`C|`, `y{w}|`) with only its right rule. Using the macros for every cell draws two rules side by side between header cells.
 - **Repeated header:** put `\endhead` right after the header row, so the header repeats when a table continues on the next page.
+- **Short tables stay whole:** in a table of up to 6 body rows every row ends with `\\*` instead of `\\`, which forbids a page break after it. Such a table moves to the next page whole instead of leaving one row behind. Longer tables end rows with `\\` and may continue.
+- **Line spacing in cells:** a type whose body text is tighter than 0.8 (past-paper: 0.7) sets `\AddToHook{env/tabularx/begin}{\setstretch{0.8}}`, so wrapped lines in a cell don't touch.
 - **Caption row:** put `\rowcolor{white}` on the line before `\caption{…}`, so the caption row doesn't pick up the banding. Don't use `\hiderowcolors` for this; it breaks the banding of the whole table.
 - **Heading with a table:** a heading directly followed by a table (or a figure) gets `\needspace{10\baselineskip}` before it, so the heading never sits alone at a page bottom.
 - **Page-break guards:** any other heading directly followed by an equation, a box, a table, a figure or a listing gets `\needspace{7\baselineskip}`, and a lone bold label (`\textbf{Derivation:}` on its own line) followed by one of those gets `\needspace{5\baselineskip}`. Before running text or a list nothing is added, since those break anywhere. `md2tex.py --no-guards` leaves them all out.

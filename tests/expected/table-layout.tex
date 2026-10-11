@@ -1,0 +1,98 @@
+% Generated from table-layout.md by md2tex.py, then reviewed against SKILL.md.
+
+A column of short symbols next to a prose column: the prose column takes the spare width.
+
+\begin{tabularx}{\textwidth}{|c|x{4.2cm}|L|c|}
+    \hline
+    \rowcolor{gray!15}
+    \cc{Symbol} &
+    \multicolumn{1}{y{4.2cm}|}{\textbf{Name}} &
+    \multicolumn{1}{C|}{\textbf{Where it comes from}} &
+    \multicolumn{1}{c|}{\textbf{Unit}} \\* \hline
+\endhead
+
+    $R$ &
+    series resistance &
+    the conductors are not perfect; current heats them &
+    $\Omega/\text{m}$ \\* \hline
+
+    $L$ &
+    series inductance &
+    current in the wires makes a magnetic field around them &
+    H/m \\* \hline
+
+    $G$ &
+    shunt conductance &
+    the insulation between the wires leaks a little current &
+    S/m \\* \hline
+
+    $C$ &
+    shunt capacitance &
+    the two wires are two conductors separated by insulation &
+    F/m \\* \hline
+
+\rowcolor{white}
+\caption{The four line constants (per unit length)}
+\label{tab:doc}
+\end{tabularx}
+
+A two-row table with short tall maths: kept on one page, and the short fraction column stays narrow.
+
+\begin{tabularx}{\textwidth}{|c|x{3.4cm}|x{2.2cm}|L|}
+    \hline
+    \rowcolor{gray!15}
+    \cc{Family} &
+    \multicolumn{1}{y{3.4cm}|}{\textbf{Centre}} &
+    \multicolumn{1}{y{2.2cm}|}{\textbf{Radius}} &
+    \multicolumn{1}{C|}{\textbf{Special members}} \\* \hline
+\endhead
+
+    constant $r$ &
+    \tallcell{$\left(\frac{r}{1+r}, 0\right)$ on the real axis} &
+    \tallcell{$\frac{1}{1+r}$} &
+    $r = 0$: the rim; $r = 1$: through the centre; $r \to \infty$: the point $(1, 0)$ \\* \hline
+
+    constant $x$ &
+    \tallcell{$\left(1, \frac{1}{x}\right)$ on the line $u = 1$} &
+    \tallcell{$\frac{1}{\lvert x\rvert}$} &
+    $x = 0$: the real axis; $x = \pm1$: centre $(1, \pm1)$, radius 1 \\* \hline
+
+\rowcolor{white}
+\caption{The two families of Smith-chart circles}
+\label{tab:doc_2}
+\end{tabularx}
+
+A table longer than six rows may continue on the next page.
+
+\begin{tabularx}{\textwidth}{|c|L|}
+    \hline
+    \rowcolor{gray!15}
+    \cc{Step} &
+    \multicolumn{1}{C|}{\textbf{Action}} \\ \hline
+\endhead
+
+    1 &
+    Normalise the load impedance \\ \hline
+
+    2 &
+    Plot it on the chart \\ \hline
+
+    3 &
+    Draw the SWR circle through it \\ \hline
+
+    4 &
+    Move to the admittance point \\ \hline
+
+    5 &
+    Turn toward the generator to the g = 1 circle \\ \hline
+
+    6 &
+    Read the stub susceptance \\ \hline
+
+    7 &
+    Find the stub length from the short \\ \hline
+
+\rowcolor{white}
+\caption{Single-stub matching steps}
+\label{tab:doc_3}
+\end{tabularx}

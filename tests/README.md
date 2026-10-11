@@ -17,6 +17,7 @@ Fixed so far:
 - A `####` run-in label ending in `?` no longer gets a colon after it.
 - Sub-parts `(iv)`, `(12)` at the start of a line now start a new paragraph like `(b)` did; before, only single-character labels did.
 - One `$$` block with `\\` and `&` becomes an `aligned` equation; before, its lines were centred.
+- Tables (`table-layout`): a column of short symbols no longer takes the spare width from a prose column; header cells no longer draw double rules between them; a table of up to 6 rows no longer splits across pages.
 - In-file links written with GitHub's anchors (`#2-tables`, `#lecture-24--pm-bandwidth`) now reach their heading; before, they became plain text.
 
 `--build` also builds the example and the cases marked `"print": true` with `--print`: no rendered page of those may hold colour. A small check draws two coloured curves and runs `figures_bw.to_bw` on them: they must get different dashes, the legend must match, and nothing may stay coloured.

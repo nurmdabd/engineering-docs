@@ -5,6 +5,8 @@
 % ---------- Tighter layout (the user's past-paper settings) ----------
 \geometry{top=0.7in, bottom=0.7in, left=0.8in, right=0.7in}
 \setstretch{0.7}
+% wrapped lines in table cells need a little more air than body text, which runs at 0.7
+\AddToHook{env/tabularx/begin}{\setstretch{0.8}}
 \setlength{\parskip}{0.2em}
 \setlength{\intextsep}{0pt}
 \titlespacing*{\section}{0pt}{25pt}{0pt}

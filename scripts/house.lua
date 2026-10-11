@@ -659,6 +659,8 @@ local function verb_to_texttt(s)   -- \verb can't sit inside a table cell (or an
 end
 local function cell_tex(cell) return verb_to_texttt(trimnl(latex(cell.contents, false)):gsub("\n+", " ")) end
 
+local SHORT_TABLE = 6   -- body rows; a table this short is kept on one page
+
 local function table_block(t)
   local maxl, avg = {}, {}
   for v in (t.attr.attributes["maxl"] or ""):gmatch("[^,]+") do maxl[#maxl + 1] = tonumber(v) end
@@ -675,11 +677,17 @@ local function table_block(t)
   local flex, best = nil, 0
   -- flexible column: the maths-heavy column with the longest entries (maths cannot wrap like text);
   -- otherwise the column with the longest average text
-  -- a "formula column": mostly maths and clearly more maths-heavy than every other column
+  -- a "formula column": mostly maths, clearly more maths-heavy than every other column, and with a real
+  -- formula in it (10+ characters, or as long as the other columns' typical text); a column of short
+  -- symbols like $R$ or 1/(1+r) is narrow and never takes the spare width from a prose column
   for j = 1, ncol do
-    local other = 0
-    for i = 1, ncol do if i ~= j and (mshare[i] or 0) > other then other = mshare[i] end end
-    if (mshare[j] or 0) >= 0.3 and (mshare[j] or 0) >= other + 0.25 and maxl[j] > best then best, flex = maxl[j], j end
+    local other, prose = 0, 0
+    for i = 1, ncol do
+      if i ~= j and (mshare[i] or 0) > other then other = mshare[i] end
+      if i ~= j and avg[i] > prose then prose = avg[i] end
+    end
+    if (mshare[j] or 0) >= 0.3 and (mshare[j] or 0) >= other + 0.25 and (mmax[j] or 0) >= math.min(prose, 10)
+      and maxl[j] > best then best, flex = maxl[j], j end
   end
   if not flex then for j = 1, ncol do if avg[j] > best then best, flex = avg[j], j end end end
   local spec, kind, width = {}, {}, {}
@@ -729,7 +737,12 @@ local function table_block(t)
     for j, cell in ipairs(row.cells) do
       local txt = cell_tex(cell)
       local h
-      if kind[j] == "L" then h = "\\CC{" .. txt .. "}"
+      if j > 1 then
+        -- \cc, \yy and \CC draw a rule on both sides; after the first cell the left one would double
+        -- the previous cell's right rule, so these cells draw only their right rule
+        local col = kind[j] == "L" and "C" or (kind[j] == "x" and "y{" .. width[j] .. "}" or "c")
+        h = "\\multicolumn{1}{" .. col .. "|}{\\textbf{" .. txt .. "}}"
+      elseif kind[j] == "L" then h = "\\CC{" .. txt .. "}"
       elseif kind[j] == "x" then h = "\\yy{" .. txt .. "}{" .. width[j] .. "}"
       else h = "\\cc{" .. txt .. "}" end
       cells[#cells + 1] = "    " .. h
@@ -738,6 +751,12 @@ local function table_block(t)
   end
   lines[#lines + 1] = "\\endhead"   -- repeat the header row when the table continues on the next page
   lines[#lines + 1] = ""
+  -- a short table never splits across pages: \\* forbids a break after a row (longtable). A table that
+  -- doesn't fit moves to the next page whole; a longer one may still continue, repeating its header.
+  local nrows = 0
+  for _, body in ipairs(t.bodies) do nrows = nrows + #body.body end
+  local rowend = nrows <= SHORT_TABLE and " \\\\* \\hline" or " \\\\ \\hline"
+  if nrows <= SHORT_TABLE then lines[#lines - 2] = lines[#lines - 2]:gsub(" \\\\ \\hline$", rowend) end
   for _, body in ipairs(t.bodies) do
     for _, row in ipairs(body.body) do
       local cells = {}
@@ -751,7 +770,7 @@ local function table_block(t)
         end
         cells[#cells + 1] = "    " .. tex
       end
-      lines[#lines + 1] = table.concat(cells, " &\n") .. " \\\\ \\hline"
+      lines[#lines + 1] = table.concat(cells, " &\n") .. rowend
       lines[#lines + 1] = ""
     end
   end
