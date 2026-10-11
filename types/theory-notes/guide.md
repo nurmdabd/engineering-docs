@@ -66,7 +66,7 @@ Use this when Claude writes or rewrites notes.
 1. **Lecture opener:** the 📌 box above (Where we are / Today's question / Plan), all in one blockquote.
 2. **Topic openers:** before any formula, table or list in a `###` section, 1–3 sentences on why this topic comes next and what question it answers.
 3. **Explanation inside topics:** before a derivation, the idea in words ("the trick is…"); between steps, why we take each step; after a boxed result, what it means physically and how to use it. Add intuition, analogies and "a common confusion is…" where they help. Every added sentence must help understanding.
-4. **Figures:** every figure is explained in the paragraph right after it, starting with `**Reading the figure.**`. Look at the image first and describe what is actually drawn: axes, blocks, line styles, panels (a)/(b), what to notice first, what it shows, how it connects to the formula just derived (typically 4–8 sentences).
+4. **Figures:** every figure is explained in the paragraph right after it, starting with `**Reading the figure.**`. Look at the image first and describe what is actually drawn: axes, blocks, line styles, panels (a)/(b), what to notice first, what it shows, how it connects to the formula just derived (typically 4–8 sentences). Name each curve or region by line style and colour together ("the dashed orange curve"), so the paragraph still fits the black-and-white print copy (`references/authoring.md`, Figures).
 5. **Wrap-up:** a short paragraph or `### NN.k Summary` before the self-check: what we learned and how it leads into the next lecture.
 
 **Boxes and markers:**

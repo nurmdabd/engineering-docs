@@ -1,0 +1,34 @@
+% Black-and-white print copy: build.py --print loads this after the house and type preambles.
+% The normal (screen) build never uses it.
+
+% Every named hue the house style mixes from becomes black, so red!70!black, BlueLagoon or
+% orange!7 turn into black or a light grey tint. (\selectcolormodel{gray} would be shorter but
+% breaks lstlisting, so each colour is set here; a colour a document defines itself needs a line too.)
+\definecolor{red}{gray}{0}
+\definecolor{green}{gray}{0}
+\definecolor{blue}{gray}{0}
+\definecolor{orange}{gray}{0}
+\definecolor{yellow}{gray}{0}
+\definecolor{BlueLagoon}{gray}{0}
+\definecolor{DeepOcean}{gray}{0}
+\colorlet{numb}{black}
+\colorlet{codegreen}{black!75}
+\colorlet{codepurple}{black}
+\colorlet{codered}{black!75}
+\colorlet{calloutnote}{black!70}
+\colorlet{calloutexample}{black!70}
+\colorlet{calloutexam}{black!70}
+\colorlet{calloutwarn}{black!70}
+\colorlet{calloutquestion}{black!70}
+\colorlet{calloutsolution}{black!70}
+
+% Links stay clickable but print black
+\hypersetup{colorlinks=true, linkcolor=black, citecolor=black, urlcolor=black}
+
+% Lighter fills to save toner: question box, highlights, table stripes, code background
+\renewtcolorbox{mainquestion}{before=\clearpage, colback=black!10, colframe=black, coltext=black,
+	boxrule=0.6pt, arc=4pt, left=8pt, right=8pt, top=6pt, bottom=6pt}
+\renewcommand{\grayhl}[1]{{\sethlcolor{black!15}\color{black}{\hl{#1}}}}
+\renewcommand{\blackhl}[1]{{\sethlcolor{black!70}\color{white}{\hl{#1}}}}
+\AddToHook{env/tabularx/begin}{\rowcolors{2}{black!6}{white}}
+\definecolor{codegray}{gray}{0.97}

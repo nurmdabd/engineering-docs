@@ -19,4 +19,6 @@ Fixed so far:
 - One `$$` block with `\\` and `&` becomes an `aligned` equation; before, its lines were centred.
 - In-file links written with GitHub's anchors (`#2-tables`, `#lecture-24--pm-bandwidth`) now reach their heading; before, they became plain text.
 
+`--build` also builds the example and the cases marked `"print": true` with `--print`: no rendered page of those may hold colour. A small check draws two coloured curves and runs `figures_bw.to_bw` on them: they must get different dashes, the legend must match, and nothing may stay coloured.
+
 `lint/` holds Markdown for the linter: `clean.md` must give no findings, `problems.md` one of each. Their output is compared with the `.expected` files.

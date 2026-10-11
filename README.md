@@ -13,8 +13,8 @@ A Claude Code skill that turns engineering Markdown into LaTeX in Nur Mohammad's
 | `USER-GUIDE.md` | For you: how to use every feature, with example prompts |
 | `SKILL.md` | Workflow, output rules, when to ask |
 | `references/` | `authoring.md` (how to write the Markdown), `commands.md` (custom commands: registry, adding new ones), `latex-rules.md` (Sections 1–12), `pdf-links.md` (13), `bangla.md` (14) |
-| `template/` | House preamble, `main.tex`, study-notes cover page |
-| `scripts/` | `doc.py` (one command: types, new, check, build), `commands.py` (custom-command registry), `setup.sh`, `lint_md.py` (Markdown checks), `md2tex.py` + `house.lua` (converter), `check_structure.py`, `build.py` |
+| `template/` | House preamble, `main.tex`, study-notes cover page, `print-bw.tex` (black-and-white print copy) |
+| `scripts/` | `doc.py` (one command: types, new, check, build; `--print` for the black-and-white copy), `figures_bw.py` (grey print copies of matplotlib figures), `commands.py` (custom-command registry), `setup.sh`, `lint_md.py` (Markdown checks), `md2tex.py` + `house.lua` (converter), `check_structure.py`, `build.py` |
 | `examples/` | A body file that uses every rule |
 | `types/` | Document types (theory-notes, exam-notes, formula-sheet, question-bank, past-paper, project-report): settings (`type.json`), writing and layout guide (`guide.md`), starting file (`template.md`), own commands (`preamble.tex`, optional) |
 | `tests/` | Regression tests: `python3 tests/run_tests.py --build` |

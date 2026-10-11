@@ -272,6 +272,7 @@ Set `lang: bn`. Technical terms, maths, numbers, figure paths and the callout ma
 - **Tables** repeat their header row on every page and size their columns from the content. Tall maths in cells gets padding.
 - **Numbers and units** stay on one line when written `9.995~MHz` or in maths.
 - **Cover page** with the course band, title, subtitle, note and an "Inside" list.
+- **Black-and-white print copy, when you ask:** say "make a print version of the 2022-23 solution". You get `NAME_print.pdf` beside the normal PDF: black text and headings, light grey boxes, and figures redrawn in grey with dashed and dotted lines in place of colours. Every document is written ready for this from the start (curves differ in line style as well as colour, and the text names both, like "the dashed orange curve"), so the print copy needs no rewriting. Only the print PDF and the grey figure copies (`figures/print/`) are made on request.
 
 ---
 
@@ -286,6 +287,8 @@ python3 $S/doc.py new past-paper 2023-24.md     # start from the type's template
 python3 $S/doc.py check 2023-24.md              # lint
 python3 $S/doc.py build 2023-24.md --out pdf/2023-24.pdf             # lint + convert + build
 python3 $S/doc.py build 2023-24.md --out pdf/2023-24.pdf --reconvert # regenerate the .tex from the Markdown
+DOC_PRINT=1 python3 figures/_src/2023-24.py     # grey copies of the figures, in figures/print/
+python3 $S/doc.py build 2023-24.md --out pdf/2023-24.pdf --print     # black-and-white copy: pdf/2023-24_print.pdf
 bash $S/setup.sh                                 # install TeX, pandoc, fonts (safe to re-run)
 ```
 
@@ -317,6 +320,7 @@ Before you call a document done:
 | `\_` appears in a label like k_f | Put symbols in maths: `**Units of $k_f$:**`. |
 | Box-drawing characters missing in a code block | Use ASCII in code: `|`, `+--`, `->`. |
 | A heading sits alone at the bottom of a page, followed by a list | The guards only cover equations, boxes, tables, figures and code. Ask Claude to add a `\needspace` there by hand. |
+| The print copy says "text naming a colour without a line style" | Those sentences say "the red curve" and mean nothing in grey. Reword them to name the style too ("the dotted red curve") in the Markdown. |
 | The skill copy in the repo changed at session start | The hook pulled a newer master copy. Commit it. |
 
 ---

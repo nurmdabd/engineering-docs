@@ -5,7 +5,8 @@ run_tests.py -- regression tests for the converter and the build.
     python3 tests/run_tests.py            # convert every fixture, compare with tests/expected/; lint tests/lint/*.md
     python3 tests/run_tests.py --update   # accept the current output as the new expected output
     python3 tests/run_tests.py --build    # also compile every expected body and the example; each log must be clean,
-                                          # and the PDF text must match a case's pdf_has / pdf_lacks lists
+                                          # and the PDF text must match a case's pdf_has / pdf_lacks lists;
+                                          # the --print copies of the example and "print": true cases hold no colour
 
 Corpus check, for real notes that live in another repo (run before and after a converter change):
 
@@ -178,8 +179,9 @@ def run_commands_add():
     return failed
 
 
-def build_one(body, flags, label, has=(), lacks=()):
-    """Compile body; the log must be clean, and the PDF text must contain every `has` and no `lacks` string."""
+def build_one(body, flags, label, has=(), lacks=(), grey=False):
+    """Compile body; the log must be clean, and the PDF text must contain every `has` and no `lacks` string.
+    grey: no rendered page may hold colour (the --print copy)."""
     with tempfile.TemporaryDirectory() as tmp:
         r = subprocess.run([sys.executable, str(BUILD), str(body), "--out", f"{tmp}/t.pdf",
                             "--build-dir", f"{tmp}/b", *flags], capture_output=True, text=True)
@@ -188,14 +190,57 @@ def build_one(body, flags, label, has=(), lacks=()):
             text = subprocess.run(["pdftotext", f"{tmp}/t.pdf", "-"], capture_output=True, text=True).stdout
             problems += [f"PDF text lacks {s!r}" for s in has if s not in text]
             problems += [f"PDF text has {s!r}" for s in lacks if s in text]
+        if not problems and grey:
+            problems += colour_pages(f"{tmp}/t.pdf", tmp)
         print(f"{'ok' if not problems else 'FAILED':8} build {label}")
         for p in problems:
             print("  " + p.replace("\n", "\n  "))
         return 1 if problems else 0
 
 
+def colour_pages(pdf, tmp):
+    import numpy as np
+    from PIL import Image
+    subprocess.run(["pdftoppm", "-r", "40", "-png", pdf, f"{tmp}/pg"], check=True)
+    bad = []
+    for png in sorted(Path(tmp).glob("pg-*.png")):
+        px = np.asarray(Image.open(png).convert("RGB")).astype(int)
+        if ((px.max(2) - px.min(2)) > 12).sum() > 5:
+            bad.append(png.stem)
+    return [f"colour left on {', '.join(bad)}"] if bad else []
+
+
+def run_figures_bw():
+    """figures_bw.to_bw: two coloured curves get different dashes, legend samples follow, nothing stays coloured."""
+    sys.path.insert(0, str(SKILL / "scripts"))
+    import matplotlib
+    matplotlib.use("Agg")
+    from matplotlib import pyplot as plt
+    from matplotlib.colors import to_rgb
+    import figures_bw
+    fig, ax = plt.subplots()
+    x = [i / 10 for i in range(20)]
+    a, = ax.plot(x, x, color="#1f5fa8", label="blue")
+    b, = ax.plot(x, [1 - v for v in x], color="#d9730d", label="orange")
+    ax.annotate("", xy=(1, 1), xytext=(0, 0), arrowprops=dict(arrowstyle="->", color="red"))
+    ax.legend()
+    figures_bw.to_bw(fig)
+    legend = ax.get_legend().get_lines()
+    grey = all(max(to_rgb(c)) - min(to_rgb(c)) < 1e-6 for c in (a.get_color(), b.get_color()))
+    arrow = ax.texts[0].arrow_patch.get_edgecolor()
+    checks = [("curves get different dashes", a.get_linestyle() != b.get_linestyle()),
+              ("legend samples match their curves", [l.get_linestyle() for l in legend] == [a.get_linestyle(), b.get_linestyle()]),
+              ("curves and arrows are grey", grey and max(arrow[:3]) - min(arrow[:3]) < 1e-6)]
+    plt.close(fig)
+    for what, ok in checks:
+        print(f"{'ok' if ok else 'FAILED':8} figures_bw: {what}")
+    return sum(not ok for _, ok in checks)
+
+
 def run_builds(cases):
     failed = build_one(SKILL / "examples" / "example-body.tex", [], "example-body")
+    failed += build_one(SKILL / "examples" / "example-body.tex", ["--print"], "example-body --print", grey=True)
+    failed += run_figures_bw()
     for case in cases:
         if case.get("build", True):
             body = FIXTURES / f".{case['name']}.tex"   # beside the fixture, so figures/ resolves
@@ -206,6 +251,9 @@ def run_builds(cases):
             try:
                 failed += build_one(body, case.get("build_flags", []), case["name"],
                                     case.get("pdf_has", []), case.get("pdf_lacks", []))
+                if case.get("print"):   # the black-and-white copy must hold no colour
+                    failed += build_one(body, [*case.get("build_flags", []), "--print"], case["name"] + " --print",
+                                        grey=True)
             finally:
                 body.unlink(missing_ok=True)
                 side.unlink(missing_ok=True)

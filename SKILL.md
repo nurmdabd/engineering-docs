@@ -1,6 +1,6 @@
 ---
 name: engineering-docs
-description: "Writes and builds engineering documents in Nur Mohammad's house LaTeX style and compiles them to interactive PDFs with XeLaTeX: lecture and theory notes, formula sheets, question banks, derivation and exam sheets, full solutions of previous years' exam papers, and multi-day project or lab reports, each kind with its own document type and writing guide. English, or Bangla with English technical terms. Covers the whole path: writing the Markdown content when asked, converting Markdown to house-style LaTeX (draft converter plus rules), and building the PDF with the bundled preamble, cover page, callout boxes, linked question/solution boxes and links between PDFs. Use whenever the user wants notes, solutions, a report or exam material as a PDF or .tex in \"my format\" or \"my LaTeX style\", even if they never say LaTeX, or asks how a Markdown element renders in this style. When converting the user's finished Markdown, content is preserved exactly (grammar fixes only)."
+description: "Writes and builds engineering documents in Nur Mohammad's house LaTeX style and compiles them to interactive PDFs with XeLaTeX: lecture and theory notes, formula sheets, question banks, derivation and exam sheets, full solutions of previous years' exam papers, and multi-day project or lab reports, each kind with its own document type and writing guide. English, or Bangla with English technical terms. Covers the whole path: writing the Markdown content when asked, converting Markdown to house-style LaTeX (draft converter plus rules), and building the PDF with the bundled preamble, cover page, callout boxes, linked question/solution boxes and links between PDFs, plus a black-and-white copy for printing on request. Use whenever the user wants notes, solutions, a report or exam material as a PDF or .tex in \"my format\" or \"my LaTeX style\" or a print version of one, even if they never say LaTeX, or asks how a Markdown element renders in this style. When converting the user's finished Markdown, content is preserved exactly (grammar fixes only)."
 ---
 
 # Engineering documents in the house LaTeX style
@@ -113,7 +113,7 @@ python3 <skill>/scripts/build.py body1.tex [body2.tex ...] --out path/Name.pdf \
     --title "First title line:" --title "Second title line" \
     --header "Short running header" \
     [--class extarticle|extreport] [--fontsize 12pt] [--author "Nur Mohammad"] \
-    [--figures extra/image/dir ...] [--no-toc] \
+    [--figures extra/image/dir ...] [--no-toc] [--print] \
     [--cover --course-code "COM I" --course-name "Communication Engineering I" \
      --cover-title "Formula Sheet" --cover-subtitle "Lectures 24--38" --cover-note "Term test preparation" \
      --cover-contents "Item" --cover-contents "Item" --date "October 2026"]
@@ -126,6 +126,10 @@ python3 <skill>/scripts/build.py body1.tex [body2.tex ...] --out path/Name.pdf \
 - **Defaults** match the user's latest main file: `extarticle`, `12pt`, author "Nur Mohammad". The title lines are rendered as `{\LARGE{\keyterm{…}}}`.
 - **Choosing the class:** use `--class extreport` when the source has chapter-level `#` headings, as in a multi-day report; `--type project-report` sets that with `14pt`. In `extreport`, a file with several `#` headings keeps them all as chapters; otherwise the first `#` heading becomes the title.
 - **Image search path:** each body file's folder and its `figures/` subfolder are added automatically, so `\includegraphics{name.png}` works with a bare filename. Use `--figures` for images stored anywhere else.
+- **Print copy (`--print`), only when the user asks for one:** a black-and-white version for printing, built beside the normal PDF as `<Name>_print.pdf` (`doc.py build` adds the `_print`). The normal build stays the default and is never replaced. It loads `template/print-bw.tex` after the type's preamble: headings, bold text, links and box title bars turn black or dark grey, and fills turn light grey to save toner. Steps:
+  1. If the figures come from scripts, make their grey copies first: `DOC_PRINT=1 python3 figures/_src/<script>.py`. Scripts that save through `scripts/figures_bw.py` write `figures/print/NAME`, where coloured curves get dashes (blue solid, orange dashed, red dotted, green dash-dot, ...) and the legends match. An older script can call `figures_bw.to_bw(fig)` before saving to `print/`.
+  2. Build with `--print`. The build uses `print/NAME` for each image that has one and greys every other PNG or JPEG itself (say so: curves told apart only by colour may merge there).
+  3. Fix what the build reports under "text naming a colour without a line style or shape": reword it in the Markdown so it names both ("the dashed orange curve"); that fixes the normal PDF too. Then look at the pages (Step 5).
 - **Build folder:** the build writes `<Name>_build/` next to the PDF. It holds `main.tex`, the preamble and the body files, and it compiles as-is on the user's MikTeX.
 
 ### Step 5: Look at the result

@@ -23,6 +23,8 @@ Usage:
         [--cover-contents "Item 1" --cover-contents "Item 2"] [--date "October 2026"]
         [--cover-dir DIR]                      # use your own cover-page-preamble.tex / cover-page-main.tex instead
         [--build-dir DIR]                      # default: <OUT stem>_build next to OUT
+        [--print]                              # black-and-white copy for printing (template/print-bw.tex):
+                                               # uses figures/print/NAME for each image that has one, greys the rest
 
 Exit code 0 = PDF built (warnings may still be printed). 1 = compile failed.
 """
@@ -109,6 +111,65 @@ def report(log_path):
     print("\n".join(lines) if lines else "Log clean: no errors, undefined references, missing glyphs or big overfull lines.")
 
 
+# ---------- --print: black-and-white copy ----------
+GRAPHIC = re.compile(r"(\\includegraphics\s*(?:\[[^\]]*\])?\s*\{)([^}]+)(\})")
+COLOUR_WORD = re.compile(r"\b(red|blue|green|orange|purple|violet|yellow|pink|magenta|cyan|teal|brown)\b", re.I)
+STYLE_WORD = re.compile(r"\b(?:solid|dash\w*|dott\w*|thick|bold|gr[ae]y|black|white|hatch\w*|shaded|filled|"
+                        r"markers?|circles?|squares?|triangles?|diamonds?)\b", re.I)
+LATEX_COLOUR = re.compile(r"\\(?:color|textcolor|rowcolor|cellcolor|colorbox|definecolor|colorlet)\b(?:\[[^\]]*\])?"
+                          r"(?:\{[^}]*\})*|\[[^\]]*\]")
+
+
+def print_figures(tex, body_dir, gdirs, store):
+    """Point each image at its print copy: DIR/print/NAME when the figure script made one, else a greyscale
+    copy made here. Returns the new text and the counts (print copies, greyed here, left as is)."""
+    used, greyed, kept = 0, [], []
+
+    def find(path):
+        for d in [body_dir, *gdirs]:
+            for cand in (d / path, *(d / f"{path}{e}" for e in (".png", ".jpg", ".jpeg", ".pdf"))):
+                if cand.is_file():
+                    return cand.resolve()
+        return None
+
+    def swap(m):
+        nonlocal used
+        src = find(m.group(2).strip())
+        if src is None:
+            return m.group(0)
+        bw = src.parent / "print" / src.name
+        if bw.is_file():
+            used += 1
+            return m.group(1) + bw.as_posix() + m.group(3)
+        if src.suffix.lower() in (".png", ".jpg", ".jpeg"):
+            try:
+                from PIL import Image
+            except ImportError:
+                kept.append(src.name)
+                return m.group(0)
+            store.mkdir(exist_ok=True)
+            out = store / f"{len(greyed):02d}-{src.name}"
+            Image.open(src).convert("L").save(out)
+            greyed.append(src.name)
+            return m.group(1) + out.as_posix() + m.group(3)
+        kept.append(src.name)
+        return m.group(0)
+
+    return GRAPHIC.sub(swap, tex), used, greyed, kept
+
+
+def colour_only(tex, name):
+    """Sentences that point at something by colour alone ("the red curve"): they lose their meaning in print."""
+    hits = []
+    for n, line in enumerate(tex.splitlines(), 1):
+        if line.lstrip().startswith("%"):
+            continue
+        for sentence in re.split(r"(?<=[.;:])\s+", LATEX_COLOUR.sub(" ", line)):
+            if COLOUR_WORD.search(sentence) and not STYLE_WORD.search(sentence):
+                hits.append(f"{name}:{n}: {sentence.strip()[:110]}")
+    return hits
+
+
 REPEATED = ("--title", "--cover-contents")   # options that collect values; the user's replace the sidecar's
 
 
@@ -152,6 +213,7 @@ def main():
     ap.add_argument("--date")
     ap.add_argument("--cover-dir", type=Path)
     ap.add_argument("--build-dir", type=Path)
+    ap.add_argument("--print", dest="bw", action="store_true")
     a = ap.parse_args(doctype.expand(with_sidecar(sys.argv), "build")[1:])
 
     out = a.out.resolve()
@@ -165,6 +227,10 @@ def main():
         name = f"type-{tp.parent.name}-preamble.tex" if tp.name == "preamble.tex" else f"pre-doc-{tp.name}"
         shutil.copy(tp, build / name)
         type_inputs.append(f"\\input{{{name}}}")
+    (build / "print-bw.tex").unlink(missing_ok=True)
+    if a.bw:   # last, so it recolours the type's own commands too
+        shutil.copy(TEMPLATE / "print-bw.tex", build)
+        type_inputs.append("\\input{print-bw.tex}")
     for f in ("cover-page-preamble.tex", "cover-page-main.tex"):
         (build / f).unlink(missing_ok=True)
         src = (a.cover_dir / f) if a.cover_dir else (TEMPLATE / f if a.cover else None)
@@ -172,6 +238,7 @@ def main():
             shutil.copy(src, build)
 
     used, includes, gdirs = set(), [], []
+    bodies = []
     for body in a.bodies:
         body = body.resolve()
         if not body.exists():
@@ -179,9 +246,27 @@ def main():
         name = safe_stem(body, used)
         shutil.copy(body, build / f"{name}.tex")
         includes.append(f"\\include{{{name}}}")
+        bodies.append((body, build / f"{name}.tex"))
         gdirs += [body.parent, body.parent / "figures"]
     gdirs += [d.resolve() for d in a.figures]
     gdirs = [d for d in dict.fromkeys(gdirs) if d.is_dir()]
+    if a.bw:
+        store = build / "print-figures"
+        shutil.rmtree(store, ignore_errors=True)
+        used_bw, greyed, kept, words = 0, [], [], []
+        for body, copy in bodies:
+            tex, n, g, k = print_figures(copy.read_text(encoding="utf-8"), body.parent, gdirs, store)
+            copy.write_text(tex, encoding="utf-8")
+            used_bw, greyed, kept = used_bw + n, greyed + g, kept + k
+            words += colour_only(tex, body.name)
+        print(f"print: {used_bw} figure(s) from print/ copies, {len(greyed)} greyed here"
+              + (f", {len(kept)} left in colour: {', '.join(kept)}" if kept else ""))
+        if greyed:
+            print("  greyed here (curves told apart only by colour may merge; make print/ copies with "
+                  "scripts/figures_bw.py): " + ", ".join(greyed))
+        if words:
+            print("  text naming a colour without a line style or shape (reads wrongly in print):\n    "
+                  + "\n    ".join(words))
     if any(" " in str(d) for d in gdirs):
         print("warning: an image folder path contains spaces; XeLaTeX may not find images there")
     graphicspath = "{figures/}" + "".join(f"{{{d.as_posix()}/}}" for d in gdirs)
