@@ -110,7 +110,7 @@ Values are raw LaTeX on the cover and title: write `--` for an en-dash, `---` fo
 - **Ready for print from the start:** every document may be printed in black and white later (`doc.py build --print`), so write it to read in grey too:
   - In a figure you draw, curves differ in **line style** as well as colour (solid, dashed, dotted, dash-dot), and markers in shape.
   - Captions, figure explanations and labels inside the figure name **both**: "the dashed orange curve", "the stub (orange, dashed)", never "the orange curve" alone. A colour fill is named by what it is ("the shaded source region").
-  - Save figures from a script with `scripts/figures_bw.py` (`save(fig, path)`), so the grey copies can be made later with `DOC_PRINT=1`.
+  - Save figures from a script with `scripts/figures_bw.py` (`save(fig, path)`). It gives each coloured curve the dash of its hue (blue solid, orange dashed, red dotted, green dash-dot, purple short dashes) in the colour figure too, so captions can name both; and `DOC_PRINT=1` makes the grey copies later.
 
 ## Callouts
 

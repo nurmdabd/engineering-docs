@@ -8,8 +8,10 @@ In a figure script:
 
     save(fig, out_dir / "2020-21_1a_wave.png", dpi=170)
 
-save() always writes the colour figure. With DOC_PRINT=1 in the environment it writes only the grey copy,
-out_dir/print/NAME, which build.py --print uses in place of the colour one:
+save() writes the colour figure, with each coloured curve given the dash of its hue (add_dashes), so the
+colour and the grey copy look the same apart from colour and a caption can name both: "the dashed orange
+curve". With DOC_PRINT=1 in the environment it writes only the grey copy, out_dir/print/NAME, which
+build.py --print uses in place of the colour one:
 
     DOC_PRINT=1 python3 figures/_src/my_figures.py
 
@@ -21,8 +23,7 @@ What the grey copy changes:
 - light fills keep their lightness; strong fills become a light grey (saves toner); colour maps become
   a light grey ramp.
 - relabel={"old": "new"} rewrites figure text that names a colour, if any is left.
-Draw so the colour version already reads in grey: give curves different line styles as well as colours,
-and name both in labels ("dashed orange").
+Name a curve by style and colour together in labels and captions ("dashed orange").
 """
 import colorsys
 import os
@@ -82,8 +83,8 @@ def _none(c):
     return isinstance(c, str) and c == "none"
 
 
-def to_bw(fig, relabel=None):
-    """Turn every element of fig to greys in place (see the module docstring)."""
+def add_dashes(fig):
+    """Give each solid coloured curve (more than 5 points) the dash of its hue, legend samples too."""
     for lg in fig.findobj(Legend):
         # legend samples are two-point lines, so give them the dash of their curve here
         for ln in lg.get_lines():
@@ -94,6 +95,14 @@ def to_bw(fig, relabel=None):
         c = ln.get_color()
         if _coloured(c) and ln.get_linestyle() == "-" and len(ln.get_xdata()) > 5:
             ln.set_linestyle(_style(c)[1])
+    return fig
+
+
+def to_bw(fig, relabel=None):
+    """Turn every element of fig to greys in place (see the module docstring)."""
+    add_dashes(fig)
+    for ln in fig.findobj(Line2D):
+        c = ln.get_color()
         ln.set_color(_stroke(c))
         for get, put in ((ln.get_markerfacecolor, ln.set_markerfacecolor),
                          (ln.get_markeredgecolor, ln.set_markeredgecolor)):
@@ -124,9 +133,12 @@ def to_bw(fig, relabel=None):
     return fig
 
 
-def save(fig, path, relabel=None, **savefig_kw):
-    """Write fig to path; with DOC_PRINT=1, write the grey copy to path.parent/print/path.name instead."""
+def save(fig, path, relabel=None, dashes=True, **savefig_kw):
+    """Write fig to path; with DOC_PRINT=1, write the grey copy to path.parent/print/path.name instead.
+    dashes=False keeps the colour figure's curves as drawn (the grey copy always gets the dashes)."""
     path = Path(path)
+    if dashes and not PRINT:
+        add_dashes(fig)
     if PRINT:
         to_bw(fig, relabel)
         path = path.parent / "print" / path.name

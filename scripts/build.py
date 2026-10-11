@@ -114,8 +114,8 @@ def report(log_path):
 # ---------- --print: black-and-white copy ----------
 GRAPHIC = re.compile(r"(\\includegraphics\s*(?:\[[^\]]*\])?\s*\{)([^}]+)(\})")
 COLOUR_WORD = re.compile(r"\b(red|blue|green|orange|purple|violet|yellow|pink|magenta|cyan|teal|brown)\b", re.I)
-STYLE_WORD = re.compile(r"\b(?:solid|dash\w*|dott\w*|thick|bold|gr[ae]y|black|white|hatch\w*|shaded|filled|"
-                        r"markers?|circles?|squares?|triangles?|diamonds?)\b", re.I)
+STYLE_WORD = re.compile(r"\b(?:solid|dash\w*|dott\w*|thick(?:er)?|thin(?:ner)?|bold|gr[ae]y|black|white|hatch\w*|shaded|"
+                        r"filled|labell?ed|markers?|dots?|arrows?|circles?|squares?|triangles?|diamonds?)\b", re.I)
 LATEX_COLOUR = re.compile(r"\\(?:color|textcolor|rowcolor|cellcolor|colorbox|definecolor|colorlet)\b(?:\[[^\]]*\])?"
                           r"(?:\{[^}]*\})*|\[[^\]]*\]")
 
@@ -164,7 +164,7 @@ def colour_only(tex, name):
     for n, line in enumerate(tex.splitlines(), 1):
         if line.lstrip().startswith("%"):
             continue
-        for sentence in re.split(r"(?<=[.;:])\s+", LATEX_COLOUR.sub(" ", line)):
+        for sentence in re.split(r"(?<=[.:])\s+", LATEX_COLOUR.sub(" ", line)):
             if COLOUR_WORD.search(sentence) and not STYLE_WORD.search(sentence):
                 hits.append(f"{name}:{n}: {sentence.strip()[:110]}")
     return hits
