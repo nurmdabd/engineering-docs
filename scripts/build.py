@@ -23,6 +23,9 @@ Usage:
         [--cover-contents "Item 1" --cover-contents "Item 2"] [--date "October 2026"]
         [--cover-dir DIR]                      # use your own cover-page-preamble.tex / cover-page-main.tex instead
         [--no-cover]                           # leave out a cover the type adds by default (past-paper)
+        [--paper | --no-paper]                 # past papers: the typeset question paper before the contents
+        [--paper-header "University" --paper-header "Course Code: ..."] [--paper-info "Total Marks: 100" ...]
+        [--paper-instruction "[Answer any ...]"] [--paper-part "Part-A: 1-3"] [--paper-appendix equations.tex]
         [--build-dir DIR]                      # default: <OUT stem>_build next to OUT
         [--print]                              # black-and-white copy for printing (template/print-bw.tex):
                                                # uses figures/print/NAME for each image that has one, greys the rest
@@ -171,7 +174,7 @@ def colour_only(tex, name):
     return hits
 
 
-REPEATED = ("--title", "--cover-contents")   # options that collect values; the user's replace the sidecar's
+REPEATED = ("--title", "--cover-contents", "--paper-header", "--paper-info", "--paper-part")   # options that collect values; the user's replace the sidecar's
 
 
 def question_marks(bodies):
@@ -188,6 +191,80 @@ def question_marks(bodies):
     return ",".join(out)
 
 
+MQ = re.compile(r"\\begin\{mainquestion\}\n?(.*?)\\end\{mainquestion\}", re.S)
+QB = re.compile(r"\\begin\{questionblock\}(\[[^\]]*\])?\{(\d+)\.\s*\(([a-z]+)\)")
+
+
+def paper_page(a, copies):
+    """Past papers: the question paper typeset like the original, from the mainquestion boxes of the bodies.
+
+    Each sub-part label links to its solution (a target is added before each questionblock), and each
+    mainquestion box sets the header's PAPER button to its question on the paper. Returns the page's
+    LaTeX, or "" when the bodies have no mainquestion box.
+    """
+    def num(box, n):
+        m = re.search(r"\\item\[(\d+)\.", box)
+        return m.group(1) if m else str(n)
+
+    texts, targets, boxes = [], set(), []
+    for copy in copies:
+        tex = copy.read_text(encoding="utf-8")
+        targets |= {f"{q}{p}" for _, q, p in QB.findall(tex)}
+        tex = QB.sub(lambda m: f"\\hypertarget{{sol-{m.group(2)}{m.group(3)}}}{{}}\n" + m.group(0), tex)
+        def mark(m):
+            boxes.append(m.group(1))
+            return f"\\begin{{mainquestion}}\\papersetq{{{num(m.group(1), len(boxes))}}}\n{m.group(1)}\\end{{mainquestion}}"
+        tex = MQ.sub(mark, tex)
+        copy.write_text(tex, encoding="utf-8")
+    if not boxes:
+        return ""
+
+    parts = {}
+    for p in a.paper_part:
+        name, _, rng = p.rpartition(":")
+        first = re.match(r"\s*(\d+)", rng)
+        if name.strip() and first:
+            parts[first.group(1)] = name.strip()
+
+    def figure(m):   # unnumbered, so the solutions keep their figure numbers; no label, so none is defined twice
+        body = re.sub(r"\\label\{[^}]*\}|\\centering", "", m.group(1))
+        body = re.sub(r"width=([0-9.]*)\\(linewidth|textwidth)",   # smaller than in the solutions, as on a paper
+                      lambda w: f"width={0.6 * float(w.group(1) or 1):.2f}\\linewidth", body)
+        cap = re.search(r"\\caption\{((?:[^{}]|\{[^{}]*\})*)\}", body)
+        body = body.replace(cap.group(0), "") if cap else body
+        return ("\\begin{center}" + body.strip() + (f"\\\\[2pt]{{\\small {cap.group(1)}}}" if cap else "")
+                + "\\end{center}")
+
+    out = []
+    for i, box in enumerate(boxes, 1):
+        q = num(box, i)
+        if q in parts:
+            out.append(f"\\paperpart{{{parts[q]}}}")
+        box = re.sub(r"\\begin\{figure\}(?:\[[^\]]*\])?(.*?)\\end\{figure\}", figure, box, flags=re.S)
+        box = re.sub(r"\\label\{[^}]*\}", "", box)
+        box = re.sub(r"\\hfill Marks: ([^\n]+?)\s*$", r"\\papermarks{\1}", box, flags=re.M)
+        box = re.sub(r"\{\[\}Marks: ([^{]+?)\{\]\}", r"\\papermarks{\1}", box)
+        lines, depth = [], 0
+        for line in box.split("\n"):   # link the top-level sub-part labels to their solutions
+            depth += line.count("\\begin{itemize}") + line.count("\\begin{enumerate}")
+            m = re.match(r"(\s*)\\item\[((?:\d+\.\s*)?\(([a-z]+)\))\]", line)
+            if m and depth == 1 and f"{q}{m.group(3)}" in targets:
+                line = line.replace(m.group(0), f"{m.group(1)}\\item[\\paperlink{{sol-{q}{m.group(3)}}}{{{m.group(2)}}}]", 1)
+            depth -= line.count("\\end{itemize}") + line.count("\\end{enumerate}")
+            lines.append(line)
+        out.append(f"\\paperquestion{{{q}}}\n" + "\n".join(lines))
+    header = "\n".join(f"\\paperheaderline{{{h}}}" for h in a.paper_header) or f"\\paperheaderline{{{tex_escape(' '.join(a.title or ['Question Paper']))}}}"
+    info = "\\paperinfo{" + "}{".join(a.paper_info) + "}" if a.paper_info else ""
+    instr = f"\\paperinstruction{{{a.paper_instruction}}}" if a.paper_instruction else ""
+    appendix = ""
+    if a.paper_appendix:
+        if not a.paper_appendix.exists():
+            sys.exit(f"missing paper appendix: {a.paper_appendix}")
+        appendix = "\\paperappendix\n" + a.paper_appendix.read_text(encoding="utf-8")
+    return ("\\begin{questionpaper}\n" + header + "\n" + info + "\n" + instr + "\n\\begin{paperquestions}\n"
+            + "\n\n".join(out) + "\n\\end{paperquestions}\n" + appendix + "\n\\end{questionpaper}\n")
+
+
 def with_sidecar(argv):
     """Put the first body's NAME.build.json settings (written by md2tex.py from front matter) before argv."""
     body = next((Path(x) for x in argv[1:] if x.endswith(".tex")), None)
@@ -196,7 +273,7 @@ def with_sidecar(argv):
         return argv
     saved = json.loads(sidecar.read_text(encoding="utf-8")).get("build", [])
     for item in saved:   # paths in the sidecar are relative to it
-        if item[0] == "--type-preamble":
+        if item[0] in ("--type-preamble", "--paper-appendix"):
             item[1] = str((sidecar.parent / item[1]).resolve())
     kept = [x for item in saved if not (item[0] in REPEATED and item[0] in argv) for x in item]
     print(f"settings from {sidecar.name}: {' '.join(kept)}")
@@ -221,6 +298,13 @@ def main():
     ap.add_argument("--cover", action="store_true")
     ap.add_argument("--no-cover", dest="cover", action="store_false")
     ap.add_argument("--type-cover-dir", type=Path)
+    ap.add_argument("--paper", action="store_true")
+    ap.add_argument("--no-paper", dest="paper", action="store_false")
+    ap.add_argument("--paper-header", action="append", default=[])
+    ap.add_argument("--paper-info", action="append", default=[])
+    ap.add_argument("--paper-instruction", default="")
+    ap.add_argument("--paper-part", action="append", default=[])
+    ap.add_argument("--paper-appendix", type=Path)
     ap.add_argument("--course-code", default="")
     ap.add_argument("--course-name", default="")
     ap.add_argument("--cover-title")
@@ -284,6 +368,12 @@ def main():
         if words:
             print("  text naming a colour without a line style or shape (reads wrongly in print):\n    "
                   + "\n    ".join(words))
+    paper = paper_page(a, [c for _, c in bodies]) if a.paper else ""
+    (build / "paper-page.tex").unlink(missing_ok=True)
+    if paper:
+        (build / "paper-page.tex").write_text(paper, encoding="utf-8")
+    elif a.paper:
+        print("note: --paper given, but the bodies have no mainquestion box; no question paper added")
     if any(" " in str(d) for d in gdirs):
         print("warning: an image folder path contains spaces; XeLaTeX may not find images there")
     graphicspath = "{figures/}" + "".join(f"{{{d.as_posix()}/}}" for d in gdirs)
@@ -318,6 +408,7 @@ def main():
                      "BODY_INPUTS": "\n".join(includes if not a.no_toc else [i.replace("\\include{", "\\input{") for i in includes]),
                      "AFTER_TITLE": "\\newpage" if not a.no_toc else "\\hypertarget{toc}{}",
                      "COVER_FIELDS": cover, "PDFTITLE": pdftitle,
+                     "BEFORE_TITLE": "\\input{paper-page}" if paper else "",
                      "BANGLA": BANGLA if a.bangla else "",
                      "TYPE_PREAMBLE": "\n".join(type_inputs),
                      "HEADER_RIGHT": bn_wrap(tex_escape(a.header_right)) if a.bangla else tex_escape(a.header_right),

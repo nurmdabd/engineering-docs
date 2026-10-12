@@ -51,3 +51,42 @@
 	{}
 }
 {}
+
+% ---------- The question paper (build.py --paper writes paper-page.tex from the mainquestion boxes) ----------
+% Laid out like the printed paper: centred header, marks/credits/time row, the instruction, part headings,
+% then each question with its marks in the right margin. Sub-part labels link to their solutions.
+\newcommand{\currentpaperq}{paper}
+\newcommand{\papersetq}[1]{\gdef\currentpaperq{paper-q#1}}   % each mainquestion box: PAPER jumps to its question
+\NewDocumentEnvironment{questionpaper}{}
+{
+	\clearpage
+	\gdef\HousePaperPage{}
+	\phantomsection\hypertarget{paper}{}\pdfbookmark[0]{Question Paper}{paper}
+	\begingroup\setstretch{1.05}\setlength{\parskip}{0pt}\setlength{\parindent}{0pt}
+	\let\textbf\oldtextbf   % plain black bold, as on the printed paper
+}
+{
+	\endgroup
+	\clearpage
+}
+\newif\ifpaperfirstline \paperfirstlinetrue   % the first header line (the institution) is set larger
+\newcommand{\paperheaderline}[1]{%
+	\ifpaperfirstline{\centering\Large\bfseries #1\par}\global\paperfirstlinefalse\else{\centering\large #1\par}\fi}
+\newcommand{\paperinfo}[3]{%
+	\par\vspace{0.6em}
+	\noindent\textbf{#1}\hfill\textbf{#2}\hfill\textbf{#3}\par\vspace{2pt}\hrule\vspace{0.6em}}
+\newcommand{\paperinstruction}[1]{{\centering\itshape #1\par}}
+% questions: a list whose right margin holds the marks
+\newenvironment{paperquestions}
+{\begin{list}{}{\setlength{\leftmargin}{0pt}\setlength{\rightmargin}{3.2em}\setlength{\itemsep}{0pt}
+	\setlength{\topsep}{0.4em}}\item\relax}
+{\end{list}}
+\newcommand{\paperpart}[1]{\par\vspace{0.8em}{\centering\large\bfseries #1\par}\vspace{0.3em}}
+\newcommand{\paperquestion}[1]{\par\phantomsection\hypertarget{paper-q#1}{}}
+\newcommand{\papermarks}[1]{\unskip\nobreak\hfill\rlap{\makebox[3.2em][r]{#1}}}
+\newcommand{\paperlink}[2]{\hyperlink{#1}{#2}}
+\newcommand{\paperappendix}{\par\vspace{1em}}
+
+% Right header: the PAPER button (to the current question on the paper) next to TOC, once there is a paper
+\fancyhead[R]{\ifdefempty{\ReportHeaderRight}{}{\ReportHeaderRight\ }%
+	\ifdefined\HousePaperPage\hyperlink{\currentpaperq}{\fbox{\small PAPER}}\ \fi\hyperlink{toc}{\fbox{\small TOC}}}

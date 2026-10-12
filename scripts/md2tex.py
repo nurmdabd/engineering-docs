@@ -152,6 +152,8 @@ def main():
     for item in build:   # the document's own preamble: a path relative to the sidecar, so the folder can move
         if item[0] == "--type-preamble":
             item[1] = os.path.relpath(own_pre, out.parent).replace(os.sep, "/")
+        if item[0] == "--paper-appendix":
+            item[1] = os.path.relpath((first.md.parent / item[1]).resolve(), out.parent).replace(os.sep, "/")
     if build:
         items = ",\n  ".join(json.dumps(x, ensure_ascii=False) for x in build)   # one option per line
         sidecar.write_text(f'{{\n "source": {json.dumps(md.name, ensure_ascii=False)},\n "build": [\n  {items}\n ]\n}}\n', encoding="utf-8")

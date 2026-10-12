@@ -163,6 +163,8 @@ def lint(path, as_type=None):
     own = (path.parent / meta["preamble"]) if meta.get("preamble") else None
     if own and not own.exists():
         say(1, "error", f"preamble {meta['preamble']} not found")
+    if meta.get("paper_appendix") and not (path.parent / meta["paper_appendix"]).exists():
+        say(1, "error", f"paper_appendix {meta['paper_appendix']} not found")
     registry = commands.registry(meta.get("type") if meta.get("type") in doctype.available() else None,
                                  own.with_suffix(".yaml") if own else None)
 

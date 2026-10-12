@@ -37,6 +37,12 @@ KEYS = {
     "toc": ("bool", None),                   # false: no table of contents (build.py --no-toc)
     "label_prefix": ("str", None),           # md2tex.py --label-prefix: d03_ makes sec:d03_objective, ...
     "first_number": ("str", None),           # md2tex.py --first-number: number of the first chapter/section   # this document's own commands (references/commands.md)
+    "paper": ("bool", "--paper"),            # past papers: the typeset question paper before the solutions
+    "paper_header": ("list", "--paper-header"),          # its centred header lines (raw LaTeX)
+    "paper_info": ("list", "--paper-info"),              # the marks / credits / time row
+    "paper_instruction": ("str", "--paper-instruction"),
+    "paper_parts": ("list", "--paper-part"),             # "Part-A: 1-3": a part heading before question 1
+    "paper_appendix": ("str", "--paper-appendix"),       # a .tex file printed at the end of the paper
     "exam": ("str", None),        # past papers: exam name and year, used by the type's guide
     "year": ("str", None),
 }
@@ -107,4 +113,6 @@ def build_flags(meta):
         flags.append(["--no-toc"])
     if meta.get("cover") is False:   # turns off a cover the type adds by default
         flags.append(["--no-cover"])
+    if meta.get("paper") is False:   # turns off the question paper the past-paper type adds by default
+        flags.append(["--no-paper"])
     return flags
