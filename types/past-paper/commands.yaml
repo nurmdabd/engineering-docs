@@ -30,3 +30,8 @@ derivation:
   kind: command
   markdown: auto
   use: "the Derivation / Explanation section, from \"### Derivation / Explanation\""
+sic:
+  kind: command
+  args: [text]
+  markdown: span
+  use: "a misprint marker right after printed paper text, [should be $\\sin\\theta$]{.sic}; the solution's ⚠ note explains it"

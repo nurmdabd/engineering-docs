@@ -90,7 +90,7 @@ Then `md2tex.py paper.md -o latex/paper.tex` and `build.py latex/paper.tex --out
 
 - **Part keys:** `## 1(a)`, `## 1.(a)` and `## (d)` all work; `(d)` takes the number of the question it sits under.
 - **Labels in the paper list:** the first item carries the question number (`**1. (a)**`), the rest only the letter (`**(b)**`).
-- **Copy the paper exactly.** The paper text is what was printed in the exam: never reword, shorten or correct it. Unclear words stay as printed, followed by `[sic]{.note}` if needed.
+- **Copy the paper exactly.** The paper text is what was printed in the exam: never reword, shorten or correct it. Unclear words stay as printed. A misprint (a wrong symbol, sign or word in the paper) also stays as printed, followed by a marker that names the correction, `[should be $\sin\theta$]{.sic}`, which prints a small red *[sic: should be sin θ]* in the paper page, the question box and the solution title (black in the print copy); `[]{.sic}` prints *[sic]* alone. Then open that sub-part's solution with a `> ⚠ **Note on the paper:**` box that says what is wrong and why, and solve the corrected question.
 - **Diagrams:** a block diagram or waveform is an image (`![Caption](figures/2020_2_7.png)`), named `<session>_<question>_<n>`. A diagram drawn in TikZ goes in a raw block: ```` ```{=latex} ```` … ```` ``` ````.
 
 ## Writing the solutions

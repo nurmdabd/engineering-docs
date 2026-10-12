@@ -52,6 +52,11 @@
 }
 {}
 
+% ---------- Misprint marker: [should be $\sin\theta$]{.sic} -> a small red [sic: ...] after the printed text ----------
+% The printed text stays exactly as it is; the marker only flags it, and the solution's warning box explains it.
+\newcommand{\sic}[1]{\unskip\,\mbox{\normalfont\scriptsize\color{red!75!black}[\textit{sic}\ifblank{#1}{}{: #1}]}}   % one unit: never split or stretched
+\soulregister{\sic}{1}   % the question titles are highlighted with soul, which needs to know the argument
+
 % ---------- The question paper (build.py --paper writes paper-page.tex from the mainquestion boxes) ----------
 % Laid out like the printed paper: centred header, marks/credits/time row, the instruction, part headings,
 % then each question with its marks in the right margin. Sub-part labels link to their solutions.
