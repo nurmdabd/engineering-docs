@@ -90,12 +90,20 @@ Then `md2tex.py paper.md -o latex/paper.tex` and `build.py latex/paper.tex --out
 
 - **Part keys:** `## 1(a)`, `## 1.(a)` and `## (d)` all work; `(d)` takes the number of the question it sits under.
 - **Labels in the paper list:** the first item carries the question number (`**1. (a)**`), the rest only the letter (`**(b)**`).
+- **Term tests (or another short paper) in the same document:** continue the numbering after the final's questions, one `# Question N` per test, its questions becoming the sub-parts (a), (b), …; give each test its own part heading that says how its numbers map, with the test's own marks and time as the part instruction, for example `"Term Test 1 (its questions 1 and 2 are 7(a) and 7(b)): 7-7 | [Term Test 1, Total Marks: 10, Time: 20 min]"`. A question the final already asks gets a short exam-ready answer and a link to the final's full solution, not a second copy. An item the paper prints without a mark stays without one (the linter warns; say so in a note).
 - **Copy the paper exactly.** The paper text is what was printed in the exam: never reword, shorten or correct it. Unclear words stay as printed. A misprint (a wrong symbol, sign or word in the paper) also stays as printed, followed by a marker that names the correction, `[should be $\sin\theta$]{.sic}`, which prints a small red *[sic: should be sin θ]* in the paper page, the question box and the solution title (black in the print copy); `[]{.sic}` prints *[sic]* alone. Then open that sub-part's solution with a `> ⚠ **Note on the paper:**` box that says what is wrong and why, and solve the corrected question.
+- **Links between solutions:** `[1(c)](#1c-inductance-of-a-three-phase-line-with-unsymmetrical-spacing)`, with the GitHub anchor of the `##` heading. Keep a heading that is a link target free of maths (`## 6(c) … on the Power-Angle Diagram`, not `$P_e$–$\delta$`), since its anchor is then easy to predict. The linter lists every link that matches no heading; a forward link to a solution not written yet shows up there until it is.
 - **Diagrams:** a block diagram or waveform is an image (`![Caption](figures/2020_2_7.png)`), named `<session>_<question>_<n>`. A diagram drawn in TikZ goes in a raw block: ```` ```{=latex} ```` … ```` ``` ````.
 
 ## Writing the solutions
 
 Use this when Claude writes the solutions. The paper (photo, PDF or text) must come from the user; Claude never invents a question.
+
+**The reader is a beginner.** Unless the user asks otherwise, write for a student meeting the topic for the first time:
+
+- **Theory is self-contained:** it starts from what the words mean and builds every idea the answer uses (what the thing is, why it happens, where the formula comes from, with a figure where a picture helps), in simple English and short sentences. A topic already built up in another solution is summarised in a sentence or two and linked (`see [2(c)](#2c-…)`), not repeated.
+- **The answer is not:** it is what a student writes in the exam, as long as the marks need and no longer, and it may lean on the Theory above it.
+- **Figures** go where they help understanding as well as where the question asks for one; each is followed by a **Reading the figure.** paragraph.
 
 **Order of sections in one solution:**
 1. **Theory** (optional): when the topic needs to be built up from basics before the answer makes sense. Numbered `####` sub-topics that ask and answer the natural questions in turn: "1. What is X? (Core Idea)", "2. Why does it happen?", "3. What does the formula mean?", including unit checks and practical reference numbers.
@@ -117,7 +125,7 @@ Use this when Claude writes the solutions. The paper (photo, PDF or text) must c
 - Answer every part the question names (a "with block diagram" question needs the diagram; "draw the curve" needs the figure).
 - `**Label:**` lead-ins structure the answer; `####` sub-headings only for real sub-topics or for the parts (i), (ii) of a short-notes question.
 
-**Accuracy:** formulas and numbers must agree with the course notes when they exist (for COM, `level-2/complete-theory/`); where a textbook convention differs from the class notes, say which one is used.
+**Accuracy:** formulas and numbers must agree with the course notes when they exist (for COM, `level-2/complete-theory/`). When there are no notes, ask which textbook the course follows and use its conventions. Where a question can be read two ways (a voltage taken as line or phase, r.m.s. or peak), solve it the textbook's way, say so under **Assumption:**, and give the other result in Notes and Remarks.
 
 ## Review checklist
 
