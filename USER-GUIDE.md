@@ -89,7 +89,7 @@ A type is a preset for one kind of document: page settings, a writing guide, a s
 | `exam-notes` | Memorize-version of theory notes, each heading linked back | 12pt article |
 | `formula-sheet` | Every formula in Title / Equation / Notation / Reference tables | 10pt, 0.4in side margins |
 | `question-bank` | Practice numericals, short and long questions, linked to solutions | 12pt article, cover |
-| `past-paper` | Full solutions of a previous year's paper | tight layout, 0.5in side margins, no cover |
+| `past-paper` | Full solutions of a previous year's paper | tight layout, 0.5in side margins, solutions cover with a question map |
 | `project-report` | Multi-day lab or project report, one chapter per day | 14pt report (chapters) |
 
 No type fits (a derivation sheet, a mind map)? Leave `type:` out and the house defaults apply. Ask Claude to add a new type if you'll make that kind of document again.

@@ -17,10 +17,16 @@ header: "EEE329: Basic Communication Engineering"
 header_right: "Solution of Session 2020--21"
 exam: "EEE329 Term Final"
 year: "2020--21"
+course_code: "EEE329"
+course_name: "Basic Communication Engineering"
+cover_title: "Question Paper Solutions"
+cover_subtitle: "Session 2020--21"
+cover_note: "EEE329 Term Final Examination"
+date: "October 2026"
 ---
 ```
 
-Then `md2tex.py paper.md -o latex/paper.tex` and `build.py latex/paper.tex --out paper.pdf`. Past papers have no cover page, like the user's own. `exam` and `year` are records only; the session shows through `subtitle` and `header_right`. The type sets `--structure past-paper` for the converter and loads `types/past-paper/preamble.tex` (the `questionblock` environment and the section commands) in the build.
+Then `md2tex.py paper.md -o latex/paper.tex` and `build.py latex/paper.tex --out paper.pdf`. The type adds its own cover (`types/past-paper/cover-page-*.tex`): course code and name, `cover_title`, the session in a pill (`cover_subtitle`), the exam as printed on the paper (`cover_note`), a question map with each question's total marks (counted by the build from the `[Marks: …]` in each paper block), and the order every answer follows. Take the course code, name and exam from the question paper; never invent them. The print copy gets a light version of the same cover, with tints and outlines instead of solid bands. `cover: false` leaves it out. `exam` and `year` are records only; the session shows through `subtitle` and `header_right`. The type sets `--structure past-paper` for the converter and loads `types/past-paper/preamble.tex` (the `questionblock` environment and the section commands) in the build.
 
 ## Markdown structure
 

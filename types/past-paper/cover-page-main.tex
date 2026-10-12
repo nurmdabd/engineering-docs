@@ -1,0 +1,82 @@
+% Past-paper cover page. Uses only fields set in cover-page-preamble.tex.
+\thispagestyle{empty}
+\begin{tikzpicture}[remember picture, overlay]
+	\coordinate (NW) at (current page.north west);
+	\coordinate (SW) at (current page.south west);
+	\coordinate (NE) at (current page.north east);
+	\coordinate (SE) at (current page.south east);
+	% wave rings in the top-right corner
+	\begin{scope}
+		\clip ($(NW)+(2.2cm,0)$) rectangle (SE);
+		\foreach \r in {2.5,3.7,...,13.3}
+			\draw[coverdeco, line width=1.2pt] (NE) circle (\r cm);
+	\end{scope}
+	% left band with the document kind, bottom band with author and date
+	\fill[coverband] (NW) rectangle ($(SW)+(2.2cm,0)$);
+	\fill[coverband] (SW) rectangle ($(SE)+(0,1.6cm)$);
+	\fill[coverstrip] ($(NW)+(2.2cm,0)$) rectangle ($(SW)+(2.45cm,1.6cm)$);
+	\fill[coverstrip] ($(SW)+(2.2cm,1.6cm)$) rectangle ($(SE)+(0,1.85cm)$);
+	\node[rotate=90, anchor=center, text=coverbandtext, font=\large\bfseries]
+		at ($(SW)+(1.1cm,14.85cm)$) {P\,A\,S\,T \enspace P\,A\,P\,E\,R \enspace S\,O\,L\,U\,T\,I\,O\,N\,S};
+	\node[anchor=west, text=coverbandtext] at ($(SW)+(3.2cm,0.8cm)$) {Prepared by \CoverAuthor};
+	\node[anchor=east, text=coverbandtext] at ($(SE)+(-1.6cm,0.8cm)$) {\CoverDate};
+	% course code and name
+	\node[anchor=north west, text=covertitle, font=\fontsize{46}{50}\selectfont\bfseries]
+		at ($(NW)+(3.2cm,-2.4cm)$) {\CoverCourseCode};
+	\node[anchor=north west, text=coveraccent, font=\LARGE, text width=13cm, align=left]
+		at ($(NW)+(3.25cm,-4.6cm)$) {\CoverCourseName};
+\end{tikzpicture}
+
+% title block, in the text area (left margin moved past the band)
+\vspace*{6.6cm}
+\begin{list}{}{\setlength{\leftmargin}{2.3cm}\setlength{\rightmargin}{0.4cm}\setlength{\topsep}{0pt}}\item\relax
+	{\color{coveraccent}\rule{2.4cm}{3pt}\par}
+	\vspace{0.5cm}
+	{\fontsize{34}{40}\selectfont\bfseries\color{black!85}\CoverTitle\par}
+	\vspace{0.6cm}
+	\ifdefempty{\CoverSubtitle}{}{%
+		\tikz[baseline=(p.base)]\node[fill=coverpill, draw=coveraccent, line width=1pt, text=coverpilltext,
+			rounded corners=9pt, inner xsep=12pt, inner ysep=6pt, font=\Large\bfseries] (p) {\CoverSubtitle};\par
+		\vspace{0.5cm}}
+	\ifdefempty{\CoverNote}{}{{\large\itshape\color{coversoft}\CoverNote\par}}
+
+	\ifdefempty{\CoverQuestions}{}{%
+		\vspace{1.6cm}
+		{\small\bfseries\color{coversoft}Q\,U\,E\,S\,T\,I\,O\,N \enspace M\,A\,P\par}
+		\vspace{0.3cm}
+		\begin{tikzpicture}
+			\foreach \q/\m [count=\i from 0] in \CoverQuestions {
+				\pgfmathtruncatemacro{\col}{mod(\i,6)}
+				\pgfmathtruncatemacro{\row}{div(\i,6)}
+				\begin{scope}[shift={(\col*2.55cm, -\row*2.4cm)}]
+					\fill[coverchip, rounded corners=6pt] (0,0) rectangle (2.2cm,-2cm);
+					\fill[coverchiptop, rounded corners=6pt] (0,0) rectangle (2.2cm,-1.05cm);
+					\fill[coverchiptop] (0,-0.7cm) rectangle (2.2cm,-1.05cm);
+					\draw[coveraccent, line width=0.8pt, rounded corners=6pt] (0,0) rectangle (2.2cm,-2cm);
+					\node[text=coverchiptoptext, font=\LARGE\bfseries] at (1.1cm,-0.53cm) {Q\q};
+					\node[text=black!80, font=\small] at (1.1cm,-1.52cm) {\ifx\m\empty\relax --\else\m\ marks\fi};
+				\end{scope}
+			}
+		\end{tikzpicture}\par}
+
+	% how every solution is laid out (the order in guide.md)
+	\vspace{1.4cm}
+	{\small\bfseries\color{coversoft}E\,A\,C\,H \enspace A\,N\,S\,W\,E\,R\par}
+	\vspace{0.3cm}
+	\begin{tikzpicture}[ansstep/.style={draw=coveraccent, line width=0.8pt, rounded corners=4pt, fill=coverchip,
+			minimum width=2.45cm, minimum height=1.1cm, align=center, font=\footnotesize\bfseries, text=black!80}]
+		\foreach \t [count=\i from 0] in {Theory, Answer, Keyword\\Explanation, Notes and\\Remarks, Final Concise\\Answer} {
+			\node[ansstep] (s\i) at (\i*3.05cm, 0) {\t};
+		}
+		\foreach \i [evaluate=\i as \j using int(\i+1)] in {0,...,3}
+			\draw[-latex, coveraccent, line width=1pt] (s\i.east) -- (s\j.west);
+	\end{tikzpicture}\par
+
+	\ifdefempty{\CoverContents}{}{%
+		\vspace{1cm}
+		\begin{tcolorbox}[enhanced, colback=coverchip, colframe=coveraccent, colbacktitle=coverchiptop,
+			coltitle=coverchiptoptext, fonttitle=\bfseries, title={Inside}, arc=2mm, width=0.85\linewidth]
+			\begingroup\def\\{\par\smallskip$\bullet$\ }$\bullet$\ \CoverContents\par\endgroup
+		\end{tcolorbox}}
+\end{list}
+\clearpage

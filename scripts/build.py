@@ -22,6 +22,7 @@ Usage:
         [--cover-title "Complete Theory"] [--cover-subtitle "Lectures 24--38"] [--cover-note "..."]
         [--cover-contents "Item 1" --cover-contents "Item 2"] [--date "October 2026"]
         [--cover-dir DIR]                      # use your own cover-page-preamble.tex / cover-page-main.tex instead
+        [--no-cover]                           # leave out a cover the type adds by default (past-paper)
         [--build-dir DIR]                      # default: <OUT stem>_build next to OUT
         [--print]                              # black-and-white copy for printing (template/print-bw.tex):
                                                # uses figures/print/NAME for each image that has one, greys the rest
@@ -173,6 +174,20 @@ def colour_only(tex, name):
 REPEATED = ("--title", "--cover-contents")   # options that collect values; the user's replace the sidecar's
 
 
+def question_marks(bodies):
+    """Past papers: 'N/marks' for each mainquestion box, comma-separated, for the cover's question map.
+
+    The marks are the sum of every [Marks: ...] in the box ('5+7' counts 12); a box without marks gives 'N/'.
+    """
+    out = []
+    for body in bodies:
+        for box in re.findall(r"\\begin\{mainquestion\}(.*?)\\end\{mainquestion\}", body.read_text(encoding="utf-8"), re.S):
+            nums = [float(x) for m in re.findall(r"Marks:\s*([0-9.+\s]+)", box) for x in re.findall(r"[0-9.]+", m)]
+            total = f"{sum(nums):g}" if nums else ""
+            out.append(f"{len(out) + 1}/{total}")
+    return ",".join(out)
+
+
 def with_sidecar(argv):
     """Put the first body's NAME.build.json settings (written by md2tex.py from front matter) before argv."""
     body = next((Path(x) for x in argv[1:] if x.endswith(".tex")), None)
@@ -204,6 +219,8 @@ def main():
     ap.add_argument("--bangla", action="store_true")
     ap.add_argument("--figures", nargs="*", default=[], type=Path)
     ap.add_argument("--cover", action="store_true")
+    ap.add_argument("--no-cover", dest="cover", action="store_false")
+    ap.add_argument("--type-cover-dir", type=Path)
     ap.add_argument("--course-code", default="")
     ap.add_argument("--course-name", default="")
     ap.add_argument("--cover-title")
@@ -233,7 +250,7 @@ def main():
         type_inputs.append("\\input{print-bw.tex}")
     for f in ("cover-page-preamble.tex", "cover-page-main.tex"):
         (build / f).unlink(missing_ok=True)
-        src = (a.cover_dir / f) if a.cover_dir else (TEMPLATE / f if a.cover else None)
+        src = (a.cover_dir / f) if a.cover_dir else ((a.type_cover_dir or TEMPLATE) / f if a.cover else None)
         if src and src.exists():
             shutil.copy(src, build)
 
@@ -283,7 +300,8 @@ def main():
         fields = {"CoverCourseCode": a.course_code, "CoverCourseName": a.course_name,
                   "CoverTitle": a.cover_title or " ".join(titles), "CoverSubtitle": a.cover_subtitle,
                   "CoverNote": a.cover_note, "CoverAuthor": a.author,
-                  "CoverContents": " \\\\ ".join(a.cover_contents)}
+                  "CoverContents": " \\\\ ".join(a.cover_contents),
+                  "CoverQuestions": question_marks([b for _, b in bodies])}
         cover = "\n".join(f"\\newcommand{{\\{k}}}{{{v}}}" for k, v in fields.items())
         if a.date:
             cover += f"\n\\newcommand{{\\CoverDate}}{{{a.date}}}"

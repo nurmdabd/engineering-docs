@@ -1,0 +1,28 @@
+% Past-paper cover. build.py uses this pair instead of the study-notes cover for `type: past-paper`.
+% Set the fields in main.tex BEFORE \input of this file (build.py does it); unset fields are left out.
+\providecommand{\CoverCourseCode}{}   % e.g. EEE475
+\providecommand{\CoverCourseName}{}   % e.g. RF and Microwave Engineering
+\providecommand{\CoverTitle}{}        % e.g. Question Paper Solutions
+\providecommand{\CoverSubtitle}{}     % e.g. Session 2020--21 (printed in a pill)
+\providecommand{\CoverNote}{}         % e.g. the exam as printed on the paper
+\providecommand{\CoverAuthor}{Nur Mohammad}
+\providecommand{\CoverDate}{\today}
+\providecommand{\CoverContents}{}     % optional short "inside" list, items separated by \\
+\providecommand{\CoverQuestions}{}    % filled by build.py: N/marks for each question box, e.g. 1/25,2/25
+\usetikzlibrary{calc}
+
+% Screen: solid ocean bands. Print copy (print-bw.tex sets \HousePrintCopy): light tints and outlines,
+% so the cover costs little toner.
+\ifdefined\HousePrintCopy
+	\colorlet{coverband}{black!7}   \colorlet{coverbandtext}{black}
+	\colorlet{coveraccent}{black}   \colorlet{coverdeco}{black!14}   \colorlet{coverstrip}{black!30}
+	\colorlet{coverpill}{white}     \colorlet{coverpilltext}{black}
+	\colorlet{coverchip}{white}     \colorlet{coverchiptop}{black!10} \colorlet{coverchiptoptext}{black}
+	\colorlet{covertitle}{black}    \colorlet{coversoft}{black!70}
+\else
+	\colorlet{coverband}{DeepOcean} \colorlet{coverbandtext}{white}
+	\colorlet{coveraccent}{BlueLagoon} \colorlet{coverdeco}{BlueLagoon!14} \colorlet{coverstrip}{BlueLagoon}
+	\colorlet{coverpill}{BlueLagoon} \colorlet{coverpilltext}{white}
+	\colorlet{coverchip}{BlueLagoon!6} \colorlet{coverchiptop}{DeepOcean} \colorlet{coverchiptoptext}{white}
+	\colorlet{covertitle}{DeepOcean} \colorlet{coversoft}{black!65}
+\fi

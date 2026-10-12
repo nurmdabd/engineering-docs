@@ -105,4 +105,6 @@ def build_flags(meta):
         flags.append(["--bangla"])
     if meta.get("toc") is False:
         flags.append(["--no-toc"])
+    if meta.get("cover") is False:   # turns off a cover the type adds by default
+        flags.append(["--no-cover"])
     return flags
