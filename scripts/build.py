@@ -244,12 +244,17 @@ def paper_page(a, copies):
         box = re.sub(r"\\label\{[^}]*\}", "", box)
         box = re.sub(r"\\hfill Marks: ([^\n]+?)\s*$", r"\\papermarks{\1}", box, flags=re.M)
         box = re.sub(r"\{\[\}Marks: ([^{]+?)\{\]\}", r"\\papermarks{\1}", box)
-        lines, depth = [], 0
-        for line in box.split("\n"):   # link the top-level sub-part labels to their solutions
+        lines, depth, cur = [], 0, None
+        for line in box.split("\n"):   # link each sub-part (label and text) to its solution
             depth += line.count("\\begin{itemize}") + line.count("\\begin{enumerate}")
             m = re.match(r"(\s*)\\item\[((?:\d+\.\s*)?\(([a-z]+)\))\]", line)
-            if m and depth == 1 and f"{q}{m.group(3)}" in targets:
-                line = line.replace(m.group(0), f"{m.group(1)}\\item[\\paperlink{{sol-{q}{m.group(3)}}}{{{m.group(2)}}}]", 1)
+            if m and depth == 1:
+                cur = f"sol-{q}{m.group(3)}" if f"{q}{m.group(3)}" in targets else None
+                if cur:
+                    line = line.replace(m.group(0), f"{m.group(1)}\\item[\\paperlink{{{cur}}}{{{m.group(2)}}}]", 1)
+            t = re.match(r"(\s*\\item\[.*?\]\]?\s*)(.*?)(\s*\\papermarks\{[^}]*\})?$", line)
+            if cur and t and t.group(2).strip():   # the text of the sub-part, or of its (i), (ii) items
+                line = t.group(1) + f"\\paperqlink{{{cur}}}{{{t.group(2)}}}" + (t.group(3) or "")
             depth -= line.count("\\end{itemize}") + line.count("\\end{enumerate}")
             lines.append(line)
         out.append(f"\\paperquestion{{{q}}}\n" + "\n".join(lines))

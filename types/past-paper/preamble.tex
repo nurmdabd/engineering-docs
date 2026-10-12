@@ -71,7 +71,7 @@
 }
 \newif\ifpaperfirstline \paperfirstlinetrue   % the first header line (the institution) is set larger
 \newcommand{\paperheaderline}[1]{%
-	\ifpaperfirstline{\centering\Large\bfseries #1\par}\global\paperfirstlinefalse\else{\centering\large #1\par}\fi}
+	\ifpaperfirstline{\centering\large\bfseries #1\par}\global\paperfirstlinefalse\else{\centering\normalsize #1\par}\fi}
 \newcommand{\paperinfo}[3]{%
 	\par\vspace{0.6em}
 	\noindent\textbf{#1}\hfill\textbf{#2}\hfill\textbf{#3}\par\vspace{2pt}\hrule\vspace{0.6em}}
@@ -85,6 +85,8 @@
 \newcommand{\paperquestion}[1]{\par\phantomsection\hypertarget{paper-q#1}{}}
 \newcommand{\papermarks}[1]{\unskip\nobreak\hfill\rlap{\makebox[3.2em][r]{#1}}}
 \newcommand{\paperlink}[2]{\hyperlink{#1}{#2}}
+% the question text links to its solution too, in black so the paper still reads like the printed one
+\newcommand{\paperqlink}[2]{{\hypersetup{linkcolor=black}\hyperlink{#1}{#2}}}
 \newcommand{\paperappendix}{\par\vspace{1em}}
 
 % Right header: the PAPER button (to the current question on the paper) next to TOC, once there is a paper
