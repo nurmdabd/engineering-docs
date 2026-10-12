@@ -86,7 +86,8 @@
 {\begin{list}{}{\setlength{\leftmargin}{0pt}\setlength{\rightmargin}{3.2em}\setlength{\itemsep}{0pt}
 	\setlength{\topsep}{0.4em}}\item\relax}
 {\end{list}}
-\newcommand{\paperpart}[1]{\par\vspace{0.8em}{\centering\large\bfseries #1\par}\vspace{0.3em}}
+\newcommand{\paperpart}[2]{\par\vspace{0.8em}{\centering\large\bfseries #1\par}%
+	\ifblank{#2}{}{{\centering\itshape #2\par}}\vspace{0.3em}}
 \newcommand{\paperquestion}[1]{\par\phantomsection\hypertarget{paper-q#1}{}}
 \newcommand{\papermarks}[1]{\unskip\nobreak\hfill\rlap{\makebox[3.2em][r]{#1}}}
 \newcommand{\paperlink}[2]{\hyperlink{#1}{#2}}

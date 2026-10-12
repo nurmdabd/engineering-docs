@@ -19,7 +19,8 @@ What the grey copy changes:
 - a coloured curve (more than 5 points) gets the dash of its hue: blue solid, orange dashed, red dotted,
   green dash-dot, purple short dashes, ...; legends get the same dashes. Straight segments, wires and
   arrows stay solid. A curve that already has a line style keeps it.
-- coloured strokes, edges and arrows become black or dark grey; text becomes black.
+- coloured strokes, edges and arrows become black or dark grey; text becomes black (white text too,
+  since the strong fill under it turns light grey).
 - light fills keep their lightness; strong fills become a light grey (saves toner); colour maps become
   a light grey ramp.
 - relabel={"old": "new"} rewrites figure text that names a colour, if any is left.
@@ -117,7 +118,8 @@ def to_bw(fig, relabel=None):
         pa.set_edgecolor(_stroke(pa.get_edgecolor()))
     for tx in fig.findobj(Text):
         c = tx.get_color()
-        tx.set_color("black" if _coloured(c) else _stroke(c))
+        # light text sat on a strong fill, which is a light grey now: make it black too, or it vanishes
+        tx.set_color("black" if _coloured(c) or _lum(c) > 0.6 else _stroke(c))
         for old, new in (relabel or {}).items():
             if old in tx.get_text():
                 tx.set_text(tx.get_text().replace(old, new))

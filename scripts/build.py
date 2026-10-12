@@ -220,11 +220,12 @@ def paper_page(a, copies):
         return ""
 
     parts = {}
-    for p in a.paper_part:
-        name, _, rng = p.rpartition(":")
+    for p in a.paper_part:   # "Part-A: 1-3", or "Part-A: 1-3 | [Answer any two ...]" with the part's own instruction
+        head, _, note = p.partition("|")
+        name, _, rng = head.rpartition(":")
         first = re.match(r"\s*(\d+)", rng)
         if name.strip() and first:
-            parts[first.group(1)] = name.strip()
+            parts[first.group(1)] = (name.strip(), note.strip())
 
     def figure(m):   # unnumbered, so the solutions keep their figure numbers; no label, so none is defined twice
         body = re.sub(r"\\label\{[^}]*\}|\\centering", "", m.group(1))
@@ -239,7 +240,7 @@ def paper_page(a, copies):
     for i, box in enumerate(boxes, 1):
         q = num(box, i)
         if q in parts:
-            out.append(f"\\paperpart{{{parts[q]}}}")
+            out.append(f"\\paperpart{{{parts[q][0]}}}{{{parts[q][1]}}}")
         box = re.sub(r"\\begin\{figure\}(?:\[[^\]]*\])?(.*?)\\end\{figure\}", figure, box, flags=re.S)
         box = re.sub(r"\\label\{[^}]*\}", "", box)
         box = re.sub(r"\\hfill Marks: ([^\n]+?)\s*$", r"\\papermarks{\1}", box, flags=re.M)
