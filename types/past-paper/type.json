@@ -1,5 +1,5 @@
 {
   "description": "Solutions of a previous year's exam paper: each question's paper block, then one solution per sub-part (Theory, Answer, Keyword Explanation, Notes and Remarks, Final Concise Answer).",
-  "md2tex": ["--structure", "past-paper"],
+  "md2tex": ["--structure", "past-paper", "--textwidth", "18.4"],
   "build": []
 }
