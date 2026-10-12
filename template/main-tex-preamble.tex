@@ -121,6 +121,10 @@
 
 % Paragraph spacing
 \setlength{\parskip}{0.5em}   % space between paragraphs
+% When a paragraph cannot be set without a line running into the margin (a long inline formula near the
+% end of a line, more often in the highlighted question titles), allow extra word space in that paragraph
+% instead. Paragraphs that already fit are set exactly as before.
+\setlength{\emergencystretch}{3em}
 \setlength{\parindent}{0pt}   % no indent
 % \setlength{\intextsep}{-5pt}  % space above and below in-line figures
 \setlength{\intextsep}{-3pt plus 3pt minus 2pt}   % when table remain between text [h]
