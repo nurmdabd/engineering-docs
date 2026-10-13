@@ -40,6 +40,7 @@ import sys
 from pathlib import Path
 
 import coverdata
+import formulasheet
 import doctype
 import json
 
@@ -352,6 +353,8 @@ def main():
     ap.add_argument("--prerequisite", action="append", default=[])
     ap.add_argument("--conventions", default="")
     ap.add_argument("--print-layout", default="duplex", choices=["duplex", "booklet"])   # print copy: sheets or a folded booklet
+    ap.add_argument("--edge-tabs", dest="edge_tabs", action="store_true")   # a clickable tab per part on the page edge
+    ap.add_argument("--no-edge-tabs", dest="edge_tabs", action="store_false")
     ap.add_argument("--source", default="")            # the Markdown file (from the front-matter sidecar)
     ap.add_argument("--build-dir", type=Path)
     ap.add_argument("--print", dest="bw", action="store_true")
@@ -423,6 +426,32 @@ def main():
         if words:
             print("  text naming a colour without a line style or shape (reads wrongly in print):\n    "
                   + "\n    ".join(words))
+    # formula sheets: a link target and a star on each row, then the Key formulas and Symbol index pages
+    (build / "formula-pages.tex").unlink(missing_ok=True)
+    extra_pages = ""
+    if a.doc_type == "formula-sheet":
+        rows = []
+        for _, copy in bodies:
+            tex, more = formulasheet.mark_rows(copy.read_text(encoding="utf-8"), len(rows))
+            copy.write_text(tex, encoding="utf-8")
+            rows += more
+        extra_pages = formulasheet.pages(rows)
+        if extra_pages:
+            (build / "formula-pages.tex").write_text(extra_pages, encoding="utf-8")
+    # edge tabs: one per part, linked to the part's label
+    (build / "edge-tabs.tex").unlink(missing_ok=True)
+    tab_items = []
+    if a.edge_tabs:
+        tab_items = []
+        for _, copy in bodies:
+            tex = copy.read_text(encoding="utf-8")
+            tops = coverdata.top_level(tex)
+            for level, title, start, _end in tops:
+                tab_items.append(coverdata.label_after(tex[start:], title))
+        if len(tab_items) >= 2 and all(tab_items):
+            shutil.copy(TEMPLATE / "edge-tabs.tex", build)
+        else:
+            tab_items = []
     paper = paper_page(a, [c for _, c in bodies]) if a.paper else ""
     (build / "paper-page.tex").unlink(missing_ok=True)
     if paper:
@@ -475,7 +504,13 @@ def main():
                      "TOC_BLOCK": toc, "AUTHOR": tex_escape(a.author),
                      # without a contents list, the body follows the title on the same page and the header's
                      # TOC button (which would point nowhere) jumps to the title instead
-                     "BODY_INPUTS": "\n".join(includes if not a.no_toc else [i.replace("\\include{", "\\input{") for i in includes]),
+                     "BODY_INPUTS": ("\\HouseTabsOn\n" if tab_items else "")
+                                    + "\n".join(includes if not a.no_toc else [i.replace("\\include{", "\\input{") for i in includes])
+                                    + ("\n\\input{formula-pages}" if extra_pages else "")
+                                    + ("\n\\HouseTabsOff" if tab_items else ""),
+                     "EDGE_TABS": ("\\input{edge-tabs.tex}\n\\newcommand{\\HouseTabCount}{" + str(len(tab_items)) + "}\n"
+                                   "\\renewcommand{\\HouseTabList}{" + "".join(f"\\housetabitem{{{i}}}{{{lab}}}" for i, lab in enumerate(tab_items, 1)) + "}")
+                                  if tab_items else "",
                      # with a cover the title is on the cover, so the contents page starts straight away
                      "TITLE_BLOCK": "" if covered else f"\\begin{{center}}\n{title_lines}\n\\end{{center}}\n",
                      "CREATED_BY": "" if covered else ("\\begin{center}\n\t{\\color{white!50!black}Created by "

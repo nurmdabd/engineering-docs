@@ -1,6 +1,6 @@
 {
   "description": "Exam (revision) notes: the memorize-version of a theory-notes document, with the same parts, lectures and section numbers, each heading linked to its full explanation.",
   "md2tex": [],
-  "build": [],
+  "build": ["--edge-tabs"],
   "cover": {"label": "EXAM NOTES", "signature": "CA6702"}
 }

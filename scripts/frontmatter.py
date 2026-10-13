@@ -40,6 +40,7 @@ KEYS = {
     "print_layout": ("str", "--print-layout"),   # print copy: duplex (default) or booklet (pages padded to a multiple of 4)   # back cover: one or two sentences on what the document is
     "prerequisites": ("list", "--prerequisite"),   # back of the cover (theory notes): what to know first
     "conventions": ("str", "--conventions"),       # back of the cover: the textbook and conventions followed
+    "edge_tabs": ("bool", "--edge-tabs"),     # a clickable tab per part on the page edge (false: none)
     "map_size": ("str", "--paper-size"),     # mind maps: a4 (screen, default) or a3 (print)
     "map_detail": ("bool", None),            # mind maps: show the cards' detail lines (default: on A3 only)
     "margin_x": ("str", "--margin-x"),       # left/right margin, e.g. 0.6in (default: the type's, else 0.5in)
@@ -135,6 +136,8 @@ def build_flags(meta):
         flags.append(["--no-inside-cover"])
     if meta.get("back_cover") is False:
         flags.append(["--no-back-cover"])
+    if meta.get("edge_tabs") is False:
+        flags.append(["--no-edge-tabs"])
     if meta.get("paper") is False:   # turns off the question paper the past-paper type adds by default
         flags.append(["--no-paper"])
     return flags

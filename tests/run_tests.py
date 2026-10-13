@@ -138,6 +138,17 @@ def check_coverdata():
     if facts != ["\\paperfact{3 h}{Total time}", "\\paperfact{100}{Total marks}", "\\paperfact{1 of 2}{Questions to answer}",
                  "\\paperfact{180 min}{Per question}"] or "& 9 & 16 min &" not in "".join(prow) or "sol-1a" not in "".join(prow):
         problems.append(f"paper(): {facts} {prow}")
+    import formulasheet
+    sheet2 = ("\\begin{tabularx}{\\textwidth}{|l|l|l|l|}\n\\hline\nT & E & N & R \\\\ \\hline\n\\endhead\n"
+              "\\keyterm{Carson} & $B_T$ & \\tallcell{$B_T$ = bandwidth\\newline $a(t) = \\int m$} & r \\\\ \\hline\n"
+              "Plain & $x$ & $B_T$ = again\\newline k = constant & r \\\\ \\hline\n\\end{tabularx}\n")
+    marked, rows = formulasheet.mark_rows(sheet2)
+    syms = [(s, m) for s, m, _ in formulasheet.symbols(rows)]
+    if [r["key"] for r in rows] != [True, False] or "\\hypertarget{fsrow-1}{}" not in marked or "$\\bigstar$" not in marked \
+            or syms != [("$B_T$", "bandwidth"), ("k", "constant")]:
+        problems.append(f"formulasheet: keys {[r['key'] for r in rows]}, symbols {syms}")
+    if "Key formulas" not in formulasheet.pages(rows) or "Symbol index" not in formulasheet.pages(rows):
+        problems.append("formulasheet.pages(): a section is missing")
     print(f"{'ok' if not problems else 'FAILED':8} cover data")
     for p in problems:
         print("  " + p)

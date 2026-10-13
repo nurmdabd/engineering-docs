@@ -32,6 +32,9 @@
 	\end{tikzpicture}\par\vspace{0.3cm}}
 \navrow{\fbox{\small TOC}}{Top right of every page: back to the contents.}
 \navrow{{\color{blue!50!black}§1.2}}{Blue text is a link: tap it to jump there.}
+\ifdefined\HouseTabCount\navrow{\tikz{\fill[CoverPart1!35] (0,0) rectangle (0.3,0.75); \fill[CoverPart2] (0.4,0) rectangle (0.95,0.75);
+	\fill[CoverPart3!35] (1.05,0) rectangle (1.35,0.75);}}{Edge tabs: the wide tab on the right edge is the part you are in; tap
+	another to jump to it.}\fi
 \navrow{\tikz{\foreach \y/\w in {0/1.1,0.22/0.8,0.44/0.95} {\fill[black!45] (0,\y) circle (0.04); \draw[black!45, line width=1.2pt] (0.12,\y) -- ++(\w,0);}}}{Bookmarks: the outline panel of your PDF viewer shows every section.}
 \ifdefempty{\CoverPrereqs}{}{%
 	\vspace{0.3cm}

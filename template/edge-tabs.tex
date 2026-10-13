@@ -1,0 +1,42 @@
+% Edge tabs: one coloured tab per part (or topic) on the right edge of every body page, the current one
+% wider and labelled; each tab is a link to its part. build.py loads this file when the build has
+% --edge-tabs (theory notes, exam notes and formula sheets by default) and fills \HouseTabList with
+% \housetabitem{n}{label} items. The current part is the last one whose label is on this page or before it
+% (page references, so it is right after the second LaTeX run). The print copy has no tabs (printers cannot
+% print to the edge of the sheet).
+\usepackage{refcount}
+\providecolor{CoverPart1}{HTML}{2E6FB7}
+\providecolor{CoverPart2}{HTML}{E07A1F}
+\providecolor{CoverPart3}{HTML}{2E8B57}
+\providecolor{CoverPart4}{HTML}{7B4FB0}
+\providecolor{CoverPart5}{HTML}{C0392B}
+\providecolor{CoverPart6}{HTML}{0A9396}
+\providecolor{CoverPart7}{HTML}{8D6E3F}
+\providecolor{CoverPart8}{HTML}{5C6B7A}
+\providecommand{\setpartcolor}[1]{\pgfmathtruncatemacro{\partcolorn}{mod(#1-1,8)+1}\edef\partcolor{CoverPart\partcolorn}}
+\providecommand{\HouseTabList}{}
+\newif\ifHouseTabs
+\newcommand{\HouseTabsOn}{\ifdefined\HousePrintCopy\else\global\HouseTabstrue\fi}
+\newcommand{\HouseTabsOff}{\clearpage\global\HouseTabsfalse}
+\newcount\housetabcount
+\newcommand{\housetabitem}[2]{%
+	\setpartcolor{#1}%
+	\pgfmathsetmacro{\housetabtop}{2.6 + (#1-1)*\housetabstep}%
+	\ifnum#1=\housecurrent\relax
+		\fill[\partcolor] ($(current page.north east)+(-0.75,-\housetabtop)$) rectangle ++(0.75,-\housetabstep+0.12);
+		\node[rotate=-90, text=white, font=\bfseries\footnotesize, anchor=center]
+			at ($(current page.north east)+(-0.38,-\housetabtop-\housetabstep/2+0.06)$) {\hyperref[#2]{#1}};
+	\else
+		\fill[\partcolor!35] ($(current page.north east)+(-0.4,-\housetabtop)$) rectangle ++(0.4,-\housetabstep+0.12);
+		\node[rotate=-90, text=\partcolor!60!black, font=\scriptsize, anchor=center]
+			at ($(current page.north east)+(-0.2,-\housetabtop-\housetabstep/2+0.06)$) {\hyperref[#2]{#1}};
+	\fi}
+% first pass over the list: find the current part
+\newcommand{\housetabscan}[2]{\ifnum\getpagerefnumber{#2}>\value{page}\else\def\housecurrent{#1}\fi}
+\AddToHook{shipout/background}{\ifHouseTabs
+	\def\housecurrent{0}%
+	\begingroup\let\housetabitem\housetabscan\HouseTabList\expandafter\endgroup\expandafter\def\expandafter\housecurrent\expandafter{\housecurrent}%
+	\put(0,0){\begin{tikzpicture}[remember picture, overlay, x=1cm, y=1cm]
+		\pgfmathsetmacro{\housetabstep}{min(2.4, (\paperheight/1cm - 5.2)/\HouseTabCount)}%
+		\HouseTabList
+	\end{tikzpicture}}\fi}
