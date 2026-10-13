@@ -77,6 +77,29 @@ def check_skill():
     return len(problems)
 
 
+def check_margins():
+    """Margins: lengths parse, the text width follows the margin, and type or front matter override the default."""
+    sys.path.insert(0, str(SKILL / "scripts"))
+    import doctype
+    import frontmatter
+    problems = []
+    for length, cm in (("0.5in", 1.27), ("1.27cm", 1.27), ("12.7mm", 1.27), ("36.135pt", 1.27)):
+        if abs(doctype.length_cm(length) - cm) > 1e-6:
+            problems.append(f"length_cm({length}) is {doctype.length_cm(length)}, not {cm}")
+    if abs(doctype.text_width_cm("0.5in") - 18.46) > 1e-6:
+        problems.append("A4 text width at 0.5in margins is not 18.46 cm")
+    flags = frontmatter.md2tex_flags({"type": "formula-sheet", "margin_x": "0.6in"})
+    if flags[-2:] != ["--margin-x", "0.6in"]:
+        problems.append(f"front matter margin_x must come after --type so it wins: {flags}")
+    expanded = doctype.expand(["x", "--type", "formula-sheet"], "build")
+    if expanded[expanded.index("--margin-x") + 1] != "0.4in":
+        problems.append("formula-sheet type no longer sets --margin-x 0.4in")
+    print(f"{'ok' if not problems else 'FAILED':8} margins")
+    for p in problems:
+        print("  " + p)
+    return len(problems)
+
+
 def run_cases(cases, update):
     failed = 0
     EXPECTED.mkdir(exist_ok=True)
@@ -298,7 +321,7 @@ def main():
         failed = corpus(a.corpus, a.snapshot or a.compare, "snapshot" if a.snapshot else "compare")
     else:
         cases = json.loads((TESTS / "cases.json").read_text())
-        failed = check_skill() + run_cases(cases, a.update) + run_lint(a.update) + run_templates(a.build)
+        failed = check_skill() + check_margins() + run_cases(cases, a.update) + run_lint(a.update) + run_templates(a.build)
         if a.build:
             failed += run_builds(cases) + run_commands_add()
     print("\nAll passed." if not failed else f"\n{failed} failed.")

@@ -13,7 +13,7 @@ Usage:
         [--author "Nur Mohammad"]
         [--class extarticle|extreport]        # default extarticle
         [--fontsize 12pt]                      # 8pt..20pt for ext* classes; default 12pt
-        [--margin-x 0.4in]                     # narrower left/right margins for dense sheets (house default .7in)
+        [--margin-x 0.6in]                     # left/right margins (default 0.5in; formula sheets 0.4in)
         [--bangla]                             # Bangla text: body must wrap Bangla runs in \\bn{...} (md2tex --bangla does it)
         [--no-toc]
         [--figures DIR ...]                    # extra image folders (body dir and body_dir/figures are added automatically)
@@ -298,7 +298,7 @@ def main():
     ap.add_argument("--class", dest="cls", default="extarticle", choices=["extarticle", "extreport"])
     ap.add_argument("--fontsize", default="12pt")
     ap.add_argument("--no-toc", action="store_true")
-    ap.add_argument("--margin-x")
+    ap.add_argument("--margin-x", default=doctype.MARGIN_X)
     ap.add_argument("--bangla", action="store_true")
     ap.add_argument("--figures", nargs="*", default=[], type=Path)
     ap.add_argument("--cover", action="store_true")
@@ -418,7 +418,7 @@ def main():
                      "BANGLA": BANGLA if a.bangla else "",
                      "TYPE_PREAMBLE": "\n".join(type_inputs),
                      "HEADER_RIGHT": bn_wrap(tex_escape(a.header_right)) if a.bangla else tex_escape(a.header_right),
-                     "GEOMETRY": f"\\geometry{{left={a.margin_x}, right={a.margin_x}}}" if a.margin_x else ""}.items():
+                     "GEOMETRY": f"\\geometry{{left={a.margin_x}, right={a.margin_x}}}"}.items():
         main = main.replace(f"<<{key}>>", val)
     (build / "main.tex").write_text(main)
 

@@ -5,6 +5,7 @@ type: project-report
 label_prefix: rpt_
 header: "RTL-to-GDSII Flow Report"
 cover: true
+margin_x: "0.6in"
 course_code: "VLSI"
 course_name: "Physical Design Lab"
 cover_title: "Lab Report"

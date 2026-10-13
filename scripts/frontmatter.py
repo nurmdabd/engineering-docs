@@ -33,6 +33,7 @@ KEYS = {
     "cover_subtitle": ("str", "--cover-subtitle"),
     "cover_note": ("str", "--cover-note"),
     "cover_contents": ("list", "--cover-contents"),
+    "margin_x": ("str", "--margin-x"),       # left/right margin, e.g. 0.6in (default: the type's, else 0.5in)
     "preamble": ("str", "--type-preamble"),
     "toc": ("bool", None),                   # false: no table of contents (build.py --no-toc)
     "label_prefix": ("str", None),           # md2tex.py --label-prefix: d03_ makes sec:d03_objective, ...
@@ -87,6 +88,8 @@ def md2tex_flags(meta):
         flags += ["--first-number", meta["first_number"]]
     if meta.get("type"):
         flags += ["--type", meta["type"]]
+    if meta.get("margin_x"):   # after --type, so it beats the type's margin
+        flags += ["--margin-x", meta["margin_x"]]
     if meta.get("lang") == "bn":
         flags.append("--bangla")
     return flags

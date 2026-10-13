@@ -8,7 +8,7 @@ equations, figures, callouts, question/solution boxes, Unicode table). The judge
 described in SKILL.md, Step 3.
 
 Usage:
-    python3 md2tex.py NOTES.md -o latex/NOTES.tex [--type NAME] [--class extarticle|extreport] [--fontsize 12pt] [--textwidth 17.4]
+    python3 md2tex.py NOTES.md -o latex/NOTES.tex [--type NAME] [--class extarticle|extreport] [--fontsize 12pt] [--margin-x 0.5in]
 
 --type NAME loads the default flags of types/NAME/type.json; flags given explicitly still win.
 
@@ -84,7 +84,9 @@ def main():
     ap.add_argument("--first-number", type=int, help="number of the first chapter (extreport) or section")
     ap.add_argument("--no-guards", action="store_true",
                     help="no page-break guards (by default a heading or lone label stays with the equation, box or table after it)")
-    ap.add_argument("--textwidth", type=float, default=17.4, help="text width in cm (17.4 for the house .7in margins)")
+    ap.add_argument("--margin-x", default=doctype.MARGIN_X,
+                    help=f"left/right margin the document is built with (default {doctype.MARGIN_X}); sets the text width")
+    ap.add_argument("--textwidth", type=float, help="text width in cm (default: A4 width minus both --margin-x)")
     first = ap.parse_known_args()[0]          # only to find the Markdown file and read its front matter
     meta, body, problems = frontmatter.split(first.md.read_text(encoding="utf-8"))
     for p in problems:
@@ -102,6 +104,8 @@ def main():
         sys.exit(f"{first.md.name}: preamble {meta['preamble']} not found")
     registry = commands.registry(type_name[0], own_pre.with_suffix(".yaml") if own_pre else None)
 
+    if a.textwidth is None:
+        a.textwidth = round(doctype.text_width_cm(a.margin_x), 2)
     md = a.md.resolve()
     out = a.out.resolve()
     out.parent.mkdir(parents=True, exist_ok=True)
