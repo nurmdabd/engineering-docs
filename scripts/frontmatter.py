@@ -33,6 +33,12 @@ KEYS = {
     "cover_subtitle": ("str", "--cover-subtitle"),
     "cover_note": ("str", "--cover-note"),
     "cover_contents": ("list", "--cover-contents"),
+    "accent": ("str", "--accent"),           # the subject's colour on cover and back cover, hex like 5B3A8C
+    "inside_cover": ("bool", None),          # false: no page on the back of the cover
+    "back_cover": ("bool", None),            # false: no back cover
+    "back_blurb": ("str", "--back-blurb"),   # back cover: one or two sentences on what the document is
+    "prerequisites": ("list", "--prerequisite"),   # back of the cover (theory notes): what to know first
+    "conventions": ("str", "--conventions"),       # back of the cover: the textbook and conventions followed
     "margin_x": ("str", "--margin-x"),       # left/right margin, e.g. 0.6in (default: the type's, else 0.5in)
     "preamble": ("str", "--type-preamble"),
     "toc": ("bool", None),                   # false: no table of contents (build.py --no-toc)
@@ -116,6 +122,10 @@ def build_flags(meta):
         flags.append(["--no-toc"])
     if meta.get("cover") is False:   # turns off a cover the type adds by default
         flags.append(["--no-cover"])
+    if meta.get("inside_cover") is False:
+        flags.append(["--no-inside-cover"])
+    if meta.get("back_cover") is False:
+        flags.append(["--no-back-cover"])
     if meta.get("paper") is False:   # turns off the question paper the past-paper type adds by default
         flags.append(["--no-paper"])
     return flags

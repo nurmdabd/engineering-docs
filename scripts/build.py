@@ -39,6 +39,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+import coverdata
 import doctype
 import json
 
@@ -70,6 +71,12 @@ def tex_escape(text):
                  ("#", r"\#"), ("_", r"\_"), ("{", r"\{"), ("}", r"\}")]:
         text = text.replace(a, b) if a != "\\" else text.replace(a, "\x00")
     return text.replace("\x00", r"\textbackslash{}")
+
+
+def spaced_caps(text):
+    """Upper case for letter-spaced text, outside LaTeX commands, with --- and -- as real dashes."""
+    text = text.replace("---", "\u2014").replace("--", "\u2013")
+    return re.sub(r"(\\[A-Za-z]+)|([^\\]+)", lambda m: m.group(1) or m.group(2).upper(), text)
 
 
 def safe_stem(path, used):
@@ -277,7 +284,10 @@ def with_sidecar(argv):
     sidecar = body.with_suffix(".build.json") if body else None
     if not sidecar or not sidecar.exists():
         return argv
-    saved = json.loads(sidecar.read_text(encoding="utf-8")).get("build", [])
+    data = json.loads(sidecar.read_text(encoding="utf-8"))
+    saved = data.get("build", [])
+    if data.get("source") and "--source" not in argv:   # the back of the cover names the Markdown it came from
+        saved = [*saved, ["--source", data["source"]]]
     for item in saved:   # paths in the sidecar are relative to it
         if item[0] in ("--type-preamble", "--paper-appendix"):
             item[1] = str((sidecar.parent / item[1]).resolve())
@@ -319,6 +329,17 @@ def main():
     ap.add_argument("--cover-contents", action="append", default=[])
     ap.add_argument("--date")
     ap.add_argument("--cover-dir", type=Path)
+    ap.add_argument("--doc-type")                      # set by --type: which cover data to read
+    ap.add_argument("--cover-label")                   # set by --type (type.json "cover")
+    ap.add_argument("--cover-signature")
+    ap.add_argument("--accent")                        # the subject's colour, hex (front matter: accent)
+    ap.add_argument("--inside-cover-file", type=Path)  # set by --type: types/NAME/inside-cover.tex
+    ap.add_argument("--no-inside-cover", dest="inside_cover", action="store_false")
+    ap.add_argument("--no-back-cover", dest="back_cover", action="store_false")
+    ap.add_argument("--back-blurb", default="")
+    ap.add_argument("--prerequisite", action="append", default=[])
+    ap.add_argument("--conventions", default="")
+    ap.add_argument("--source", default="")            # the Markdown file (from the front-matter sidecar)
     ap.add_argument("--build-dir", type=Path)
     ap.add_argument("--print", dest="bw", action="store_true")
     a = ap.parse_args(doctype.expand(with_sidecar(sys.argv), "build")[1:])
@@ -338,11 +359,26 @@ def main():
     if a.bw:   # last, so it recolours the type's own commands too
         shutil.copy(TEMPLATE / "print-bw.tex", build)
         type_inputs.append("\\input{print-bw.tex}")
-    for f in ("cover-page-preamble.tex", "cover-page-main.tex"):
+    for f in ("cover-page-preamble.tex", "cover-page-main.tex", "cover-kit.tex", "inside-cover.tex", "back-cover.tex"):
         (build / f).unlink(missing_ok=True)
-        src = (a.cover_dir / f) if a.cover_dir else ((a.type_cover_dir or TEMPLATE) / f if a.cover else None)
+    for f in ("cover-page-preamble.tex", "cover-page-main.tex"):
+        if a.cover_dir:
+            src = a.cover_dir / f
+        elif a.cover:   # the type's own file if it has one, else the default
+            src = a.type_cover_dir / f if a.type_cover_dir and (a.type_cover_dir / f).exists() else TEMPLATE / f
+        else:
+            src = None
         if src and src.exists():
             shutil.copy(src, build)
+    covered = a.cover or a.cover_dir
+    inside = bool(covered and a.inside_cover and a.inside_cover_file and a.inside_cover_file.exists())
+    back = bool(covered and a.back_cover)
+    if covered:
+        shutil.copy(TEMPLATE / "cover-kit.tex", build)
+    if inside:
+        shutil.copy(a.inside_cover_file, build / "inside-cover.tex")
+    if back:
+        shutil.copy(TEMPLATE / "back-cover.tex", build)
 
     used, includes, gdirs = set(), [], []
     bodies = []
@@ -392,13 +428,28 @@ def main():
                                "\\tableofcontents\n\\endgroup\n\\hfill")
 
     cover = ""
-    if a.cover and not a.cover_dir:
+    if covered:
         fields = {"CoverCourseCode": a.course_code, "CoverCourseName": a.course_name,
                   "CoverTitle": a.cover_title or " ".join(titles), "CoverSubtitle": a.cover_subtitle,
                   "CoverNote": a.cover_note, "CoverAuthor": a.author,
                   "CoverContents": " \\\\ ".join(a.cover_contents),
-                  "CoverQuestions": question_marks([b for _, b in bodies])}
-        cover = "\n".join(f"\\newcommand{{\\{k}}}{{{v}}}" for k, v in fields.items())
+                  "CoverQuestions": question_marks([b for _, b in bodies]),
+                  "CoverLabel": a.cover_label or "STUDY NOTES",
+                  "CoverBlurb": a.back_blurb, "CoverConventions": a.conventions,
+                  "CoverSource": tex_escape(a.source),
+                  "CoverPrereqs": "".join(f"\\coverprereq{{{x}}}" for x in a.prerequisite)}
+        # the back cover's spine line, upper case; letter spacing turns ligatures off, so -- becomes a real dash
+        spine = [a.course_code, fields["CoverTitle"], a.cover_subtitle]
+        fields["CoverSpine"] = "\\quad$\\cdot$\\quad ".join(spaced_caps(x) for x in spine if x)
+        for key, hexval in (("CoverAccentHex", a.accent), ("CoverSignatureHex", a.cover_signature)):
+            if hexval:
+                if not re.fullmatch(r"#?[0-9A-Fa-f]{6}", hexval):
+                    sys.exit(f"{key}: '{hexval}' is not a colour like 5B3A8C")
+                fields[key] = hexval.lstrip("#").upper()
+        data, override = coverdata.cover_macros(a.doc_type, [c.read_text(encoding="utf-8") for _, c in bodies], a,
+                                                linked_paper=bool(paper))
+        fields.update(override)
+        cover = "\n".join(f"\\newcommand{{\\{k}}}{{{v}}}" for k, v in fields.items()) + "\n" + data
         if a.date:
             cover += f"\n\\newcommand{{\\CoverDate}}{{{a.date}}}"
     pdftitle = re.sub(r"[{}\\$]", "", " ".join(titles)).replace("%", "\\%").replace("#", "\\#").replace("&", "\\&")
@@ -408,10 +459,16 @@ def main():
 
     main = (TEMPLATE / "main.tex").read_text()
     for key, val in {"CLASS": a.cls, "FONTSIZE": a.fontsize, "HEADER": header, "GRAPHICSPATH": graphicspath,
-                     "TITLE_LINES": title_lines, "TOC_BLOCK": toc, "AUTHOR": tex_escape(a.author),
+                     "TOC_BLOCK": toc, "AUTHOR": tex_escape(a.author),
                      # without a contents list, the body follows the title on the same page and the header's
                      # TOC button (which would point nowhere) jumps to the title instead
                      "BODY_INPUTS": "\n".join(includes if not a.no_toc else [i.replace("\\include{", "\\input{") for i in includes]),
+                     # with a cover the title is on the cover, so the contents page starts straight away
+                     "TITLE_BLOCK": "" if covered else f"\\begin{{center}}\n{title_lines}\n\\end{{center}}\n",
+                     "CREATED_BY": "" if covered else ("\\begin{center}\n\t{\\color{white!50!black}Created by "
+                                                       + tex_escape(a.author) + "} \\\\\n\t\\vspace{0.5cm}\n\\end{center}\n"),
+                     "INSIDE_COVER": "\\input{inside-cover}" if inside else "",
+                     "BACK_COVER": "\\input{back-cover}" if back else "",
                      "AFTER_TITLE": "\\newpage" if not a.no_toc else "\\hypertarget{toc}{}",
                      "COVER_FIELDS": cover, "PDFTITLE": pdftitle,
                      "BEFORE_TITLE": "\\input{paper-page}" if paper else "",

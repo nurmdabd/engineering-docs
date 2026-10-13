@@ -1,0 +1,25 @@
+% Back of the cover for formula sheets (C): how to read a row (the sheet's own first row), and how to use
+% the sheet in the exam.
+\thispagestyle{empty}
+\bochead{BACK OF THE COVER}{Before you use the sheet}
+\newcommand{\coversamplerow}[4]{%
+	\bocsection{How to read a row}
+	\begin{tikzpicture}[lab/.style={font=\small, text=CoverSoft, align=center}, cell/.style={draw=black!30, minimum height=1.3cm, align=center, inner sep=4pt}]
+		\node[cell, fill=gray!6, text width=3.0cm] (t) at (0,0) {\covbf{#1}};
+		\node[cell, text width=5.6cm, right=0pt of t] (e) {#2};
+		\node[cell, text width=4.6cm, right=0pt of e, font=\small] (n) {#3};
+		\node[cell, text width=2.3cm, right=0pt of n, font=\small] (r) {#4};
+		\path (e.north) -- (t.north);
+		\foreach \x/\s in {t/{the name you\\search for}, e/{the formula,\\exactly as derived}, n/{every new symbol\\with its unit}, r/{link: opens the\\derivation}} {
+			\draw[-{Latex}, CoverSig] ($(\x.south)+(0,-0.75)$) -- (\x.south);
+			\node[lab, below=0.8cm of \x.south, anchor=north] {\s};}
+	\end{tikzpicture}\par\vspace{0.8cm}}
+\CoverSampleRow
+\bocsection{In the exam}
+\begin{itemize}\setlength\itemsep{3pt}
+\item Write the formula first, then put the numbers in: the formula alone often earns a mark.
+\item Read the symbols in the Notation column before you substitute, and check the units.
+\item Not sure where a formula comes from? Its Reference opens the derivation.
+\end{itemize}
+\bocinfo
+\clearpage

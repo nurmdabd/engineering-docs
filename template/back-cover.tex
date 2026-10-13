@@ -1,0 +1,40 @@
+% Back cover (every type): a white page with its own style. The accent strip on the right edge is the spine
+% side of a back cover and carries course, document and range; faint rings rise from the bottom-left; the text
+% is set like the back of a book. The blurb is the front matter's back_blurb; the numbers come from the
+% document (\CoverBackStats: \coverstat{number}{label}, plus the page count).
+\clearpage
+\thispagestyle{empty}
+% pages before this one (the back cover's own absolute page number, less one; 0 on the first run)
+\makeatletter\edef\HouseContentPages{\number\numexpr\zref@extractdefault{house-back-cover}{abspage}{1}-1\relax}\makeatother
+\begin{tikzpicture}[remember picture, overlay]
+	\coordinate (SW) at (current page.south west); \coordinate (SE) at (current page.south east);
+	\coordinate (NE) at (current page.north east);
+	\fill[CoverBand] ($(SE)+(-1.25cm,0)$) rectangle (NE);
+	\fill[CoverSig] ($(SE)+(-1.45cm,0)$) rectangle ($(NE)+(-1.25cm,0)$);
+	\node[rotate=-90, text=CoverBandSoft, font=\small] at ($(SE)!0.5!(NE)+(-0.62cm,0)$)
+		{\spaced{\CoverSpine}};
+	\foreach \r in {3,4.3,...,15.5} {\pgfmathsetmacro{\op}{0.13-\r*0.006}\draw[CoverSig, opacity=\op, line width=1.1pt] (SW) circle (\r cm);}
+\end{tikzpicture}\par
+\renewcommand{\coverstat}[2]{\begin{tikzpicture}[baseline=(v.base)]
+		\node[font=\fontsize{28}{30}\selectfont\bfseries, text=CoverSig, anchor=south west, inner sep=0pt] (v) at (0,0) {#1};
+		\node[font=\small\coversans, text=CoverSoft, anchor=north west, inner sep=0pt] at (0,-0.15) {#2};
+		\path (0,0) -- (3.0,0);
+	\end{tikzpicture}\hspace{0.5cm}}
+\begin{minipage}{0.82\linewidth}
+\vspace*{1.6cm}
+{\small\color{CoverSig!80!black}\spaced{ABOUT THIS DOCUMENT}\par}
+\vspace{0.4cm}
+{\fontsize{24}{30}\selectfont\color{CoverInk}\CoverTitle\ifdefempty{\CoverSubtitle}{}{, \CoverSubtitle}\par}
+\ifdefempty{\CoverBlurb}{}{\vspace{0.5cm}{\large\color{CoverInk!85}\linespread{1.25}\selectfont\CoverBlurb\par}}
+\vspace{1.1cm}
+\zlabel{house-back-cover}\noindent\CoverBackStats\coverstat{\HouseContentPages}{pages}
+\end{minipage}
+\vfill
+\begin{minipage}{0.82\linewidth}
+{\color{CoverAccent}\rule{1.6cm}{2.5pt}\par}\vspace{0.3cm}
+\ifdefempty{\CoverCourseCode}{}{{\fontsize{22}{26}\selectfont\bfseries\color{CoverAccent}\CoverCourseCode\par}\vspace{0.1cm}}
+\ifdefempty{\CoverCourseName}{}{{\large\color{CoverSoft}\CoverCourseName\par}}
+\vspace{0.5cm}
+{\coversans\small\color{CoverSoft}Prepared by \CoverAuthor\quad$\cdot$\quad\CoverDate\par}
+\vspace{0.3cm}
+\end{minipage}

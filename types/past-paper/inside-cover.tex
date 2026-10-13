@@ -1,0 +1,22 @@
+% Back of the cover for past papers (D): the paper at a glance (time, marks, how many to answer), then every
+% sub-part with its marks, the minutes it is worth, a link to its solution, and a box to tick the questions
+% you will answer. Everything comes from the front matter and the bodies (\CoverPaperFacts, \CoverPaperRows).
+\thispagestyle{empty}
+\bochead{BACK OF THE COVER}{The paper at a glance}
+\newcommand{\paperfact}[2]{\begin{tikzpicture}[baseline=(v.base)]
+		\node[draw=CoverSig!45, fill=CoverSig!5, rounded corners=5pt, minimum width=4.25cm, minimum height=1.75cm] at (0,0) {};
+		\node[font=\fontsize{22}{24}\selectfont\bfseries, text=CoverSig] (v) at (0,0.28) {#1};
+		\node[text=CoverSoft, font=\small] at (0,-0.45) {#2};\end{tikzpicture}\hspace{0.25cm}}
+\noindent\CoverPaperFacts\par
+\vspace{0.45cm}
+{\small\color{CoverSoft}\CoverPaperNote\par}
+\vspace{0.3cm}
+\newcommand{\paperpartrow}[1]{\multicolumn{5}{@{}l}{\rule{0pt}{14pt}\small\color{CoverSoft}\spaced{#1}} \\}
+{\small\renewcommand{\arraystretch}{1.22}
+\begin{tabularx}{\linewidth}{@{}p{1.1cm} X r r c@{}}
+\rowcolor{CoverSig}{\leavevmode\color{white}\bfseries Q} & {\color{white}\bfseries Sub-part} & {\color{white}\bfseries Marks}
+	& {\color{white}\bfseries Time} & {\color{white}\bfseries Pick} \\
+\CoverPaperRows
+\end{tabularx}}
+\bocinfo
+\clearpage

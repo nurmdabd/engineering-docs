@@ -1,5 +1,6 @@
 {
   "description": "Multi-day project or lab report (for example the RTL-to-GDSII flow): one chapter per day, extreport at 14pt.",
   "md2tex": ["--class", "extreport", "--fontsize", "14pt"],
-  "build": ["--class", "extreport", "--fontsize", "14pt"]
+  "build": ["--class", "extreport", "--fontsize", "14pt"],
+  "cover": {"label": "PROJECT REPORT", "signature": "3D405B"}
 }

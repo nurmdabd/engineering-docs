@@ -1,0 +1,29 @@
+% Formula-sheet cover: graph-paper band, the dot-grid motif, and the topics with their formula counts
+% pinned above the footer.
+\thispagestyle{empty}
+\begin{tikzpicture}[remember picture, overlay]
+	\motifdots
+	\coverbandrect{9.55cm}
+	\begin{scope}\clip (current page.north west) rectangle ($(current page.north east)+(0,-9.55cm)$);
+		\begin{scope}[shift={(current page.north west)}]
+			\draw[CoverMotifOnBand, opacity=0.07, line width=0.3pt, step=0.5cm] (0,-10) grid (22,0);
+			\draw[CoverMotifOnBand, opacity=0.13, line width=0.6pt, step=2.5cm] (0,-10) grid (22,0);
+		\end{scope}\end{scope}
+	\coverspine{9.9cm}
+	\coverhead
+	\coverfooter
+\end{tikzpicture}\par
+% a topic: number, title, sub-line, and its formula count in a badge
+\renewcommand{\coveritem}[3]{\stepcounter{coverchip}%
+	\begin{tikzpicture}[baseline=(c.base)]
+		\node[draw=CoverSig!40, fill=CoverSig!4, rounded corners=4pt, minimum width=5.45cm, minimum height=1.6cm] (c) at (0,0) {};
+		\node[anchor=west, font=\Large\bfseries, text=CoverSig] at (-2.6,0.1) {#1};
+		\node[anchor=north west, font=\small, text=CoverInk, text width=4.4cm, align=left, inner sep=0pt] at (-2.0,0.62) {#2};
+		\ifstrempty{#3}{}{\node[anchor=south east, font=\scriptsize\coversans, fill=CoverSig, text=white, rounded corners=4pt,
+			inner xsep=3pt, inner ysep=1.5pt] at (2.6,-0.68) {#3};}
+	\end{tikzpicture}\ifnum\numexpr\value{coverchip}-3*(\value{coverchip}/3)\relax=0 \par\vspace{0.2cm}\else\hspace{0.25cm}\fi}
+\newcounter{coverchip}
+\covertitleblock
+\ifdefempty{\CoverItems}{}{\infopanel{TOPICS}{\setcounter{coverchip}{0}\noindent\CoverItems\par
+	{\small\color{CoverSoft}Each topic is one table: \covbf{Title} $\cdot$ \covbf{Equation} $\cdot$ \covbf{Notation} $\cdot$ \covbf{Reference}.\par}}}
+\clearpage

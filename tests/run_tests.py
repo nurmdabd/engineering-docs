@@ -100,6 +100,49 @@ def check_margins():
     return len(problems)
 
 
+def check_coverdata():
+    """The facts the covers show are read from the body, not typed in: parts, formula rows, questions, paper times."""
+    import argparse
+    import coverdata
+    problems = []
+    theory = ("\\section{Part 1 --- Lectures 24, 25, 26: Frequency Modulation}\\label{sec:p1}\n"
+              "\\subsection{Lecture 24 --- PM bandwidth}\\label{sec:l24}\n\\begin{examplebox}x\\end{examplebox}\n"
+              "\\subsection{Lecture 25 --- FM methods}\n\\begin{selfcheckbox}x\\end{selfcheckbox}\n"
+              "\\section{Part 2 --- Lecture 27: Sampling}\n\\subsection{Lecture 27 --- Sampling}\n")
+    items, n = coverdata.parts(theory)
+    if n != 2 or "Frequency Modulation" not in items[0] or "L24--26" not in items[0] or "2 lectures" not in items[0] \
+            or "worked examples" not in items[0] or "self-check" not in items[0] or "L27" not in items[1]:
+        problems.append(f"parts(): {items}")
+    rows = coverdata.tracker(theory)
+    if len(rows) != 3 or "sec:l24" not in rows[0] or "{L25}" not in rows[1] or not rows[2].endswith("{2}"):
+        problems.append(f"tracker(): {rows}")
+    sheet = ("\\section{Formula Sheet}\n\\subsection{Angle modulation (L24)}\n\\begin{tabularx}{\\textwidth}{|l|l|l|l|}\n"
+             "\\hline\nT & E & N & R \\\\ \\hline\n\\endhead\nA & $x$ & n & r \\\\ \\hline\nB & \\tallcell{$y$} & n & r \\\\ \\hline\n"
+             "\\rowcolor{white}\n\\caption{Angle}\n\\end{tabularx}\n")
+    items, total, n = coverdata.topics(sheet)
+    if (total, n) != (2, 1) or "2 formulas" not in items[0] or "CoverSoft}L24}" not in items[0]:
+        problems.append(f"topics(): {items}, {total}, {n}")
+    if coverdata.sample_row(sheet) != "\\coversamplerow{A}{$x$}{n}{r}":
+        problems.append(f"sample_row(): {coverdata.sample_row(sheet)}")
+    bank = ("\\subsection{A1 FM}\n\\phantomsection\\label{q:n1}\n\\begin{questionbox}{N1}{sol:n1}x\\end{questionbox}\n"
+            "\\label{q:s1}\n\\begin{questionbox}{S1}{sol:s1}x\\end{questionbox}\n\\begin{solutionbox}{Solution N1}{q:n1}x\\end{solutionbox}\n")
+    stats, groups, log = coverdata.bank(bank)
+    if stats != ["\\coverstat{1}{Numericals}", "\\coverstat{1}{Short questions}", "\\coverstat{1}{Solutions}"] \
+            or groups != ["\\covergroup{A1}{FM}{2}"] or "\\coverlog{N1}{q:n1}" not in log:
+        problems.append(f"bank(): {stats} {groups} {log}")
+    paper = ("\\begin{questionblock}[1(a) Entropy]{1.(a) Find it. Marks: 6}\n\\begin{questionblock}[1(b) Modes]{1.(b) Discuss. Marks: 4+5}\n"
+             "\\begin{questionblock}[2(a) AM]{2.(a) AM. Marks: 10}\n")
+    facts, prow, note = coverdata.paper(paper, ["Total Marks: 100", "Total Time: 3 Hours"],
+                                       ["Part-A: 1-2 | [Answer any one of the following questions]"], True)
+    if facts != ["\\paperfact{3 h}{Total time}", "\\paperfact{100}{Total marks}", "\\paperfact{1 of 2}{Questions to answer}",
+                 "\\paperfact{180 min}{Per question}"] or "& 9 & 16 min &" not in "".join(prow) or "sol-1a" not in "".join(prow):
+        problems.append(f"paper(): {facts} {prow}")
+    print(f"{'ok' if not problems else 'FAILED':8} cover data")
+    for p in problems:
+        print("  " + p)
+    return len(problems)
+
+
 def run_cases(cases, update):
     failed = 0
     EXPECTED.mkdir(exist_ok=True)
@@ -321,7 +364,7 @@ def main():
         failed = corpus(a.corpus, a.snapshot or a.compare, "snapshot" if a.snapshot else "compare")
     else:
         cases = json.loads((TESTS / "cases.json").read_text())
-        failed = check_skill() + check_margins() + run_cases(cases, a.update) + run_lint(a.update) + run_templates(a.build)
+        failed = check_skill() + check_margins() + check_coverdata() + run_cases(cases, a.update) + run_lint(a.update) + run_templates(a.build)
         if a.build:
             failed += run_builds(cases) + run_commands_add()
     print("\nAll passed." if not failed else f"\n{failed} failed.")

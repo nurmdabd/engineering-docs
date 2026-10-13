@@ -1,0 +1,26 @@
+% Back of the cover for question banks (E): how to practise, and a practice log with two boxes per question
+% (first try, redo). The log is made from the question labels (\CoverLog); each label links to its question.
+\thispagestyle{empty}
+\bochead{BACK OF THE COVER}{How to practise}
+\begin{tikzpicture}[st/.style={draw=CoverSig!55, fill=CoverSig!6, rounded corners=4pt, minimum width=3.95cm, minimum height=1.55cm,
+		align=center, font=\small, text=CoverInk}]
+	\foreach \t/\s [count=\i from 0] in {1\enspace Try/{10 min, no notes}, 2\enspace Check/{with the solution},
+			3\enspace Mark/{right or wrong, below}, 4\enspace Redo/{the wrong ones after 2 days}} {
+		\node[st] (s\i) at (\i*4.6,0) {\covbf{\t}\\{\footnotesize\color{CoverSoft}\s}};}
+	\foreach \i [evaluate=\i as \j using int(\i+1)] in {0,1,2} \draw[-{Latex}, CoverSig, line width=0.9pt] (s\i) -- (s\j);
+	\draw[-{Latex}, CoverSig, line width=0.9pt, dashed] (s3.south) -- ++(0,-0.45) -| node[pos=0.25, below, font=\scriptsize, text=CoverSoft]
+		{still wrong? read the theory the solution points to, then try again} (s0.south);
+\end{tikzpicture}
+\vspace{0.8cm}
+
+\bocsection{Practice log}
+{\small\color{CoverSoft}Left box: first try. Right box: the redo. Each label opens its question.\par}\vspace{0.3cm}
+\newcounter{coverlogn}
+\newcommand{\coverloghead}[1]{\par\vspace{0.25cm}\setcounter{coverlogn}{0}{\small\color{CoverSig}\spaced{#1}\par}\vspace{0.2cm}}
+\newcommand{\coverlog}[2]{\stepcounter{coverlogn}\hyperref[#2]{\tikz[baseline=-3pt]{\node[font=\small\bfseries\coversans, text=CoverSig, minimum width=0.95cm, anchor=west] at (0,0) {#1};
+	\draw[black!45, line width=0.6pt, rounded corners=1pt] (1.0,-0.17) rectangle ++(0.34,0.34);
+	\draw[black!45, line width=0.6pt, rounded corners=1pt] (1.45,-0.17) rectangle ++(0.34,0.34);}}\hspace{0.32cm}%
+	\ifnum\numexpr\value{coverlogn}-7*(\value{coverlogn}/7)\relax=0 \par\vspace{0.18cm}\fi}
+\noindent\CoverLog\par
+\bocinfo
+\clearpage

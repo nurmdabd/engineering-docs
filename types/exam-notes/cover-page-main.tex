@@ -1,0 +1,32 @@
+% Exam-notes cover: diagonal cut with a REVISION stamp, the diagonal-lines motif, and what every section
+% gives you pinned above the footer.
+\thispagestyle{empty}
+\begin{tikzpicture}[remember picture, overlay]
+	\coordinate (NW) at (current page.north west); \coordinate (NE) at (current page.north east);
+	\motifhatch
+	\fill[CoverBand] (NW) -- (NE) -- ($(NE)+(0,-5.2cm)$) -- ($(NW)+(0,-10.6cm)$) -- cycle;
+	\fill[CoverSig] ($(NE)+(0,-5.2cm)$) -- ($(NW)+(0,-10.6cm)$) -- ($(NW)+(0,-11.1cm)$) -- ($(NE)+(0,-5.7cm)$) -- cycle;
+	\begin{scope}[shift={($(NE)+(-4.1cm,-8.4cm)$)}, rotate=-14]
+		\fill[white] (0,0) circle (2.15cm);
+		\draw[CoverSig, line width=2.2pt] (0,0) circle (2.15cm); \draw[CoverSig, line width=0.8pt] (0,0) circle (1.85cm);
+		\node[text=CoverSig, font=\Large\bfseries\coversans] at (0,0.25) {REVISION};
+		\node[text=CoverSig, font=\footnotesize\coversans] at (0,-0.45) {memorize version};
+		\foreach \a in {0,30,...,330} \fill[CoverSig] (\a:2.0cm) circle (0.6pt);
+	\end{scope}
+	\coverspine{11.1cm}
+	\coverhead
+	\coverfooter
+\end{tikzpicture}\par
+\covertitleblock
+\infopanel{EVERY SECTION GIVES YOU}{%
+	\begin{tikzpicture}[tile/.style={draw=CoverSig!60, fill=CoverSig!6, rounded corners=5pt, minimum width=3.95cm, minimum height=2.2cm}]
+		\foreach \big/\sub [count=\i from 0] in {Definitions/{the exact words\\to write}, Steps/{numbered, in\\exam order},
+				Worked examples/{one per\\formula}, Exam answers/{model answers\\with marks}} {
+			\node[tile] at (\i*4.25,0) {};
+			\node[font=\large\bfseries, text=CoverInk] at (\i*4.25,0.42) {\big};
+			\node[font=\small, text=CoverSoft, align=center] at (\i*4.25,-0.42) {\sub};
+		}
+	\end{tikzpicture}\par\vspace{0.45cm}
+	{\small\color{CoverInk}\covbf{Need the reason, not just the result?} Every heading ends with an \emph{Explained in §\dots}
+	link that opens the same section of the full theory.\par}}
+\clearpage
