@@ -17,7 +17,7 @@ Usage:
         [--bangla]                             # Bangla text: body must wrap Bangla runs in \\bn{...} (md2tex --bangla does it)
         [--no-toc]
         [--figures DIR ...]                    # extra image folders (body dir and body_dir/figures are added automatically)
-        [--cover]                              # add the bundled study-notes cover page, with:
+        [--cover]                              # add the type's cover (and its back-of-cover page and back cover), with:
         [--course-code "COM I"] [--course-name "Communication Engineering I"]
         [--cover-title "Complete Theory"] [--cover-subtitle "Lectures 24--38"] [--cover-note "..."]
         [--cover-contents "Item 1" --cover-contents "Item 2"] [--date "October 2026"]

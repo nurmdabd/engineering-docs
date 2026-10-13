@@ -18,10 +18,14 @@ course_name: "Communication Engineering I"
 cover_title: "Complete Theory"
 cover_subtitle: "Lectures 24--38"
 cover_note: "Term test preparation"
+accent: 005F73                    # the subject's colour, the same on every document of the course
+prerequisites:                    # "Before you start" on the back of the cover
+  - "Fourier transform and its main properties"
+back_blurb: "The theory of Lectures 24--38, taught like a lesson."
 ---
 ```
 
-The type uses the house defaults (`extarticle`, 12pt). A Bangla version is the same file translated, with `lang: bn` (see Bangla version below).
+The type uses the house defaults (`extarticle`, 12pt, 0.5in margins). Its cover lists the parts with their lecture ranges and whether they hold worked examples and self-checks (read from the `#` part and `## Lecture NN` headings, so keep those names); the back of the cover explains the layout and boxes; the pages carry edge tabs per part (`references/covers-and-print.md`). A Bangla version is the same file translated, with `lang: bn` (see Bangla version below).
 
 ## Structure
 

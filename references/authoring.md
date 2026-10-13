@@ -30,21 +30,18 @@ date: "October 2026"
 ---
 ```
 
+The keys used most:
+
 | Key | Meaning |
 |---|---|
-| `title`, `subtitle` | The title lines on page 1 (without them, the first `#` heading is the title) |
-| `type` | A folder in `types/`; sets that type's defaults |
-| `lang` | `en` (default) or `bn` for Bangla; `bn` adds `--bangla` to both scripts |
-| `header` | The running header, left (default: the titles) |
-| `header_right` | Text on the right of the header, before the TOC button |
-| `author`, `date` | Cover and title page |
-| `cover` | `true` adds the study-notes cover page |
-| `course_code`, `course_name`, `cover_title`, `cover_subtitle`, `cover_note`, `cover_contents` | Cover fields; `cover_contents` is a list |
-| `exam`, `year` | Records for past papers (which exam, which session); they don't change the PDF, so put the session in `subtitle` and `header_right` too |
-| `toc` | `false` leaves out the table of contents (a one-table sheet) |
-| `label_prefix` | A prefix for every label of this file, such as `d03_`; needed when several files are built into one PDF (a report's days) |
-| `first_number` | The number of the first chapter (or section), when a file is built on its own: `first_number: 3` for Day 3 of a report, `first_number: 24` for Lecture 24 taken out of longer notes |
-| `preamble` | This document's own commands: a `.tex` file next to it, with a registry `.yaml` of the same name (`references/commands.md`) |
+| `title`, `subtitle` | The title lines (without them, the first `#` heading is the title) |
+| `type` | A folder in `types/`; sets that type's layout, cover and writing guide |
+| `lang` | `en` (default) or `bn` for Bangla |
+| `cover` and `course_code`, `course_name`, `cover_title`, `cover_subtitle`, `cover_note` | The type's cover (Section 15); with it come the back of the cover and the back cover |
+| `accent`, `back_blurb` | The subject's colour; the back cover's sentence about the document |
+| `margin_x` | Left and right margins (default 0.5in) |
+
+**Every key**, with its default, is in `references/front-matter-keys.md` (generated from the code, so it is always complete). Unknown keys are reported by the linter.
 
 Values are raw LaTeX on the cover and title: write `--` for an en-dash, `---` for an em-dash and `\&` for `&`. Quote any value that contains `:`. Unknown keys are reported by the linter.
 
@@ -164,3 +161,5 @@ Set `lang: bn`. Technical terms, maths, numbers, figure paths and the callout ma
 Any registered command can be written directly: a box as `::: {.repocard title="OpenLane repo"}` … `:::`, an inline command as `[text]{.note}`. `scripts/commands.py list` shows every one with its syntax; `references/commands.md` explains the rules. A box written this way may hold several paragraphs.
 
 A single real past-exam question inside other material goes in `::: mainquestion` … `:::` (`references/latex-rules.md`, Section 12); a whole past paper uses the `past-paper` type.
+
+A mind map is a list inside `::: {.mindmap}` … `:::`, with its own syntax (parts as `##`, cards as `- **Title**: formula`, `→ Title` chips): `types/mind-map/guide.md`. The linter checks it.

@@ -16,7 +16,7 @@ python3 <skill>/scripts/build.py latex/day-01.tex latex/day-02.tex --out Report.
 - **One body file per day,** for example `day-01.tex`, `day-02.tex`, built together into one PDF.
 - **Labels:** set `label_prefix: d03_` in each day's front matter; every label of that file then starts with it (`sec:d03_objective`), so labels stay unique when the days are built together.
 - **One day on its own:** set `first_number: 3` so Day 3 is numbered Chapter 3, not Chapter 1.
-- **No cover by default.** Add `--cover` with the cover fields if the report needs one.
+- **No cover by default.** Add `cover: true` for the formal framed cover: `course_name` and `course_code` are the institution lines at the top (for example the university and the department), `cover_title` the report's name, `cover_subtitle` and `cover_note` the lines under it, and each `cover_contents` line is printed above the author ("Submitted to: …", "Student ID: …"). There is no back-of-the-cover page; a print copy keeps page 2 blank.
 
 ## Writing the content
 

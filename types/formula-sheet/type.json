@@ -1,5 +1,5 @@
 {
-  "description": "A dense formula sheet: one table per topic with Title, Equation, Notation and Reference columns, at 10pt with narrow margins.",
+  "description": "A dense formula sheet: one table per topic with Title, Equation, Notation and Reference columns, at 10pt with 0.4in margins; Key formulas and Symbol index pages added at build.",
   "md2tex": ["--fontsize", "10pt", "--margin-x", "0.4in"],
   "build": ["--fontsize", "10pt", "--margin-x", "0.4in", "--edge-tabs"],
   "cover": {"label": "FORMULA SHEET", "signature": "3A5BA0"}

@@ -6,7 +6,7 @@ Everything in `SKILL.md` and `references/authoring.md` applies; this guide adds 
 
 ## Settings
 
-The type uses the house defaults. Front matter as for theory notes, with `type: exam-notes` (and `lang: bn` for the Bangla version).
+The type uses the house defaults (12pt, 0.5in margins). Front matter as for theory notes, with `type: exam-notes` (and `lang: bn` for the Bangla version), and the same `accent`. Its cover is the revision design; the back of the cover is a revision plan with one row per `## Lecture NN` heading; the pages carry edge tabs per part (`references/covers-and-print.md`).
 
 **Links into the main PDF:** the *Explained in* links point at the theory notes' Markdown with GitHub anchors (`COM_Complete_Theory_L24-38.md#241-bandwidth-of-pm`), so they work on GitHub. In the PDF they must point at the labels of the theory PDF, which differ. Build the theory notes first, then give the converter a copy of the exam notes whose links use the theory `.tex` labels; the COM repo does this with `complete-theory/_tools/notes_links_for_pdf.py` in `latex/build-notes.sh`. The committed Markdown keeps the GitHub anchors.
 

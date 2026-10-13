@@ -57,6 +57,62 @@ KEYS = {
     "exam": ("str", None),        # past papers: exam name and year, used by the type's guide
     "year": ("str", None),
 }
+# The reference table of every key (references/front-matter-keys.md is generated from this; doc.py keys).
+# key -> (group, default, what it does). tests/run_tests.py fails when a key in KEYS has no entry here.
+DOCS = {
+    "title": ("Document", "the first # heading", "First title line (on page 1 without a cover; in the PDF properties)"),
+    "subtitle": ("Document", "", "Second title line"),
+    "type": ("Document", "none (house defaults)", "A folder in `types/`: its layout, cover and writing guide (`doc.py types`)"),
+    "lang": ("Document", "`en`", "`bn` for Bangla (technical terms stay English)"),
+    "header": ("Document", "the first title line", "Running header, left"),
+    "header_right": ("Document", "", "Running header, right, before the TOC button"),
+    "author": ("Document", "Nur Mohammad", "Author on the cover, title page and back cover"),
+    "date": ("Document", "today", "Date on the cover and back cover (raw LaTeX, e.g. `October 2026`)"),
+    "toc": ("Document", "`true`", "`false` leaves out the table of contents"),
+    "margin_x": ("Document", "`0.5in` (formula sheet `0.4in`)", "Left and right page margins; table columns follow it"),
+    "label_prefix": ("Document", "", "Prefix for every label (`d03_`), when several files go into one PDF"),
+    "first_number": ("Document", "", "Number of the first chapter or section when a file is built on its own"),
+    "preamble": ("Document", "", "This document's own commands: a `.tex` next to it with a registry `.yaml`"),
+    "cover": ("Cover", "the type's (past paper: on)", "`true` adds the type's front cover (and, by default, its back cover)"),
+    "course_code": ("Cover", "", "Large code on the cover band, e.g. `COM I`"),
+    "course_name": ("Cover", "", "Course name under the code"),
+    "cover_title": ("Cover", "the title lines", "The document's name on the cover"),
+    "cover_subtitle": ("Cover", "", "The pill under the cover title, e.g. `Lectures 24--38`"),
+    "cover_note": ("Cover", "formula sheet: its counts", "One italic line beside the pill"),
+    "cover_contents": ("Cover", "the parts, read from the document", "A hand-written \"Inside\" list (theory and default covers)"),
+    "accent": ("Cover", "`005F73` (ocean)", "The subject's colour on the cover, back cover and spine, as hex"),
+    "inside_cover": ("Cover", "`true` when the type has one", "`false`: no page on the back of the cover"),
+    "back_cover": ("Cover", "`true` with a cover", "`false`: no back cover"),
+    "back_blurb": ("Cover", "", "One or two sentences on the back cover about the document"),
+    "prerequisites": ("Cover", "", "List shown as \"Before you start\" on the back of a theory-notes cover"),
+    "conventions": ("Cover", "", "One line on the textbook and conventions, at the foot of the back-of-cover page"),
+    "edge_tabs": ("Cover", "on for theory, exam notes, formula sheets", "A clickable tab per part on the page edge (screen PDF only)"),
+    "print_layout": ("Print", "`duplex`", "Print copy page order: `duplex` (even pages) or `booklet` (a multiple of 4)"),
+    "map_size": ("Mind map", "`a4`", "`a4` (screen) or `a3` (print) landscape"),
+    "map_detail": ("Mind map", "on A3 only", "Show the cards' detail lines"),
+    "paper": ("Past paper", "`true`", "`false` leaves out the typeset question paper"),
+    "paper_header": ("Past paper", "", "List: the paper's centred header lines (raw LaTeX)"),
+    "paper_info": ("Past paper", "", "List: the marks / credits / time row; also feeds the paper-at-a-glance page"),
+    "paper_instruction": ("Past paper", "", "The instruction line under the header"),
+    "paper_parts": ("Past paper", "", "List: `Part-A: 1-3 | [Answer any two ...]`, a part heading before its first question"),
+    "paper_appendix": ("Past paper", "", "A `.tex` file printed at the end of the paper (an equation sheet)"),
+    "exam": ("Past paper", "", "Record only: which exam (put it in `cover_note` to show it)"),
+    "year": ("Past paper", "", "Record only: the session"),
+}
+
+
+def reference():
+    """The Markdown table of every key, grouped (doc.py keys)."""
+    out = ["# Front-matter keys", "",
+           "Generated from `scripts/frontmatter.py` (`python3 scripts/doc.py keys --write`); do not edit by hand.",
+           "Values are raw LaTeX: `--` is an en-dash, `\\&` an ampersand; quote a value that contains `:`.", ""]
+    for group in dict.fromkeys(g for g, _, _ in DOCS.values()):
+        out += [f"## {group}", "", "| Key | Default | What it does |", "|---|---|---|"]
+        out += [f"| `{k}` | {d} | {w} |" for k, (g, d, w) in DOCS.items() if g == group]
+        out.append("")
+    return "\n".join(out)
+
+
 LANGS = ("en", "bn")
 FENCE = re.compile(r"^---\n(.*?)\n---\n", re.S)
 

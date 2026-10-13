@@ -6,7 +6,7 @@ Everything in `SKILL.md` and `references/authoring.md` applies; this guide adds 
 
 ## Settings
 
-The type uses the house defaults. A cover with a short contents list suits it:
+The type uses the house defaults (12pt, 0.5in margins). Its cover counts the questions of each kind and lists the topics with their question counts, all read from the document, so never type counts into the front matter; the back of the cover is a practice log with a box per question (`references/covers-and-print.md`):
 
 ```yaml
 ---
@@ -17,11 +17,8 @@ cover: true
 course_code: "COM I"
 course_name: "Communication Engineering I"
 cover_title: "Question Bank"
-cover_contents:
-  - "35 numericals"
-  - "25 short questions"
-  - "20 long questions"
-  - "Click a question's title bar to jump to its solution"
+cover_subtitle: "Lectures 24--38"
+back_blurb: "Numericals and short questions on every topic, each linked to a full solution."
 ---
 ```
 
@@ -78,4 +75,4 @@ $\beta = \Delta f/B = 75/15 = 5$. Carson: $B_T = 2(\Delta f + B) = \mathbf{180}$
 
 - [ ] Every question has its solution and every solution its question (the linter checks this).
 - [ ] Every numerical result was computed and carries its unit.
-- [ ] The cover contents list matches the real counts.
+- [ ] The cover's counts and topics look right (they are read from the `#### N1` / `S1` / `L1` headings and the `##` topics).

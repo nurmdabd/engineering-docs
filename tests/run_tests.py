@@ -14,7 +14,7 @@ Corpus check, for real notes that live in another repo (run before and after a c
     python3 tests/run_tests.py --compare  DIR  notes.md other.md:--bangla ...
 
 Each corpus entry is a Markdown path, optionally followed by ':' and md2tex flags separated by commas
-(for example sheet.md:--fontsize,10pt,--textwidth,18.9). Snapshots go to DIR, outside the skill.
+(for example sheet.md:--fontsize,10pt,--margin-x,0.4in). Snapshots go to DIR, outside the skill.
 """
 import argparse
 import re
@@ -72,6 +72,14 @@ def check_skill():
         for f in ("type.json", "guide.md"):
             if t.is_dir() and not (t / f).exists():
                 problems.append(f"types/{t.name} has no {f}")
+    sys.path.insert(0, str(SKILL / "scripts"))
+    import frontmatter
+    missing = [k for k in frontmatter.KEYS if k not in frontmatter.DOCS] + [k for k in frontmatter.DOCS if k not in frontmatter.KEYS]
+    if missing:
+        problems.append(f"front-matter keys without a DOCS entry (or the reverse): {', '.join(missing)}")
+    ref = SKILL / "references" / "front-matter-keys.md"
+    if not ref.exists() or ref.read_text(encoding="utf-8") != frontmatter.reference():
+        problems.append("references/front-matter-keys.md is out of date: python3 scripts/doc.py keys --write")
     print(f"{'ok' if not problems else 'FAILED':8} skill files")
     for p in problems:
         print("  " + p)

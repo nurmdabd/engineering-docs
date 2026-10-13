@@ -157,7 +157,7 @@ Preserve every row and cell exactly. Generate a meaningful caption and label if 
 - **One item per line:** in a cell listing several items (symbols, steps), separate them with `<br>` in the Markdown, or `\newline` in LaTeX.
 
 **Dense reference sheets** (formula sheets, many-column tables):
-- **Font and margins:** use `--fontsize 11pt` and `--margin-x 0.4in` in `build.py`. Pass the matching `--textwidth 18.9` (cm) to `md2tex.py` so it sizes columns for the wider text block.
+- **Font and margins:** `type: formula-sheet` sets 10pt and `--margin-x 0.4in` for both scripts; `md2tex.py` sizes the columns from the margin. For another dense sheet, give `margin_x: 0.4in` in its front matter.
 - **Formula sheet layout:** `Title | Equation | Notation | Reference`.
   - **Notation** is required: define every new symbol in the row, one per line.
   - **Reference** is optional: give the lecture, plus a link to the section of the theory PDF where the formula is derived.

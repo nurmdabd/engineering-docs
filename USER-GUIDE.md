@@ -4,6 +4,20 @@ How to get the best documents out of this skill: what to ask for, what to give C
 
 **In one sentence:** you ask for a document (notes, a formula sheet, past-paper solutions, a lab report…), Claude writes or takes the Markdown, and the skill turns it into a PDF in your own LaTeX style: your preamble, colours, callout boxes, linked questions and a clickable table of contents.
 
+**I want to…**
+
+| … | Say or set | Section |
+|---|---|---|
+| Turn my Markdown into a PDF | "Convert `notes.md` with the engineering-docs skill" | [2](#2-the-two-ways-to-use-it) |
+| Have Claude write it | "Use the engineering-docs skill (TYPE type) to write …" | [2](#2-the-two-ways-to-use-it), [4](#4-document-types) |
+| Give it a cover | `cover: true` and the `course_*` / `cover_*` keys | [5](#5-covers-colours-and-the-back-pages) |
+| Colour a subject's documents | `accent: 5B3A8C` (the same on every document of that subject) | [5](#5-covers-colours-and-the-back-pages) |
+| Change the margins | `margin_x: 0.6in` | [6](#6-front-matter-the-settings-block) |
+| Print it double-sided | "make a print version" | [12](#12-printing) |
+| Put several PDFs in one | a `pack.yaml`, then `doc.py bundle` | [13](#13-packs-several-documents-in-one-pdf) |
+| Draw a course mind map | `type: mind-map` | [4](#mind-map) |
+| See every setting | `python3 scripts/doc.py keys` or `references/front-matter-keys.md` | [6](#6-front-matter-the-settings-block) |
+
 ---
 
 ## Contents
@@ -12,16 +26,19 @@ How to get the best documents out of this skill: what to ask for, what to give C
 2. [The two ways to use it](#2-the-two-ways-to-use-it)
 3. [Getting the best content](#3-getting-the-best-content)
 4. [Document types](#4-document-types)
-5. [Front matter: the settings block](#5-front-matter-the-settings-block)
-6. [Writing Markdown yourself](#6-writing-markdown-yourself)
-7. [Custom commands](#7-custom-commands)
-8. [Bangla documents](#8-bangla-documents)
-9. [Changing a document after the build](#9-changing-a-document-after-the-build)
-10. [Layout features you get for free](#10-layout-features-you-get-for-free)
-11. [Running the scripts yourself](#11-running-the-scripts-yourself)
-12. [Checking the result](#12-checking-the-result)
-13. [Problems and fixes](#13-problems-and-fixes)
-14. [Improving the skill](#14-improving-the-skill)
+5. [Covers, colours and the back pages](#5-covers-colours-and-the-back-pages)
+6. [Front matter: the settings block](#6-front-matter-the-settings-block)
+7. [Writing Markdown yourself](#7-writing-markdown-yourself)
+8. [Custom commands](#8-custom-commands)
+9. [Bangla documents](#9-bangla-documents)
+10. [Changing a document after the build](#10-changing-a-document-after-the-build)
+11. [Layout features you get for free](#11-layout-features-you-get-for-free)
+12. [Printing](#12-printing)
+13. [Packs: several documents in one PDF](#13-packs-several-documents-in-one-pdf)
+14. [Running the scripts yourself](#14-running-the-scripts-yourself)
+15. [Checking the result](#15-checking-the-result)
+16. [Problems and fixes](#16-problems-and-fixes)
+17. [Improving the skill](#17-improving-the-skill)
 
 ---
 
@@ -85,14 +102,15 @@ A type is a preset for one kind of document: page settings, a writing guide, a s
 
 | Type | Use it for | Layout |
 |---|---|---|
-| `theory-notes` | Lecture notes taught like a lesson | 12pt article, cover |
-| `exam-notes` | Memorize-version of theory notes, each heading linked back | 12pt article |
-| `formula-sheet` | Every formula in Title / Equation / Notation / Reference tables | 10pt, 0.4in side margins |
-| `question-bank` | Practice numericals, short and long questions, linked to solutions | 12pt article, cover |
-| `past-paper` | Full solutions of a previous year's paper | tight layout, 0.5in side margins, solutions cover with a question map, the typeset question paper linked to the solutions |
-| `project-report` | Multi-day lab or project report, one chapter per day | 14pt report (chapters) |
+| `theory-notes` | Lecture notes taught like a lesson | 12pt; cover listing the parts; "how to use" page; edge tabs |
+| `exam-notes` | Memorize-version of theory notes, each heading linked back | 12pt; revision cover; revision-plan page; edge tabs |
+| `formula-sheet` | Every formula in Title / Equation / Notation / Reference tables | 10pt, 0.4in margins; cover with the topics; Key formulas and Symbol index pages; edge tabs |
+| `question-bank` | Practice numericals, short and long questions, linked to solutions | 12pt; cover with the counts; practice-log page |
+| `past-paper` | Full solutions of a previous year's paper | tight layout; solutions cover with a question map; paper-at-a-glance page; the typeset question paper linked to the solutions |
+| `project-report` | Multi-day lab or project report, one chapter per day | 14pt report (chapters); formal framed cover |
+| `mind-map` | A whole course on one page | landscape A4 (screen) or A3 (print); its own cover |
 
-No type fits (a derivation sheet, a mind map)? Leave `type:` out and the house defaults apply. Ask Claude to add a new type if you'll make that kind of document again.
+Every type has 0.5in left and right margins unless the table says otherwise. No type fits (a derivation sheet, a traps sheet)? Leave `type:` out and the house defaults apply. Ask Claude to add a new type if you'll make that kind of document again.
 
 **Not sure which type?** If your Markdown has no `type:`, the linter and converter suggest one from the content ("this looks like exam-notes"). They never apply it on their own.
 
@@ -151,9 +169,41 @@ No type fits (a derivation sheet, a mind map)? Leave `type:` out and the house d
   - Several days in one PDF: `label_prefix: d03_` in each day's front matter keeps labels unique.
   - One day built on its own: `first_number: 3` numbers it Chapter 3.
 
+### mind-map
+
+- **What you get:** the course on one landscape page. The parts run left to right in the order they are taught, each part's key ideas sit above and below it as cards with their formula, a ★ marks what exams ask most, and small "→ TDM" chips show where an idea is used again (tap one to jump to that card). Card titles can link into the theory PDF. Anything after the map (a compare-and-contrast table) follows on its own pages.
+- **Two sizes:** `map_size: a4` (the default) for reading on screen; `map_size: a3` for printing, with an extra detail line on every card. Build both if you want both.
+- **You give:** the theory notes, or the topics you want on it. You write it as a plain list (`types/mind-map/guide.md`); Claude never places boxes by hand.
+- **Ask:** "Make a mind map of COM I Lectures 24–38 (engineering-docs, mind-map type), A4 and A3."
+
 ---
 
-## 5. Front matter: the settings block
+## 5. Covers, colours and the back pages
+
+With `cover: true` (past papers have it by default), a document gets three extra pages, all filled from the document itself:
+
+- **The front cover,** different for each type but clearly one family: the same band, course block, footer and a faint motif in the middle. The panel at the bottom shows facts read from the document, never typed in: the parts and their lecture ranges, the formula count of each topic, the number of questions of each kind.
+- **The back of the cover** (page 2), useful instead of blank:
+
+  | Type | Page 2 |
+  |---|---|
+  | theory notes | How to use these notes: how a lecture is laid out, what each box means, how to get around, what to know first (`prerequisites:`) |
+  | exam notes | My revision plan: a row per lecture to tick on days 1, 3 and 7 and the night before, with a confidence rating |
+  | formula sheet | Before you use the sheet: your first row, annotated, and how to use the sheet in the exam |
+  | past paper | The paper at a glance: time, marks, how many to answer, and every sub-part with its marks and minutes |
+  | question bank | How to practise, and a practice log with two boxes per question |
+
+- **The back cover** (last page), in its own style: a strip on the right edge with the course and document name, faint rings, a short "About this document" (`back_blurb:`), a few numbers and the page count.
+
+**Colours:** each type has its own colour, and each subject has one too (`accent:`). Give every document of a subject the same `accent`, and they look like a set. Headings and boxes keep the house colours.
+
+**Turning parts off:** `inside_cover: false` (no page 2), `back_cover: false` (no back cover), `cover: false` (none of the three).
+
+**Edge tabs:** theory notes, exam notes and formula sheets also get a clickable coloured tab per part on the right edge of every page; the wide tab is the part you are reading. `edge_tabs: false` removes them. They are never printed.
+
+---
+
+## 6. Front matter: the settings block
 
 The YAML block at the top of the Markdown holds every build setting, so you never need to pass flags.
 
@@ -179,22 +229,25 @@ date: "October 2026"
 
 | Key | Effect |
 |---|---|
-| `title`, `subtitle` | Title lines on page 1. Without them, the first `#` heading is the title. |
-| `type` | Loads that type's settings and rules |
+| `title`, `subtitle` | Title lines. Without them, the first `#` heading is the title. |
+| `type` | Loads that type's layout, cover and writing rules |
 | `lang` | `bn` switches on Bangla handling |
 | `header`, `header_right` | Running header, left and right |
-| `cover` and the `course_*` / `cover_*` keys | The study-notes cover page. Claude leaves the cover out rather than invent course details. |
-| `author`, `date` | Cover and title page (author defaults to Nur Mohammad) |
+| `cover` and the `course_*` / `cover_*` keys | The type's cover (Section 5). Claude leaves the cover out rather than invent course details. |
+| `accent`, `back_blurb`, `prerequisites` | The subject's colour; the back cover's sentence; "before you start" on a theory cover's back |
+| `margin_x` | Left and right margins (default `0.5in`; formula sheets `0.4in`) |
+| `author`, `date` | Cover and back cover (author defaults to Nur Mohammad) |
 | `toc: false` | No table of contents (one-table sheets) |
-| `label_prefix`, `first_number` | Report days (see project-report) |
-| `preamble` | Your own commands for this one document (Section 7) |
-| `exam`, `year` | Records only, for past papers |
+| `print_layout: booklet` | Print copy padded to a multiple of 4 pages (Section 12) |
+| `map_size` | Mind maps: `a4` or `a3` |
+
+**Every key with its default** is listed in `references/front-matter-keys.md`, or run `python3 scripts/doc.py keys`. That list is generated from the code, so it is always complete; the linter reports any key it doesn't know.
 
 **Writing values:** they are raw LaTeX, so write `--` for an en-dash, `---` for an em-dash and `\&` for `&`. Put quotes around any value that contains a colon.
 
 ---
 
-## 6. Writing Markdown yourself
+## 7. Writing Markdown yourself
 
 The full spec is in `references/authoring.md`. This is the short version.
 
@@ -228,7 +281,7 @@ The full spec is in `references/authoring.md`. This is the short version.
 
 ---
 
-## 7. Custom commands
+## 8. Custom commands
 
 Every house command is in a registry, which records how Markdown can use it. To list them all: `python3 scripts/commands.py list` (add `--type past-paper` for a type's own).
 
@@ -244,7 +297,7 @@ Every house command is in a registry, which records how Markdown can use it. To 
 
 ---
 
-## 8. Bangla documents
+## 9. Bangla documents
 
 Set `lang: bn`. Technical terms, maths, numbers, figure paths and the callout markers stay in English, and sentences end with "।". The Bangla font and the Bangla text handling are switched on automatically.
 
@@ -253,7 +306,7 @@ Set `lang: bn`. Technical terms, maths, numbers, figure paths and the callout ma
 
 ---
 
-## 9. Changing a document after the build
+## 10. Changing a document after the build
 
 - **Normal fixes go in the Markdown:** wording, a caption, a heading, a box. Then rebuild with `doc.py build notes.md --reconvert`. The Markdown stays the single source.
 - **Hand edits to the `.tex`** are only for what Markdown can't express, such as a column width or a forced page break.
@@ -263,7 +316,7 @@ Set `lang: bn`. Technical terms, maths, numbers, figure paths and the callout ma
 
 ---
 
-## 10. Layout features you get for free
+## 11. Layout features you get for free
 
 - **Clickable everything:** the table of contents, cross-references, question ↔ solution boxes, links between PDFs, and a **TOC** button in the header of every page.
 - **Your colours:** mid-tone blue section headings, red sub-section headings, and a soft red warning box with white title text.
@@ -271,12 +324,58 @@ Set `lang: bn`. Technical terms, maths, numbers, figure paths and the callout ma
 - **Automatic colon** after headings, skipped when the title already ends in `?`, `!`, `.` or `।`.
 - **Tables** repeat their header row on every page and size their columns from the content. Tall maths in cells gets padding.
 - **Numbers and units** stay on one line when written `9.995~MHz` or in maths.
-- **Cover page** with the course band, title, subtitle, note and an "Inside" list.
-- **Black-and-white print copy, when you ask:** say "make a print version of the 2022-23 solution". You get `NAME_print.pdf` beside the normal PDF: black text and headings, light grey boxes, and figures redrawn in grey with dashed and dotted lines in place of colours. Every document is written ready for this from the start (curves differ in line style as well as colour, and the text names both, like "the dashed orange curve"), so the print copy needs no rewriting. Only the print PDF and the grey figure copies (`figures/print/`) are made on request.
+- **Margins** of 0.5in left and right (formula sheets 0.4in); `margin_x` changes one document's, and the tables follow.
+- **Covers, the back of the cover and a back cover** for every type (Section 5), and **edge tabs** on theory notes, exam notes and formula sheets.
+- **Formula sheets** also get a *Key formulas* page (the bold rows, starred in the sheet) and a *Symbol index*, both linked to the rows.
+- **Bookmarks** read cleanly: the EXAM and NOTE markers appear as words.
+- **Black-and-white print copy** when you ask (Section 12).
 
 ---
 
-## 11. Running the scripts yourself
+## 12. Printing
+
+Say "make a print version of the 2022-23 solution". You get `NAME_print.pdf` beside the normal PDF, which stays as it is:
+
+- **Black and white:** black text and headings, light grey boxes, covers in light tints (little toner), and figures redrawn in grey with dashed and dotted lines in place of colours. Every document is written ready for this from the start (curves differ in line style as well as colour, and the text names both, like "the dashed orange curve"), so the print copy needs no rewriting. The grey figure copies go to `figures/print/`.
+- **Laid out for double-sided printing:**
+  - page 2 is the back of the cover (or a blank page), so the content starts on a right-hand page;
+  - blank pages are added at the end so the back cover is the back of the last sheet: an even page count;
+  - `print_layout: booklet` pads to a multiple of 4 pages, for a folded and stapled booklet;
+  - without a back cover (`back_cover: false`), the document still ends on a full sheet.
+- **No edge tabs** in print: printers cannot print to the edge of the sheet.
+
+---
+
+## 13. Packs: several documents in one PDF
+
+To hand out one file, for example a past paper with the formula sheet, write a small `pack.yaml` beside the PDFs:
+
+```yaml
+title: "Exam Pack"
+subtitle: "Session 2021--22"
+course_code: "EEE329"
+course_name: "Basic Communication Engineering"
+accent: 2F5D3A
+back_blurb: "The solved paper and the formula sheet in one file."
+parts:
+  - pdf: pdf/2021-22-term-final.pdf
+    title: "Question Paper Solutions"
+  - pdf: ../level-2/pdf/1-formula-sheet.pdf
+    title: "Formula Sheet"
+```
+
+Then run `python3 scripts/doc.py bundle pack.yaml` (add `--print` for the print pack). You get one PDF with:
+- a pack cover and an "In this pack" page with each part's pages, linked;
+- every part as it was built, its own cover kept as a divider (its back cover is left out);
+- one back cover;
+- bookmarks with one entry per part and that part's outline under it;
+- links between the parts working inside the file, so the "same folder" rule no longer applies.
+
+Build or rebuild the parts first; the pack takes the PDFs as they are. The print pack uses each part's `_print.pdf` and starts every part on a right-hand page. `scripts/bundle.py` lists every key (`label`, `note`, `date`, `out`, `keep_back_cover`, …).
+
+---
+
+## 14. Running the scripts yourself
 
 Claude normally runs these for you. From the folder of the Markdown file:
 
@@ -289,14 +388,16 @@ python3 $S/doc.py build 2023-24.md --out pdf/2023-24.pdf             # lint + co
 python3 $S/doc.py build 2023-24.md --out pdf/2023-24.pdf --reconvert # regenerate the .tex from the Markdown
 DOC_PRINT=1 python3 figures/_src/2023-24.py     # grey copies of the figures, in figures/print/
 python3 $S/doc.py build 2023-24.md --out pdf/2023-24.pdf --print     # black-and-white copy: pdf/2023-24_print.pdf
-bash $S/setup.sh                                 # install TeX, pandoc, fonts (safe to re-run)
+python3 $S/doc.py bundle pack.yaml               # several PDFs as one pack (Section 13)
+python3 $S/doc.py keys                           # every front-matter key and its default
+bash $S/setup.sh                                 # install TeX, pandoc, fonts, pypdf (safe to re-run)
 ```
 
 `--out` is relative to the folder you run the command from. The converted body goes to `latex/NAME.tex` beside the Markdown, and its settings to `latex/NAME.build.json`.
 
 ---
 
-## 12. Checking the result
+## 15. Checking the result
 
 Before you call a document done:
 
@@ -309,7 +410,7 @@ Before you call a document done:
 
 ---
 
-## 13. Problems and fixes
+## 16. Problems and fixes
 
 | Problem | Fix |
 |---|---|
@@ -322,9 +423,17 @@ Before you call a document done:
 | A heading sits alone at the bottom of a page, followed by a list | The guards only cover equations, boxes, tables, figures and code. Ask Claude to add a `\needspace` there by hand. |
 | The print copy says "text naming a colour without a line style" | Those sentences say "the red curve" and mean nothing in grey. Reword them to name the style too ("the dotted red curve") in the Markdown. |
 | The skill copy in the repo changed at session start | The hook pulled a newer master copy. Commit it. |
+| A cover's panel lists the wrong parts, or none | The cover reads the document's top headings. A hand-written `cover_contents` list replaces them on theory covers. |
+| "mind map: … too many for A4" | A part has more than three cards on one side. Move a card, split the part, or use `map_size: a3`. |
+| "'→ X' … no card has that title" | The chip must name another card's title exactly as written (markup and case don't matter). |
+| `doc.py bundle` says it needs pypdf | Run `scripts/setup.sh`, or `pip install pypdf`. |
+| The edge tab highlights the wrong part | It needs the second LaTeX run; `build.py` does that. On a hand compile, compile twice. |
 
 ---
 
-## 14. Improving the skill
+## 17. Improving the skill
 
 All changes go to the master repo `nurmdabd/engineering-docs`: a new type, a new command, a style change. Then run `python3 tests/run_tests.py --build` and push. Working repos pick the change up at their next session, and their copy is committed there. Just tell Claude what you'd like changed, for example "past-paper answers should also have a diagram section". Claude edits the type's guide or the preamble, updates the tests and syncs both repos.
+
+- `CHANGELOG.md` records what changed and when.
+- `ROADMAP.md` keeps the ideas saved for later (series pages and QR codes for distribution, Bangla back-of-cover pages, a cover gallery).

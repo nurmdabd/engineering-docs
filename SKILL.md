@@ -1,6 +1,6 @@
 ---
 name: engineering-docs
-description: "Writes and builds engineering documents in Nur Mohammad's house LaTeX style and compiles them to interactive PDFs with XeLaTeX: lecture and theory notes, formula sheets, question banks, derivation and exam sheets, full solutions of previous years' exam papers, and multi-day project or lab reports, each kind with its own document type and writing guide. English, or Bangla with English technical terms. Covers the whole path: writing the Markdown content when asked, converting Markdown to house-style LaTeX (draft converter plus rules), and building the PDF with the bundled preamble, cover page, callout boxes, linked question/solution boxes and links between PDFs, plus a black-and-white print copy on request. Use whenever the user wants notes, solutions, a report or exam material as a PDF or .tex in \"my format\" or \"my LaTeX style\", even if they never say LaTeX, or asks how a Markdown element renders in this style. When converting the user's finished Markdown, content is preserved exactly (grammar fixes only)."
+description: "Writes and builds engineering documents in Nur Mohammad's house LaTeX style and compiles them to interactive PDFs with XeLaTeX: lecture and theory notes, exam notes, formula sheets, question banks, mind maps, derivation sheets, full solutions of previous years' exam papers, and multi-day project or lab reports, each kind with its own document type, cover and writing guide. English, or Bangla with English technical terms. Covers the whole path: writing the Markdown when asked, converting it to house-style LaTeX, and building the PDF with the bundled preamble, covers, callout boxes, linked questions and solutions and links between PDFs; plus a black-and-white print copy laid out for double-sided printing, and packs that combine several PDFs into one. Use whenever the user wants notes, solutions, a report or exam material as a PDF or .tex in \"my format\" or \"my LaTeX style\", even without saying LaTeX. When converting the user's finished Markdown, content is preserved exactly (grammar fixes only)."
 ---
 
 # Engineering documents in the house LaTeX style
@@ -14,9 +14,11 @@ Read this file first. It is the workflow; the detailed rules are in `references/
 | `references/commands.md` | Using a custom command from Markdown (`::: {.name}`, `[text]{.name}`), or adding a new command for a document, a type or the core |
 | `references/pdf-links.md` | Building several PDFs that link to each other (Section 13) |
 | `references/bangla.md` | The document is in Bangla (Section 14) |
+| `references/covers-and-print.md` | Covers, the back of the cover, back covers, edge tabs, print copies and packs of several PDFs (Section 15) |
+| `references/front-matter-keys.md` | Every front-matter key with its default (generated: `doc.py keys --write`) |
 | `types/<name>/guide.md` | Writing or converting a document of that type |
 
-Section numbers (0–14) are shared across these files, so "Section 7" always means the same rules.
+Section numbers (0–15) are shared across these files, so "Section 7" always means the same rules.
 
 ## Two ways this skill is used
 
@@ -31,10 +33,14 @@ Section numbers (0–14) are shared across these files, so "Section 7" always me
 |---|---|
 | `template/main-tex-preamble.tex` | The **live** house preamble. It is the user's own preamble with two portable changes: the header text comes from `\ReportHeader`, and the emoji font falls back to DejaVu Sans when Segoe UI Emoji is missing. |
 | `template/main.tex` | The user's main-file layout: title lines, TOC with the `toc` anchor, "Created by …", `\newpage`, then `\include` of each body file. A cover page is included automatically if `cover-page-preamble.tex` and `cover-page-main.tex` are present in the build. It also passes hyperref's `destlabel` option (Section 13). |
-| `template/cover-page-*.tex` | The **study-notes cover page** (a type may bring its own pair, as `types/past-paper/` does) (course code band, document title, subtitle, note, optional "Inside" box, author and date). It is filled by `build.py --cover …`. The user's other covers are for other purposes; pass `--cover-dir` to use one of those instead. |
+| `template/cover-kit.tex`, `cover-page-*.tex`, `back-cover.tex` | The **cover system** (Section 15): the shared kit, the default front cover (theory notes use it too), and the back cover. Each type may bring its own `cover-page-main.tex` and an `inside-cover.tex` (the back of the cover). `--cover-dir` uses one of the user's own covers instead. |
+| `template/edge-tabs.tex` | Clickable part tabs on the page edge (Section 15.5). |
+| `scripts/coverdata.py`, `formulasheet.py` | Read the facts the covers show from the bodies; add a formula sheet's Key formulas and Symbol index pages. |
+| `scripts/mindmap.py` | Turns a `::: {.mindmap}` list into the TikZ map (`types/mind-map/guide.md`). |
+| `scripts/bundle.py` | Combines finished PDFs into one pack (`doc.py bundle`, Section 15.7). |
 | `scripts/md2tex.py` + `scripts/house.lua` | A pandoc-based **draft converter** that applies the mechanical rules: headings, labels, table tiers, equations, figures, callouts, question/solution boxes, `eqnote` and Unicode. Its output still gets the Step 3 review. |
 | `scripts/setup.sh` | Installs XeLaTeX, every package the preamble loads, pandoc, PyYAML, Pillow, matplotlib and NumPy (Debian/Ubuntu). Re-running it is safe. |
-| `scripts/doc.py` | One command for the whole path: `types`, `new`, `check`, `build` (see Workflow). |
+| `scripts/doc.py` | One command for the whole path: `types`, `new`, `check`, `build`, `bundle`, `keys` (see Workflow). |
 | `scripts/commands.py` + `template/commands.yaml` | The custom-command registry: `list`, `check NAME`, `add` (references/commands.md). Types and documents add their own `commands.yaml`. |
 | `scripts/lint_md.py` | Checks Markdown against `references/authoring.md` before converting: front matter, headings, questions and solutions, links, images, equations, glyphs. |
 | `scripts/check_structure.py` | A fast check for unbalanced braces and `\begin`/`\end` pairs, with no compile. |
@@ -53,12 +59,13 @@ A type is a preset for one kind of document. `type:` in the front matter (or `--
 |---|---|
 | `theory-notes` | Lecture or theory notes taught like a lesson: lecture openers, explained figures, worked examples, a self-check per lecture; Bangla versions too |
 | `exam-notes` | The memorize-version of theory notes: same headings, each linked back to its full explanation; definitions, steps, labels, worked examples, exam answers |
-| `formula-sheet` | Every formula of a course in Title / Equation / Notation / Reference tables, 10pt with narrow margins |
+| `formula-sheet` | Every formula of a course in Title / Equation / Notation / Reference tables, 10pt with 0.4in margins; Key formulas and Symbol index pages added at build |
 | `question-bank` | Practice numericals, short and long questions, each linked to its solution |
 | `past-paper` | Solutions of a previous year's exam paper: the paper's questions with marks, then a solution block per sub-part (Theory, Answer, Keyword Explanation, Notes and Remarks, Final Concise Answer); tighter layout |
 | `project-report` | Multi-day project or lab reports (RTL-to-GDSII flow): one chapter per day, `extreport` at 14pt |
+| `mind-map` | A course on one landscape page (A4 for the screen, A3 for print): parts in story order, cards with key formulas, links between topics |
 
-- **Choosing the type:** the user's request usually names it. For existing Markdown without `type:`, the linter and the converter suggest one from the content (`scripts/detect_type.py`); confirm it with the user before adding it to the front matter. When nothing fits (a derivation sheet, a mind map), use the house defaults with no type, then offer to add a type for that kind of document.
+- **Choosing the type:** the user's request usually names it. For existing Markdown without `type:`, the linter and the converter suggest one from the content (`scripts/detect_type.py`); confirm it with the user before adding it to the front matter. When nothing fits (a derivation sheet, a traps sheet), use the house defaults with no type, then offer to add a type for that kind of document.
 - **New types:** a folder `types/NAME/` with `type.json`, `guide.md` and `template.md` (and `preamble.tex` if it needs its own commands). `tests/run_tests.py` checks that every type has them and that its template lints and builds clean.
 
 ## Workflow
@@ -69,6 +76,8 @@ python3 <skill>/scripts/doc.py types                  # what each type is for
 python3 <skill>/scripts/doc.py new question-bank notes.md
 python3 <skill>/scripts/doc.py check notes.md         # Step 2's lint
 python3 <skill>/scripts/doc.py build notes.md         # lint, convert to latex/notes.tex, check, build notes.pdf
+python3 <skill>/scripts/doc.py bundle pack.yaml       # several finished PDFs as one pack (Section 15.7)
+python3 <skill>/scripts/doc.py keys                   # every front-matter key and its default
 ```
 `build` reuses an existing `latex/NAME.tex` (it may hold hand edits) and stops if the Markdown is newer; `--reconvert` regenerates it. The steps still apply: review the draft (Step 3) and look at the pages (Step 5).
 
@@ -120,16 +129,19 @@ python3 <skill>/scripts/build.py body1.tex [body2.tex ...] --out path/Name.pdf \
 ```
 
 - **Settings from front matter:** if `NAME.build.json` sits beside the first body, its settings are applied first and printed. A flag you pass overrides it; your `--title` or `--cover-contents` lines replace the saved ones.
-- **Cover page:** add `--cover` (or `cover: true`) for study notes, unless the type's guide says otherwise (past papers get their own cover by default; `cover: false` leaves it out; they also get the typeset question paper, see `types/past-paper/guide.md`, which `paper: false` leaves out). When the sources give no course code or name, leave the cover out rather than invent them, and say so. The cover fields are raw LaTeX, so write `--` for an en-dash and `\&` for `&`. Use `--cover-dir DIR` to use another cover pair instead.
+- **Covers (Section 15):** add `--cover` (or `cover: true`) for study notes, unless the type's guide says otherwise (past papers get their own cover by default; `cover: false` leaves it out; they also get the typeset question paper, see `types/past-paper/guide.md`, which `paper: false` leaves out). A cover brings the type's back-of-the-cover page and the back cover with it. Give `accent` (the subject's colour) the same value on every document of one subject, and a `back_blurb`. When the sources give no course code or name, leave the cover out rather than invent them, and say so. The cover fields are raw LaTeX, so write `--` for an en-dash and `\&` for `&`. Use `--cover-dir DIR` to use another cover pair instead.
+- **Margins:** 0.5in left and right by default; a type may set its own (formula sheets 0.4in) and `margin_x` sets one document's. The converter sizes table columns from the margin, so set it before converting.
 - **Several documents:** when one project produces several PDFs, write a small `build-all.sh` next to the bodies that calls `build.py` once per document. Commit it so the PDFs can be rebuilt later.
 
-- **Defaults** match the user's latest main file: `extarticle`, `12pt`, author "Nur Mohammad". The title lines are rendered as `{\LARGE{\keyterm{…}}}`.
+- **Defaults** match the user's latest main file: `extarticle`, `12pt`, author "Nur Mohammad", A4 portrait (`--paper-size a3`, `--landscape` for mind maps). The title lines are rendered as `{\LARGE{\keyterm{…}}}`.
 - **Choosing the class:** use `--class extreport` when the source has chapter-level `#` headings, as in a multi-day report; `--type project-report` sets that with `14pt`. In `extreport`, a file with several `#` headings keeps them all as chapters; otherwise the first `#` heading becomes the title.
 - **Image search path:** each body file's folder and its `figures/` subfolder are added automatically, so `\includegraphics{name.png}` works with a bare filename. Use `--figures` for images stored anywhere else.
 - **Print copy (`--print`), only when the user asks for one:** a black-and-white version for printing, built beside the normal PDF as `<Name>_print.pdf` (`doc.py build` adds the `_print`). The normal build stays the default and is never replaced. It loads `template/print-bw.tex` after the type's preamble: headings, bold text, links and box title bars turn black or dark grey, and fills turn light grey to save toner. Steps:
   1. If the figures come from scripts, make their grey copies first: `DOC_PRINT=1 python3 figures/_src/<script>.py`. Scripts that save through `scripts/figures_bw.py` write `figures/print/NAME`, where coloured curves get dashes (blue solid, orange dashed, red dotted, green dash-dot, ...) and the legends match. An older script can call `figures_bw.to_bw(fig)` before saving to `print/`.
   2. Build with `--print`. The build uses `print/NAME` for each image that has one and greys every other PNG or JPEG itself (say so: curves told apart only by colour may merge there).
   3. Fix what the build reports under "text naming a colour without a line style or shape": reword it in the Markdown so it names both ("the dashed orange curve"); that fixes the normal PDF too. Then look at the pages (Step 5).
+  4. With a cover, the print copy is laid out for double-sided printing: page 2 is the back of the cover (or blank), and blank pages put the back cover on the back of the last sheet; `print_layout: booklet` pads to a multiple of 4 (Section 15.6).
+- **Several documents as one PDF (a pack):** build each part, then `doc.py bundle pack.yaml` (Section 15.7). Each part keeps its own layout; links between them become links inside the pack.
 - **Build folder:** the build writes `<Name>_build/` next to the PDF. It holds `main.tex`, the preamble and the body files, and it compiles as-is on the user's MikTeX.
 
 ### Step 5: Look at the result
@@ -142,6 +154,7 @@ Check the following, and fix the body file and rebuild if anything is off:
 - No equation overflows the margin.
 - Figures are sized sensibly. Use `width=0.8\linewidth` by default and narrower for tall images.
 - Nothing is blank where a glyph should be.
+- With a cover: page 1, page 2 (the back of the cover) and the last page (the back cover) look right, and the numbers on them match the document (Section 15.8).
 
 ### Step 6: Deliver
 Give the user:
