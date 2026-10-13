@@ -17,6 +17,7 @@ Each corpus entry is a Markdown path, optionally followed by ':' and md2tex flag
 (for example sheet.md:--fontsize,10pt,--textwidth,18.9). Snapshots go to DIR, outside the skill.
 """
 import argparse
+import re
 import difflib
 import shutil
 import json
@@ -326,6 +327,44 @@ def run_builds(cases):
     return failed
 
 
+def run_print_layout():
+    """Print copies of a document with a cover: page 2 is the back of the cover (or blank), the back cover is the
+    last page, and the page count is even (a multiple of 4 for a booklet); without a back cover, still even."""
+    failed = 0
+    body = FIXTURES / ".print-layout.tex"
+    side = body.with_suffix(".build.json")
+    body.write_text((EXPECTED / "front-matter.tex").read_text(encoding="utf-8"), encoding="utf-8")
+    side.write_text((EXPECTED / "front-matter.build.json").read_text(encoding="utf-8"), encoding="utf-8")
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            for flags, group, back in (([], 2, True), (["--print-layout", "booklet"], 4, True), (["--no-back-cover"], 2, False)):
+                out = Path(tmp) / "p.pdf"
+                r = subprocess.run([sys.executable, str(BUILD), str(body), "--out", str(out), "--print", *flags],
+                                   capture_output=True, text=True)
+                name = "print layout " + (" ".join(flags) or "duplex")
+                if r.returncode or not out.exists():
+                    failed += 1
+                    print(f"FAILED   {name}: build failed\n{r.stdout[-800:]}")
+                    continue
+                info = subprocess.run(["pdfinfo", str(out)], capture_output=True, text=True).stdout
+                pages = int(re.search(r"Pages:\s+(\d+)", info).group(1))
+                last = subprocess.run(["pdftotext", "-f", str(pages), "-l", str(pages), str(out), "-"],
+                                      capture_output=True, text=True).stdout
+                problems = []
+                if pages % group:
+                    problems.append(f"{pages} pages, not a multiple of {group}")
+                if back != ("ABOUT THIS DOCUMENT" in last):
+                    problems.append("the back cover is not the last page" if back else "a back cover was added")
+                print(f"{'ok' if not problems else 'FAILED':8} {name} ({pages} pages)")
+                for p in problems:
+                    print("  " + p)
+                failed += bool(problems)
+    finally:
+        body.unlink(missing_ok=True)
+        side.unlink(missing_ok=True)
+    return failed
+
+
 def corpus(entries, folder, mode):
     folder.mkdir(parents=True, exist_ok=True)
     failed = 0
@@ -366,7 +405,7 @@ def main():
         cases = json.loads((TESTS / "cases.json").read_text())
         failed = check_skill() + check_margins() + check_coverdata() + run_cases(cases, a.update) + run_lint(a.update) + run_templates(a.build)
         if a.build:
-            failed += run_builds(cases) + run_commands_add()
+            failed += run_builds(cases) + run_print_layout() + run_commands_add()
     print("\nAll passed." if not failed else f"\n{failed} failed.")
     sys.exit(1 if failed else 0)
 

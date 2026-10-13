@@ -36,7 +36,8 @@ KEYS = {
     "accent": ("str", "--accent"),           # the subject's colour on cover and back cover, hex like 5B3A8C
     "inside_cover": ("bool", None),          # false: no page on the back of the cover
     "back_cover": ("bool", None),            # false: no back cover
-    "back_blurb": ("str", "--back-blurb"),   # back cover: one or two sentences on what the document is
+    "back_blurb": ("str", "--back-blurb"),
+    "print_layout": ("str", "--print-layout"),   # print copy: duplex (default) or booklet (pages padded to a multiple of 4)   # back cover: one or two sentences on what the document is
     "prerequisites": ("list", "--prerequisite"),   # back of the cover (theory notes): what to know first
     "conventions": ("str", "--conventions"),       # back of the cover: the textbook and conventions followed
     "margin_x": ("str", "--margin-x"),       # left/right margin, e.g. 0.6in (default: the type's, else 0.5in)

@@ -79,6 +79,16 @@ def spaced_caps(text):
     return re.sub(r"(\\[A-Za-z]+)|([^\\]+)", lambda m: m.group(1) or m.group(2).upper(), text)
 
 
+def back_cover_block(a, back, covered):
+    """The end of main.tex: the back cover, and in a print copy the blank pages that put it on the back of the
+    last sheet (page count a multiple of 2, or of 4 for a folded booklet)."""
+    if not a.bw or not covered:
+        return "\\input{back-cover}" if back else ""
+    pad = 4 if a.print_layout == "booklet" else 2
+    count = "\\clearpage\\xdef\\HouseContentPages{\\the\\ReadonlyShipoutCounter}"   # before the blank pages
+    return f"{count}\\HousePadBefore{{{pad}}}\\input{{back-cover}}" if back else f"\\HousePadTo{{{pad}}}"
+
+
 def safe_stem(path, used):
     stem = re.sub(r"[^A-Za-z0-9-]", "-", path.stem).strip("-") or "body"
     name, i = stem, 2
@@ -339,6 +349,7 @@ def main():
     ap.add_argument("--back-blurb", default="")
     ap.add_argument("--prerequisite", action="append", default=[])
     ap.add_argument("--conventions", default="")
+    ap.add_argument("--print-layout", default="duplex", choices=["duplex", "booklet"])   # print copy: sheets or a folded booklet
     ap.add_argument("--source", default="")            # the Markdown file (from the front-matter sidecar)
     ap.add_argument("--build-dir", type=Path)
     ap.add_argument("--print", dest="bw", action="store_true")
@@ -467,8 +478,10 @@ def main():
                      "TITLE_BLOCK": "" if covered else f"\\begin{{center}}\n{title_lines}\n\\end{{center}}\n",
                      "CREATED_BY": "" if covered else ("\\begin{center}\n\t{\\color{white!50!black}Created by "
                                                        + tex_escape(a.author) + "} \\\\\n\t\\vspace{0.5cm}\n\\end{center}\n"),
-                     "INSIDE_COVER": "\\input{inside-cover}" if inside else "",
-                     "BACK_COVER": "\\input{back-cover}" if back else "",
+                     # print copy: page 2 is never left out (the back of the cover, or a blank page), and the back
+                     # cover sits on the last even page (a multiple of 4 for a booklet)
+                     "INSIDE_COVER": "\\input{inside-cover}" if inside else ("\\HouseBlankPage" if a.bw and covered else ""),
+                     "BACK_COVER": back_cover_block(a, back, covered),
                      "AFTER_TITLE": "\\newpage" if not a.no_toc else "\\hypertarget{toc}{}",
                      "COVER_FIELDS": cover, "PDFTITLE": pdftitle,
                      "BEFORE_TITLE": "\\input{paper-page}" if paper else "",

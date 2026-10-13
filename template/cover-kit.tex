@@ -3,7 +3,6 @@
 % The fields (\CoverCourseCode, ...) and the generated data (\CoverItems, \CoverStats, ...) are set in
 % main.tex before this file; every one has a default here, so a hand-made main.tex still compiles.
 \usetikzlibrary{calc, arrows.meta, positioning}
-\usepackage{zref-abspage, zref-user}   % the back cover's page count
 
 % ---------- fields ----------
 \providecommand{\CoverCourseCode}{}
@@ -148,3 +147,16 @@
 % the line at the foot of every back-of-cover page
 \newcommand{\bocinfo}{\docinfo{\ifdefempty{\CoverSource}{Built \CoverDate.}{Built \CoverDate\ from \texttt{\CoverSource}.}%
 	\ifdefempty{\CoverConventions}{}{\quad$\cdot$\quad\CoverConventions}}}
+
+% ---------- print copy: page order for double-sided printing ----------
+% The back of the cover is page 2 (a blank page when the type has none), so the content starts on a
+% right-hand page. \HousePadBefore{n}: blank pages until the next page is the last of a group of n, for the
+% back cover (n = 2: the back of the last sheet; n = 4: the back of a folded booklet). \HousePadTo{n}: blank
+% pages until the page count is a multiple of n (no back cover).
+\newcommand{\HouseBlankPage}{\null\thispagestyle{empty}\clearpage}
+\newcommand{\HousePadBefore}[1]{\clearpage
+	\pgfmathtruncatemacro{\housepadleft}{mod(\ReadonlyShipoutCounter + 1, #1)}%
+	\ifnum\housepadleft>0 \HouseBlankPage\HousePadBefore{#1}\fi}
+\newcommand{\HousePadTo}[1]{\clearpage
+	\pgfmathtruncatemacro{\housepadleft}{mod(\ReadonlyShipoutCounter, #1)}%
+	\ifnum\housepadleft>0 \HouseBlankPage\HousePadTo{#1}\fi}
