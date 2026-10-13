@@ -74,10 +74,7 @@ def tex_escape(text):
     return text.replace("\x00", r"\textbackslash{}")
 
 
-def spaced_caps(text):
-    """Upper case for letter-spaced text, outside LaTeX commands, with --- and -- as real dashes."""
-    text = text.replace("---", "\u2014").replace("--", "\u2013")
-    return re.sub(r"(\\[A-Za-z]+)|([^\\]+)", lambda m: m.group(1) or m.group(2).upper(), text)
+spaced_caps = coverdata.spaced_caps   # letter-spaced labels: upper case outside LaTeX commands
 
 
 def back_cover_block(a, back, covered):
@@ -517,7 +514,9 @@ def main():
                                                        + tex_escape(a.author) + "} \\\\\n\t\\vspace{0.5cm}\n\\end{center}\n"),
                      # print copy: page 2 is never left out (the back of the cover, or a blank page), and the back
                      # cover sits on the last even page (a multiple of 4 for a booklet)
-                     "INSIDE_COVER": "\\input{inside-cover}" if inside else ("\\HouseBlankPage" if a.bw and covered else ""),
+                     # (a long back-of-cover page may take two pages: pad so the content still starts on the right)
+                     "INSIDE_COVER": ("\\input{inside-cover}" + ("\\HousePadTo{2}" if a.bw else "")) if inside
+                                     else ("\\HouseBlankPage" if a.bw and covered else ""),
                      "BACK_COVER": back_cover_block(a, back, covered),
                      "AFTER_TITLE": "\\newpage" if not a.no_toc else "\\hypertarget{toc}{}",
                      "COVER_FIELDS": cover, "PDFTITLE": pdftitle,

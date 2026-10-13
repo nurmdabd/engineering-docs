@@ -19,6 +19,12 @@ SEP = "\\quad$\\cdot$\\quad "
 SECTION = re.compile(r"\\(chapter|section|subsection)\*?\{")
 
 
+def spaced_caps(text):
+    """Upper case for letter-spaced labels, outside LaTeX commands, with --- and -- as real dashes."""
+    text = text.replace("---", "\u2014").replace("--", "\u2013")
+    return re.sub(r"(\\[A-Za-z]+)|([^\\]+)", lambda m: m.group(1) or m.group(2).upper(), text)
+
+
 def braced(text, start):
     """The content of the {...} group whose opening brace is at text[start], and the index after it."""
     depth, i = 0, start
@@ -220,65 +226,81 @@ def bank(tex):
 WORDS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8}
 
 
+def strip_tex(text):
+    """Plain words for matching: \\textbf{TWO} -> TWO."""
+    return re.sub(r"\\[A-Za-z]+\*?(?:\[[^\]]*\])?\{([^{}]*)\}", r"\1", text)
+
+
+def duration(text):
+    """Minutes in 'Time: 3 Hours' or 'Time: 20 min', else None."""
+    m = re.search(r"time\W*(\d+(?:\.\d+)?)\s*(hours?|hrs?|h\b|minutes?|mins?)", text, re.I)
+    return float(m.group(1)) * (60 if m.group(2).lower().startswith("h") else 1) if m else None
+
+
+def total_marks_in(text):
+    m = re.search(r"marks\W*(\d+(?:\.\d+)?)", text, re.I)
+    return float(m.group(1)) if m else None
+
+
 def paper(tex, info, parts_spec, linked):
     """Past paper: (facts, rows, note). Time and marks come from the paper's info row, how many to answer from
-    each part's instruction ("Answer any two ..."); minutes = marks x total time / total marks."""
-    def find(pattern):
-        for item in info:
-            m = re.search(pattern, item, re.I)
-            if m:
-                return m
-        return None
-    marks_m = find(r"marks\W*(\d+)")
-    time_m = find(r"time\W*(\d+(?:\.\d+)?)\s*(hours?|hrs?|h|minutes?|mins?)")
-    total_marks = float(marks_m.group(1)) if marks_m else None
-    minutes = None
-    if time_m:
-        minutes = float(time_m.group(1)) * (60 if time_m.group(2).lower().startswith("h") else 1)
-    answer = 0
+    each part's instruction ("Answer any two ..."); minutes = marks x total time / total marks. A part whose
+    instruction gives its own time and marks (a term test in the same document) uses those instead, and is
+    not counted in the paper's totals."""
+    info_text = " ".join(strip_tex(x) for x in info)
+    minutes, total_marks = duration(info_text), total_marks_in(info_text)
+    parts = []                       # (first, last, label, answer, own rate or None)
     for p in parts_spec:
-        m = re.search(r"any\s+(\w+)", p, re.I)
-        if m:
-            answer += WORDS.get(m.group(1).lower(), int(m.group(1)) if m.group(1).isdigit() else 0)
+        head, _, note = p.partition("|")
+        name, _, rng = head.rpartition(":")
+        nums = re.findall(r"\d+", rng)
+        if not nums:
+            continue
+        plain = strip_tex(note)
+        m = re.search(r"any\s+(\w+)", plain, re.I)
+        answer = (WORDS.get(m.group(1).lower(), int(m.group(1)) if m.group(1).isdigit() else 0)) if m else 0
+        own_time, own_marks = duration(plain), total_marks_in(plain)
+        note = spaced_caps(plain.strip().strip("[]"))
+        parts.append((int(nums[0]), int(nums[-1]), spaced_caps(strip_tex(name.strip())) + (SEP + note if note else ""),
+                      answer, own_time / own_marks if own_time and own_marks else None))
+    def part_of(q):
+        return next((pt for pt in parts if pt[0] <= q <= pt[1]), None)
     blocks = re.findall(r"\\begin\{questionblock\}\[([^\]]*)\]\{(\d+)\.\s*\(([a-z]+)\)(.*)", tex)
     questions = sorted({int(q) for _, q, _, _ in blocks})
+    main_q = [q for q in questions if not (part_of(q) and part_of(q)[4])]     # not in a part with its own time
+    answer = sum(pt[3] for pt in parts if not pt[4])
     facts = []
     if minutes:
         facts.append(f"\\paperfact{{{minutes / 60:g} h}}{{Total time}}" if minutes >= 60 else f"\\paperfact{{{minutes:g} min}}{{Total time}}")
     if total_marks:
         facts.append(f"\\paperfact{{{total_marks:g}}}{{Total marks}}")
-    if answer and questions:
-        facts.append(f"\\paperfact{{{answer} of {len(questions)}}}{{Questions to answer}}")
+    if answer and main_q:
+        facts.append(f"\\paperfact{{{answer} of {len(main_q)}}}{{Questions to answer}}")
     if minutes and answer:
         facts.append(f"\\paperfact{{{round(minutes / answer):g} min}}{{Per question}}")
     rate = minutes / total_marks if minutes and total_marks else None
-    part_at = {}
-    for p in parts_spec:
-        head, _, note = p.partition("|")
-        name, _, rng = head.rpartition(":")
-        first = re.match(r"\s*(\d+)", rng)
-        if first:
-            note = note.strip().strip("[]").upper()
-            part_at[int(first.group(1))] = name.strip().upper() + (SEP + note if note else "")
     rows = []
     for q in questions:
         subs = [(t, p, rest) for t, qq, p, rest in blocks if int(qq) == q]
-        if q in part_at:
-            rows.append(f"\\paperpartrow{{{part_at[q]}}}")
+        pt = part_of(q)
+        if pt and pt[0] == q:
+            rows.append(f"\\paperpartrow{{{pt[2]}}}")
+        q_rate = pt[4] if pt and pt[4] else rate
         for i, (title, p, rest) in enumerate(subs):
             m = re.search(r"Marks:\s*([0-9.+\s]+)", rest)
             mk = sum(float(x) for x in re.findall(r"[0-9.]+", m.group(1))) if m else None
             name = re.sub(rf"^\s*{q}\s*\(\s*{p}\s*\)\s*", "", title)
             label = f"({p}) {name}"
             cell = f"\\hyperlink{{sol-{q}{p}}}{{{label}}}" if linked else label
-            tm = f"{round(mk * rate):g} min" if mk and rate else ""
+            tm = f"{round(mk * q_rate):g} min" if mk and q_rate else ""
             first = f"{{\\large\\bfseries\\color{{CoverSig}}Q{q}}}" if i == 0 else ""
             pick = "\\tickbox" if i == 0 else ""
             rows.append(f"{first} & {cell} & {f'{mk:g}' if mk else ''} & {tm} & {pick} \\\\")
         rows.append("\\arrayrulecolor{black!12}\\hline\\arrayrulecolor{black}")
     note = ""
     if rate:
-        note = (f"Time = marks $\\times$ {rate:.2g} min ({minutes:g} min for {total_marks:g} marks)."
+        note = (f"Time = marks $\\times$ {rate:.2g} min ({minutes:g} min for {total_marks:g} marks)"
+                + ("; a part with its own time (a term test) uses that." if any(pt[4] for pt in parts) else ".")
                 + (" Tick the questions you will answer; each sub-part links to its solution." if linked else
                    " Tick the questions you will answer."))
     return facts, rows, note
