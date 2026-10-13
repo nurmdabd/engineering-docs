@@ -6,6 +6,7 @@ doc.py -- one entry point for the whole path, Markdown to PDF.
     python3 doc.py new TYPE notes.md            # start a document from types/TYPE/template.md
     python3 doc.py check notes.md [--type T]    # lint (references/authoring.md)
     python3 doc.py build notes.md [--out notes.pdf] [--reconvert] [--print] [build.py options ...]
+    python3 doc.py bundle pack.yaml [--print] [--out pack.pdf]   # combine finished PDFs (scripts/bundle.py)
 
 `build` lints the Markdown (and stops on errors), converts it to latex/NAME.tex beside it, checks the
 structure, then builds the PDF (default: NAME.pdf beside the Markdown). An existing latex/NAME.tex may have
@@ -94,6 +95,8 @@ def main():
         sys.exit(run("lint_md.py", *args))
     elif cmd == "build" and args and not {"-h", "--help"} & set(args):
         build(args)
+    elif cmd == "bundle" and args:
+        sys.exit(run("bundle.py", *args))
     else:
         sys.exit(__doc__)
 

@@ -440,6 +440,9 @@ literate=
 \newcommand{\okmark}{{\color{green!45!black}\emojifont ✔}}
 \newcommand{\nomark}{{\color{red!70!black}\emojifont ✘}}
 
+% Bookmarks are plain text: the markers become words there instead of their box code
+\AtBeginDocument{\pdfstringdefDisableCommands{\def\exammark{(exam)}\def\pinmark{(note)}\def\warnmark{}\def\okmark{}\def\nomark{}}}
+
 % Small clickable chip for "go to" links: \golink{label}{text}
 \newcommand{\golink}[2]{\hyperref[#1]{\tcbox[on line, arc=1.5pt, colback=BlueLagoon!12, colframe=BlueLagoon!60,
 	boxsep=0pt, left=3pt, right=3pt, top=1pt, bottom=1pt]{\small\color{BlueLagoon!70!black}#2}}}

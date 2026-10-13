@@ -365,6 +365,65 @@ def run_print_layout():
     return failed
 
 
+def run_bundle():
+    """doc.py bundle: two built PDFs become one pack with its own cover, "In this pack" page and back cover; the
+    parts' own back covers are left out, every link still resolves, and the print pack starts each part on an
+    odd page and has an even page count."""
+    import logging
+    from pypdf import PdfReader
+    logging.getLogger("pypdf").setLevel(logging.ERROR)
+    failed = 0
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = Path(tmp)
+        for case in ("front-matter", "core-elements"):
+            body = FIXTURES / f".bundle-{case}.tex"
+            side = body.with_suffix(".build.json")
+            body.write_text((EXPECTED / f"{case}.tex").read_text(encoding="utf-8"), encoding="utf-8")
+            if (EXPECTED / f"{case}.build.json").exists():
+                side.write_text((EXPECTED / f"{case}.build.json").read_text(encoding="utf-8"), encoding="utf-8")
+            try:
+                for extra, name in (([], f"{case}.pdf"), (["--print"], f"{case}_print.pdf")):
+                    subprocess.run([sys.executable, str(BUILD), str(body), "--out", str(tmp / name), *extra],
+                                   capture_output=True, text=True)
+            finally:
+                body.unlink(missing_ok=True)
+                side.unlink(missing_ok=True)
+        (tmp / "pack.yaml").write_text('title: "Test Pack"\ncourse_code: "VLSI"\nparts:\n'
+                                       '  - pdf: front-matter.pdf\n    title: "Report"\n'
+                                       '  - pdf: core-elements.pdf\n    title: "Core"\n', encoding="utf-8")
+        for extra in ([], ["--print"]):
+            name = "bundle" + (" --print" if extra else "")
+            r = subprocess.run([sys.executable, str(DOC), "bundle", str(tmp / "pack.yaml"), *extra], capture_output=True, text=True)
+            out = tmp / ("pack_print.pdf" if extra else "pack.pdf")
+            if r.returncode or not out.exists():
+                failed += 1
+                print(f"FAILED   {name}\n{r.stdout[-600:]}{r.stderr[-600:]}")
+                continue
+            pdf = PdfReader(out)
+            names, problems = pdf.named_destinations, []
+            for page in pdf.pages:
+                for annot in page.get("/Annots", []) or []:
+                    act = annot.get_object().get("/A")
+                    act = act.get_object() if act else {}
+                    if act.get("/S") == "/GoTo" and str(act.get("/D")) not in names:
+                        problems.append(f"broken link to {act.get('/D')}")
+            text = [re.sub(r"\s", "", p.extract_text() or "").upper() for p in pdf.pages]   # labels are letter-spaced
+            if sum("ABOUTTHISDOCUMENT" in t for t in text) != 1 or "ABOUTTHISDOCUMENT" not in text[-1]:
+                problems.append("expected exactly one back cover, the last page")
+            if "INTHISPACK" not in text[1]:
+                problems.append("page 2 is not the In this pack page")
+            if [o.title for o in pdf.outline if not isinstance(o, list)] != ["Report", "Core"]:
+                problems.append("bookmarks are not one per part")
+            starts = [pdf.get_destination_page_number(names[f"p0-bundle-part-{i}"]) + 1 for i in (1, 2)]
+            if extra and (len(pdf.pages) % 2 or any(s % 2 == 0 for s in starts)):
+                problems.append(f"print pack: {len(pdf.pages)} pages, parts start at {starts}")
+            print(f"{'ok' if not problems else 'FAILED':8} {name} ({len(pdf.pages)} pages, parts at {starts})")
+            for p in problems[:5]:
+                print("  " + p)
+            failed += bool(problems)
+    return failed
+
+
 def corpus(entries, folder, mode):
     folder.mkdir(parents=True, exist_ok=True)
     failed = 0
@@ -405,7 +464,7 @@ def main():
         cases = json.loads((TESTS / "cases.json").read_text())
         failed = check_skill() + check_margins() + check_coverdata() + run_cases(cases, a.update) + run_lint(a.update) + run_templates(a.build)
         if a.build:
-            failed += run_builds(cases) + run_print_layout() + run_commands_add()
+            failed += run_builds(cases) + run_print_layout() + run_bundle() + run_commands_add()
     print("\nAll passed." if not failed else f"\n{failed} failed.")
     sys.exit(1 if failed else 0)
 
