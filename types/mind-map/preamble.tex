@@ -1,0 +1,51 @@
+% Mind-map type: styles for the map page that scripts/mindmap.py writes (\mmpart, \mmcard, \mmref, \mmstory
+% inside a mindmappage). Pages are landscape (type.json); map_size: a3 gives A3.
+\usetikzlibrary{calc, arrows.meta, shadows}
+% part colours, in story order (the covers use the same list)
+\definecolor{CoverPart1}{HTML}{2E6FB7}
+\definecolor{CoverPart2}{HTML}{E07A1F}
+\definecolor{CoverPart3}{HTML}{2E8B57}
+\definecolor{CoverPart4}{HTML}{7B4FB0}
+\definecolor{CoverPart5}{HTML}{C0392B}
+\definecolor{CoverPart6}{HTML}{0A9396}
+\definecolor{CoverPart7}{HTML}{8D6E3F}
+\definecolor{CoverPart8}{HTML}{5C6B7A}
+\providecommand{\setpartcolor}[1]{\pgfmathtruncatemacro{\partcolorn}{mod(#1-1,8)+1}\edef\partcolor{CoverPart\partcolorn}}
+\colorlet{mmink}{black!82}
+\colorlet{mmsoft}{black!55}
+\colorlet{mmstar}{orange!80!black}
+\providecolor{CoverSoft}{gray}{0.45}
+% print copy (print-bw.tex is read after this file): every part grey, the cards told apart by position
+\AtBeginDocument{\ifdefined\HousePrintCopy
+	\colorlet{CoverPart1}{black!60}\colorlet{CoverPart2}{black!60}\colorlet{CoverPart3}{black!60}\colorlet{CoverPart4}{black!60}\colorlet{CoverPart5}{black!60}\colorlet{CoverPart6}{black!60}\colorlet{CoverPart7}{black!60}\colorlet{CoverPart8}{black!60}\colorlet{mmstar}{black}\fi}
+
+\tikzset{
+	mmpart/.style={rounded corners=6pt, fill=#1, text=white, font=\bfseries\large, minimum height=1.55cm,
+		align=center, inner sep=4pt, drop shadow={opacity=0.22}, mmpartw},
+	mmcard/.style={rounded corners=4pt, draw=#1, line width=0.8pt, fill=#1!6, text=mmink, align=left, inner sep=4pt, mmcardw},
+	mmstem/.style={#1!70, line width=1.1pt},
+	mmstoryarrow/.style={-{Latex[length=3.5mm]}, line width=3pt, black!35},
+}
+% the page: #1 card font, #2 title font, #3 map title (may be empty)
+\newenvironment{mindmappage}[3]{\clearpage
+	\def\mmfont{#1}%
+	\noindent{\color{mmsoft}\footnotesize\tikz[baseline=-3pt]\draw[mmstoryarrow, line width=2pt](0,0)--(0.8,0); story order\quad
+		{\color{CoverPart5!70!black}$\rightarrow$\,TDM} used again in\quad {\color{mmstar}$\bigstar$} often asked\quad
+		tap a part or a card to open it}\par
+	\ifstrempty{#3}{}{\vspace{0.15cm}{#2\selectfont\bfseries\color{mmink}#3\par}}
+	\vfill\begin{center}\mmfont}
+	{\end{center}\vfill\clearpage}
+% \mmpart{n}{x}{name}{sub}: a part on the spine
+\newcommand{\mmpart}[4]{\setpartcolor{#1}%
+	\node[mmpart=\partcolor] (mmp#1) at (#2,0) {#3\ifstrempty{#4}{}{\\[-1pt]{\normalfont\footnotesize #4}}};}
+% \mmcard{part}{name}{x}{y}{title}{star}{body}{chips}: a card, joined to its part by a stem
+\newcommand{\mmcard}[8]{\setpartcolor{#1}%
+	\node[mmcard=\partcolor] (#2) at (#3,#4) {\hypertarget{#2}{}{\bfseries #5}\ifnum#6=1\hfill{\color{mmstar}$\bigstar$}\fi
+		\ifstrempty{#7}{}{\\[1pt]#7}\ifstrempty{#8}{}{\\[2pt]#8}};
+	\ifdim#4pt>0pt \draw[mmstem=\partcolor] ($(mmp#1.north west)+(0.12,0)$) |- (#2.west);
+	\else \draw[mmstem=\partcolor] ($(mmp#1.south west)+(0.12,0)$) |- (#2.west); \fi}
+% \mmref{part}{target}{text}: "used again in" chip, a link to the card it names
+\newcommand{\mmref}[3]{\setpartcolor{#1}\hyperlink{#2}{\tcbox[on line, arc=2pt, colback=\partcolor!15, colframe=\partcolor!60,
+	boxsep=0pt, left=2pt, right=2pt, top=0.5pt, bottom=0.5pt, boxrule=0.5pt]{\scriptsize\color{\partcolor!70!black}$\rightarrow$ #3}}\ }
+% \mmstory{a}{b}: the story arrow between two parts
+\newcommand{\mmstory}[2]{\draw[mmstoryarrow] (mmp#1) -- (mmp#2);}

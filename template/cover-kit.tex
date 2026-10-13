@@ -46,14 +46,14 @@
 \definecolor{CoverPart7}{HTML}{8D6E3F}
 \definecolor{CoverPart8}{HTML}{5C6B7A}
 % \setpartcolor{n}: \partcolor becomes the colour of part n (parts after the eighth reuse the list)
-\newcommand{\setpartcolor}[1]{\pgfmathtruncatemacro{\partcolorn}{mod(#1-1,8)+1}\edef\partcolor{CoverPart\partcolorn}}
+\providecommand{\setpartcolor}[1]{\pgfmathtruncatemacro{\partcolorn}{mod(#1-1,8)+1}\edef\partcolor{CoverPart\partcolorn}}
 \ifdefined\HousePrintCopy
 	% print copy: light tint instead of solid bands, black text, grey motifs (little toner)
 	\colorlet{CoverBand}{black!8}   \colorlet{CoverBandText}{black}   \colorlet{CoverBandSoft}{black!70}
 	\colorlet{CoverMotifOnBand}{black}
 	\colorlet{CoverSig}{black!55}
 	\colorlet{CoverAccent}{black!70}
-	\foreach \i in {1,...,8} {\colorlet{CoverPart\i}{black!65}}
+	\colorlet{CoverPart1}{black!65}\colorlet{CoverPart2}{black!65}\colorlet{CoverPart3}{black!65}\colorlet{CoverPart4}{black!65}\colorlet{CoverPart5}{black!65}\colorlet{CoverPart6}{black!65}\colorlet{CoverPart7}{black!65}\colorlet{CoverPart8}{black!65}   % not in a \foreach: its groups would undo them
 \else
 	\colorlet{CoverBand}{CoverAccent} \colorlet{CoverBandText}{white} \colorlet{CoverBandSoft}{white!85!CoverAccent}
 	\colorlet{CoverMotifOnBand}{white}

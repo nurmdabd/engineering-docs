@@ -1,0 +1,28 @@
+% Mind-map cover (landscape A4 or A3): the band on the left with course, type and title, and a small node
+% network on the right in the part colours. Drawn for A4 landscape and scaled to the paper.
+\thispagestyle{empty}
+\begin{tikzpicture}[remember picture, overlay]
+	\pgfmathsetmacro{\mmscale}{\paperwidth/29.7cm}
+	\begin{scope}[shift={(current page.south west)}, scale=\mmscale, every node/.style={transform shape}]
+		\fill[CoverBand] (0,0) rectangle (13,21);
+		\fill[CoverSig] (13,0) rectangle (13.3,21);
+		\coordinate (C) at (20.7,11.1);
+		\foreach \a [count=\i] in {90,162,234,306,18} {
+			\setpartcolor{\i}
+			\coordinate (p) at ($(C)+(\a:4.6)$);
+			\draw[\partcolor, line width=2.5pt] (C) -- (p);
+			\foreach \d in {-38,0,38} {\draw[\partcolor!60, line width=1pt] (p) -- ($(p)+(\a+\d:2.0)$);
+				\fill[\partcolor!25] ($(p)+(\a+\d:2.0)$) circle (0.32);}
+			\fill[\partcolor] (p) circle (0.95);
+		}
+		\node[circle, fill=CoverInk, text=white, font=\Large\bfseries, minimum size=2.6cm] at (C) {\CoverCourseCode};
+		\node[anchor=north west, text=CoverBandSoft, font=\small] at (1.6,19.4) {\spaced{\CoverLabel}};
+		\node[anchor=north west, text=CoverBandText, font=\fontsize{50}{54}\selectfont\bfseries] at (1.5,18.6) {\CoverCourseCode};
+		\node[anchor=north west, text=CoverBandSoft, font=\LARGE, text width=10.5cm, align=left] at (1.6,16.4) {\CoverCourseName};
+		\node[anchor=north west, text=CoverBandText, font=\fontsize{30}{36}\selectfont\bfseries, text width=10.5cm, align=left] at (1.6,12.8) {\CoverTitle};
+		\node[anchor=north west, text=CoverBandSoft, font=\large, text width=10.5cm, align=left] at (1.6,8.6)
+			{\CoverSubtitle\ifdefempty{\CoverNote}{}{\\[4pt]\small\itshape\CoverNote}};
+		\node[anchor=south west, text=CoverBandSoft, font=\coversans\small] at (1.6,1.2) {Prepared by \CoverAuthor\quad$\cdot$\quad\CoverDate};
+	\end{scope}
+\end{tikzpicture}
+\clearpage

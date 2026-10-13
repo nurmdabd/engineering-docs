@@ -40,6 +40,8 @@ KEYS = {
     "print_layout": ("str", "--print-layout"),   # print copy: duplex (default) or booklet (pages padded to a multiple of 4)   # back cover: one or two sentences on what the document is
     "prerequisites": ("list", "--prerequisite"),   # back of the cover (theory notes): what to know first
     "conventions": ("str", "--conventions"),       # back of the cover: the textbook and conventions followed
+    "map_size": ("str", "--paper-size"),     # mind maps: a4 (screen, default) or a3 (print)
+    "map_detail": ("bool", None),            # mind maps: show the cards' detail lines (default: on A3 only)
     "margin_x": ("str", "--margin-x"),       # left/right margin, e.g. 0.6in (default: the type's, else 0.5in)
     "preamble": ("str", "--type-preamble"),
     "toc": ("bool", None),                   # false: no table of contents (build.py --no-toc)
@@ -82,6 +84,8 @@ def split(text):
             meta[k] = [v]
         elif kind == "str" and v is not None:
             meta[k] = str(v)
+    if meta.get("map_size") and meta["map_size"] not in ("a4", "a3"):
+        problems.append(f"map_size must be a4 or a3, not '{meta['map_size']}'")
     if meta.get("lang") and meta["lang"] not in LANGS:
         problems.append(f"lang must be one of {', '.join(LANGS)}, not '{meta['lang']}'")
     return meta, text[m.end():], problems
@@ -97,6 +101,10 @@ def md2tex_flags(meta):
         flags += ["--type", meta["type"]]
     if meta.get("margin_x"):   # after --type, so it beats the type's margin
         flags += ["--margin-x", meta["margin_x"]]
+    if meta.get("map_size"):
+        flags += ["--paper-size", meta["map_size"]]
+    if meta.get("map_detail") is not None:
+        flags += ["--map-detail", "true" if meta["map_detail"] else "false"]
     if meta.get("lang") == "bn":
         flags.append("--bangla")
     return flags

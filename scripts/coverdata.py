@@ -294,6 +294,8 @@ def stats_for(kind, tex):
         out += [(len(table_rows(tex)), "formulas"), (len(tops), "topics")]
     elif kind == "question-bank":
         out += [(tex.count("\\begin{questionbox}"), "questions"), (tex.count("\\begin{solutionbox}"), "solutions")]
+    elif kind == "mind-map":
+        out += [(tex.count("\\mmpart{"), "parts"), (tex.count("\\mmcard{"), "cards")]
     elif kind == "past-paper":
         out += [(len(re.findall(r"\\begin\{mainquestion\}", tex)), "questions"),
                 (len(re.findall(r"\\begin\{questionblock\}", tex)), "solved sub-parts")]
@@ -303,7 +305,9 @@ def stats_for(kind, tex):
             out.append((lectures, "lectures"))
     if figures:
         out.append((figures, "figures"))
-    return [f"\\coverstat{{{n}}}{{{label}}}" for n, label in out if n][:3]
+    single = {"parts": "part", "sections": "section", "lectures": "lecture", "figures": "figure", "formulas": "formula",
+              "topics": "topic", "questions": "question", "solutions": "solution", "cards": "card"}
+    return [f"\\coverstat{{{n}}}{{{single.get(label, label) if n == 1 else label}}}" for n, label in out if n][:3]
 
 
 def cover_macros(kind, texs, a, linked_paper=False):

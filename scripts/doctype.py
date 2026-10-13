@@ -23,6 +23,7 @@ TYPES = Path(__file__).resolve().parents[1] / "types"
 # otherwise. md2tex.py sizes table columns from the text width this leaves on an A4 page.
 MARGIN_X = "0.5in"
 A4_WIDTH_CM = 21.0
+PAPER_CM = {"a4": (21.0, 29.7), "a3": (29.7, 42.0)}   # portrait width, height
 _UNIT_CM = {"in": 2.54, "cm": 1.0, "mm": 0.1, "pt": 2.54 / 72.27}
 
 
@@ -36,6 +37,11 @@ def length_cm(length):
 
 def text_width_cm(margin_x, paper_width_cm=A4_WIDTH_CM):
     return paper_width_cm - 2 * length_cm(margin_x)
+
+
+def paper_width_cm(paper="a4", landscape=False):
+    w, h = PAPER_CM[paper]
+    return h if landscape else w
 
 
 def available():

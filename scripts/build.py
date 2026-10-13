@@ -319,6 +319,8 @@ def main():
     ap.add_argument("--fontsize", default="12pt")
     ap.add_argument("--no-toc", action="store_true")
     ap.add_argument("--margin-x", default=doctype.MARGIN_X)
+    ap.add_argument("--paper-size", default="a4", choices=["a4", "a3"])
+    ap.add_argument("--landscape", action="store_true")
     ap.add_argument("--bangla", action="store_true")
     ap.add_argument("--figures", nargs="*", default=[], type=Path)
     ap.add_argument("--cover", action="store_true")
@@ -488,7 +490,8 @@ def main():
                      "BANGLA": BANGLA if a.bangla else "",
                      "TYPE_PREAMBLE": "\n".join(type_inputs),
                      "HEADER_RIGHT": bn_wrap(tex_escape(a.header_right)) if a.bangla else tex_escape(a.header_right),
-                     "GEOMETRY": f"\\geometry{{left={a.margin_x}, right={a.margin_x}}}"}.items():
+                     "GEOMETRY": (f"\\geometry{{{a.paper_size}paper, {'landscape, ' if a.landscape else ''}"
+                                  f"left={a.margin_x}, right={a.margin_x}}}")}.items():
         main = main.replace(f"<<{key}>>", val)
     (build / "main.tex").write_text(main)
 

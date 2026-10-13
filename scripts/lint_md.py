@@ -21,6 +21,7 @@ import commands
 import detect_type
 import doctype
 import frontmatter
+import mindmap
 import slugs
 
 Q_ID = re.compile(r"^[A-Z]{1,2}\d+[a-z]?$")            # N1, S12, L3, Q4a (same as house.lua)
@@ -169,11 +170,21 @@ def lint(path, as_type=None):
                                  own.with_suffix(".yaml") if own else None)
 
     lines = body.split("\n")
+    # ::: {.mindmap} blocks have their own syntax (scripts/mindmap.py): check them with its parser, skip them below
+    in_map = set()
+    for m in mindmap.BLOCK.finditer(body):
+        first = body[:m.start()].count("\n") + 1                     # the ::: line, in body lines
+        in_map |= set(range(first + offset, first + offset + m.group(0).count("\n") + 1))
+        for problem in mindmap.parse(m.group(1))[1]:
+            k = re.match(r"line (\d+): (.*)", problem)
+            say(first + offset + int(k.group(1)) if k else first + offset, "error", "mind map: " + (k.group(2) if k else problem))
     fence, fence_line = None, 0
     headings, questions, solutions, anchors = [], {}, {}, []
     open_display = None                                    # line of an unclosed $$
     last_display_end = None
     for n, line in enumerate(lines, start=offset + 1):
+        if n in in_map:
+            continue
         m = re.match(r"^(```+|~~~+)", line)
         if m:
             if fence is None:
