@@ -8,7 +8,7 @@ equations, figures, callouts, question/solution boxes, Unicode table). The judge
 described in SKILL.md, Step 3.
 
 Usage:
-    python3 md2tex.py NOTES.md -o latex/NOTES.tex [--type NAME] [--class extarticle|extreport] [--fontsize 12pt] [--textwidth 17.4]
+    python3 md2tex.py NOTES.md -o latex/NOTES.tex [--type NAME] [--class extarticle|extreport] [--fontsize 12pt] [--margin-x 0.5in]
 
 --type NAME loads the default flags of types/NAME/type.json; flags given explicitly still win.
 
@@ -31,6 +31,7 @@ import commands
 import detect_type
 import doctype
 import frontmatter
+import mindmap
 import slugs
 
 HERE = Path(__file__).resolve().parent
@@ -84,7 +85,12 @@ def main():
     ap.add_argument("--first-number", type=int, help="number of the first chapter (extreport) or section")
     ap.add_argument("--no-guards", action="store_true",
                     help="no page-break guards (by default a heading or lone label stays with the equation, box or table after it)")
-    ap.add_argument("--textwidth", type=float, default=17.4, help="text width in cm (17.4 for the house .7in margins)")
+    ap.add_argument("--margin-x", default=doctype.MARGIN_X,
+                    help=f"left/right margin the document is built with (default {doctype.MARGIN_X}); sets the text width")
+    ap.add_argument("--textwidth", type=float, help="text width in cm (default: paper width minus both --margin-x)")
+    ap.add_argument("--paper-size", default="a4", choices=["a4", "a3"])
+    ap.add_argument("--landscape", action="store_true")
+    ap.add_argument("--map-detail", choices=["true", "false"], help="mind maps: false never shows the grey detail lines on the cards (default: where they fit)")
     first = ap.parse_known_args()[0]          # only to find the Markdown file and read its front matter
     meta, body, problems = frontmatter.split(first.md.read_text(encoding="utf-8"))
     for p in problems:
@@ -102,9 +108,14 @@ def main():
         sys.exit(f"{first.md.name}: preamble {meta['preamble']} not found")
     registry = commands.registry(type_name[0], own_pre.with_suffix(".yaml") if own_pre else None)
 
+    if a.textwidth is None:
+        a.textwidth = round(doctype.text_width_cm(a.margin_x, doctype.paper_width_cm(a.paper_size, a.landscape)), 2)
     md = a.md.resolve()
     out = a.out.resolve()
     out.parent.mkdir(parents=True, exist_ok=True)
+    # mind maps have their own # and ## lines: take each block out (it comes back as LaTeX before pandoc runs)
+    maps = [m.group(1) for m in mindmap.BLOCK.finditer(body)]
+    body = mindmap.BLOCK.sub(lambda m, n=iter(range(len(maps))): f"MINDMAPBLOCK{next(n)}X\n", body)
     titles = [t for t in (meta.get("title"), meta.get("subtitle")) if t]
     # Otherwise the first # heading is the title, except in extreport, where every # heading is a chapter
     # (day-01, day-02, ...) and stays in the body. Lines inside code fences are not headings.
@@ -120,11 +131,18 @@ def main():
     # (decided after the title is taken out: "# Title" + "## Sections" also starts at ##)
     left = re.sub(r"^(```|~~~).*?^\1", "", body, flags=re.M | re.S)
     shift = 1 if a.structure == "notes" and not re.search(r"^# ", left, re.M) and re.search(r"^## ", left, re.M) else 0
-    cmd = ["pandoc", "-f", "markdown+lists_without_preceding_blankline-fancy_lists-implicit_figures",
-           "-t", "latex", "--wrap=none", "--lua-filter", str(HERE / "house.lua"),
-           "-M", f"house_class={a.cls}", "-M", f"house_fontsize={a.fontsize}", "-M", f"house_textwidth={a.textwidth}", "-M", f"house_structure={a.structure}", "-M", f"house_prefix={a.label_prefix}",
+    house_meta = ["-M", f"house_class={a.cls}", "-M", f"house_fontsize={a.fontsize}", "-M", f"house_textwidth={a.textwidth}", "-M", f"house_structure={a.structure}", "-M", f"house_prefix={a.label_prefix}",
            "-M", f"house_shift={shift}", "-M", f"house_guards={0 if a.no_guards else 1}", "-M", f"house_cmds={commands.encode(registry)}",
            "-M", "house_gfm=" + " ".join(slugs.heading_slugs(body))]   # GitHub anchors, so [..](#gh-anchor) links work
+    for i, block in enumerate(maps):   # each ::: {.mindmap} block becomes its data line; build.py draws it (scripts/mindmap.py)
+        heads = "\n\n".join(re.findall(r"^#{1,6} .*$", re.sub(r"^(```|~~~).*?^\1", "", body, flags=re.M | re.S), re.M))
+        tex, problems = mindmap.convert(block, None if a.map_detail is None else a.map_detail == "true",
+                                        pandoc_args=house_meta, context=heads, wrap=wrap_bangla if a.bangla else None)
+        if problems:
+            sys.exit("\n".join(f"{first.md.name}: mind map: {p}" for p in problems))
+        body = body.replace(f"MINDMAPBLOCK{i}X", "```{=latex}\n" + tex + "\n```")
+    cmd = ["pandoc", "-f", "markdown+lists_without_preceding_blankline-fancy_lists-implicit_figures",
+           "-t", "latex", "--wrap=none", "--lua-filter", str(HERE / "house.lua"), *house_meta]
     r = subprocess.run(cmd, input=body, capture_output=True, text=True)
     if r.returncode:
         sys.exit(r.stderr)

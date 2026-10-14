@@ -6,7 +6,13 @@ Everything in `SKILL.md` and `references/authoring.md` applies; this guide adds 
 
 ## Settings
 
-`type: formula-sheet` sets 10pt text and 0.4in side margins for the build, and tells the converter the wider text block (18.9 cm) so it sizes the columns for it. Add the cover fields in the front matter if the sheet needs a cover.
+`type: formula-sheet` sets 10pt text and 0.4in side margins (the converter sizes the columns from the margin; `margin_x` changes it). Add the cover fields in the front matter for its cover, which shows each topic with its formula count.
+
+**Added at build time** (the body `.tex` is not changed):
+- **Key formulas:** a row whose Title is bold gets a star, and all of them are gathered on a *Key formulas* page at the end, each linking back to its row. Bold only the formulas that are truly key (about one in five).
+- **Symbol index:** every symbol the Notation column defines (`$k_f$ = frequency sensitivity`, one per line) is listed in order of first use with a link to that row. A definition written wholly inside `$...$` is left out, so write the symbol in maths and the meaning in words.
+- **Edge tabs:** one per topic on the right page edge (`edge_tabs: false` turns them off).
+- **The back of the cover** explains how to read a row, using the sheet's own first row.
 
 ## Structure
 

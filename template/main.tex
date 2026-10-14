@@ -9,26 +9,23 @@
 \input{main-tex-preamble.tex}
 <<TYPE_PREAMBLE>>
 \IfFileExists{cover-page-preamble.tex}{\input{cover-page-preamble.tex}}{}
+\IfFileExists{cover-kit.tex}{\input{cover-kit.tex}}{}
 <<GEOMETRY>>
 <<BANGLA>>
+<<EDGE_TABS>>
 \graphicspath{<<GRAPHICSPATH>>}
 \hypersetup{pdftitle={<<PDFTITLE>>}, pdfauthor={<<AUTHOR>>}}
 
 \begin{document}
 \IfFileExists{cover-page-main.tex}{\include{cover-page-main}}{}
+<<INSIDE_COVER>>
 <<BEFORE_TITLE>>
-\begin{center}
-<<TITLE_LINES>>
-\end{center}
-
+<<TITLE_BLOCK>>
 <<TOC_BLOCK>>
-\begin{center}
-	{\color{white!50!black}Created by <<AUTHOR>>} \\
-	\vspace{0.5cm}
-\end{center}
-
+<<CREATED_BY>>
 <<AFTER_TITLE>>
 
 <<BODY_INPUTS>>
+<<BACK_COVER>>
 
 \end{document}

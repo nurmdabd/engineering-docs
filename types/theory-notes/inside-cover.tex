@@ -1,0 +1,46 @@
+% Back of the cover for theory notes (A): how a lecture is laid out, what the boxes mean, how to get around,
+% and what to know first (front matter: prerequisites). Uses the house boxes themselves for the legend.
+\thispagestyle{empty}
+\bochead{BACK OF THE COVER}{How to use these notes}
+\bocsection{How every lecture is laid out}
+\begin{tikzpicture}[st/.style={draw=CoverSig!60, fill=CoverSig!6, rounded corners=4pt, minimum width=2.45cm, text width=2.35cm,
+		minimum height=1.25cm, align=center, font=\small, text=CoverInk, inner sep=2pt}]
+	\foreach \t/\s [count=\i from 0] in {Opener/{why it matters}, Explanation/{idea, then maths}, Example/{every number},
+			Watch out/{common mistakes}, Exam focus/{how it is asked}, Self-check/{answer unaided}} {
+		\node[st] (s\i) at (\i*3.2,0) {\covbf{\t}\\[1pt]{\scriptsize\color{CoverSoft}\s}};}
+	\foreach \i [evaluate=\i as \j using int(\i+1)] in {0,...,4}
+		\draw[-{Latex[length=2.2mm]}, CoverSig, line width=1pt, shorten <=2pt, shorten >=2pt] (s\i.east) -- (s\j.west);
+\end{tikzpicture}
+\vspace{0.7cm}
+
+\begin{minipage}[t]{0.47\linewidth}
+\bocsection{What the boxes mean}
+\tcbset{every box/.style={before skip=0pt, after skip=4pt, fontupper=\footnotesize}}
+\begin{notebox}Background or a side remark. Read it once.\end{notebox}
+\begin{examplebox}A worked example with every number shown.\end{examplebox}
+\begin{exambox}What examiners ask and how marks are given.\end{exambox}
+\begin{warnbox}A common mistake, or a textbook that differs.\end{warnbox}
+\begin{questionbox}{Question}{}Practice question; its title bar links to the solution.\end{questionbox}
+\begin{selfcheckbox}End of each lecture: can you answer these without looking?\end{selfcheckbox}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.47\linewidth}
+\bocsection{Getting around}
+\newcommand{\navrow}[2]{\begin{tikzpicture}[baseline=(t.north)]\path (0,0) -- (1.7,0);
+	\node[anchor=north west, text width=6.6cm, align=left, font=\small,
+		execute at begin node={\hyphenpenalty=10000\exhyphenpenalty=10000}, inner sep=0pt] (t) at (1.9,0) {#2};
+	\node at ($(0.85,0)!0.5!(0.85,0|-t.south)$) {#1};
+	\end{tikzpicture}\par\vspace{0.3cm}}
+\navrow{\fbox{\small TOC}}{Top right of every page: back to the contents.}
+\navrow{{\color{blue!50!black}§1.2}}{Blue text is a link: tap it to jump there.}
+\ifdefined\HouseTabCount\navrow{\tikz{\fill[CoverPart1!35] (0,0) rectangle (0.3,0.75); \fill[CoverPart2] (0.4,0) rectangle (0.95,0.75);
+	\fill[CoverPart3!35] (1.05,0) rectangle (1.35,0.75);}}{Edge tabs: the wide tab on the right edge is the part you are in; tap
+	another to jump to it.}\fi
+\navrow{\tikz{\foreach \y/\w in {0/1.1,0.22/0.8,0.44/0.95} {\fill[black!45] (0,\y) circle (0.04); \draw[black!45, line width=1.2pt] (0.12,\y) -- ++(\w,0);}}}{Bookmarks: the outline panel of your PDF viewer shows every section.}
+\ifdefempty{\CoverPrereqs}{}{%
+	\vspace{0.3cm}
+	\bocsection{Before you start}
+	{\small You should already know:\par}\vspace{-0.1cm}
+	\begin{itemize}\setlength\itemsep{1pt}\small\CoverPrereqs\end{itemize}}
+\end{minipage}
+\bocinfo
+\clearpage

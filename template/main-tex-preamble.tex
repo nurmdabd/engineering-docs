@@ -67,8 +67,10 @@
 }
 
 %-----Page Layout and Spacing-----
-% Configures page margins
-\geometry{top=1in, bottom=.7in, left=.7in, right=.7in}
+% Configures page margins. The header takes no height (see \headheight below), so top is where the body starts;
+% 0.83in keeps the look of the earlier builds, where the header height was dropped after the layout was set.
+\setlength{\headheight}{0pt}
+\geometry{top=0.83in, bottom=.7in, left=.7in, right=.7in}
 
 
 % Level 1: Standard Solid Bullet
@@ -439,6 +441,9 @@ literate=
 \newcommand{\warnmark}{{\color{calloutwarn}\emojifont ⚠}}
 \newcommand{\okmark}{{\color{green!45!black}\emojifont ✔}}
 \newcommand{\nomark}{{\color{red!70!black}\emojifont ✘}}
+
+% Bookmarks are plain text: the markers become words there instead of their box code
+\AtBeginDocument{\pdfstringdefDisableCommands{\def\exammark{(exam)}\def\pinmark{(note)}\def\warnmark{}\def\okmark{}\def\nomark{}}}
 
 % Small clickable chip for "go to" links: \golink{label}{text}
 \newcommand{\golink}[2]{\hyperref[#1]{\tcbox[on line, arc=1.5pt, colback=BlueLagoon!12, colframe=BlueLagoon!60,

@@ -1,5 +1,6 @@
 {
   "description": "Lecture or theory notes taught like a lesson: parts, lectures and sections, with lecture openers, explained figures, worked examples, corrections, exam tips and a self-check per lecture.",
   "md2tex": [],
-  "build": []
+  "build": ["--edge-tabs"],
+  "cover": {"label": "THEORY NOTES", "signature": "0A9396"}
 }

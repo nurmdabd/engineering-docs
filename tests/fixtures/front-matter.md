@@ -5,6 +5,7 @@ type: project-report
 label_prefix: rpt_
 header: "RTL-to-GDSII Flow Report"
 cover: true
+margin_x: "0.6in"
 course_code: "VLSI"
 course_name: "Physical Design Lab"
 cover_title: "Lab Report"
@@ -13,6 +14,7 @@ cover_contents:
   - "Synthesis and floorplan"
   - "Commands, outputs and results"
 date: "October 2026"
+back_cover: true
 ---
 
 # Day 01: Synthesis

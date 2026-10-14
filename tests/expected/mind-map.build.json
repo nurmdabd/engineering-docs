@@ -1,0 +1,8 @@
+{
+ "source": "mind-map.md",
+ "build": [
+  ["--title", "Mind map test"],
+  ["--type", "mind-map"],
+  ["--paper-size", "a3"]
+ ]
+}

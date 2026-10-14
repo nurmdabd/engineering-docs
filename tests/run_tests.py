@@ -14,9 +14,10 @@ Corpus check, for real notes that live in another repo (run before and after a c
     python3 tests/run_tests.py --compare  DIR  notes.md other.md:--bangla ...
 
 Each corpus entry is a Markdown path, optionally followed by ':' and md2tex flags separated by commas
-(for example sheet.md:--fontsize,10pt,--textwidth,18.9). Snapshots go to DIR, outside the skill.
+(for example sheet.md:--fontsize,10pt,--margin-x,0.4in). Snapshots go to DIR, outside the skill.
 """
 import argparse
+import re
 import difflib
 import shutil
 import json
@@ -71,9 +72,165 @@ def check_skill():
         for f in ("type.json", "guide.md"):
             if t.is_dir() and not (t / f).exists():
                 problems.append(f"types/{t.name} has no {f}")
+    sys.path.insert(0, str(SKILL / "scripts"))
+    import frontmatter
+    missing = [k for k in frontmatter.KEYS if k not in frontmatter.DOCS] + [k for k in frontmatter.DOCS if k not in frontmatter.KEYS]
+    if missing:
+        problems.append(f"front-matter keys without a DOCS entry (or the reverse): {', '.join(missing)}")
+    ref = SKILL / "references" / "front-matter-keys.md"
+    if not ref.exists() or ref.read_text(encoding="utf-8") != frontmatter.reference():
+        problems.append("references/front-matter-keys.md is out of date: python3 scripts/doc.py keys --write")
     print(f"{'ok' if not problems else 'FAILED':8} skill files")
     for p in problems:
         print("  " + p)
+    return len(problems)
+
+
+def check_margins():
+    """Margins: lengths parse, the text width follows the margin, and type or front matter override the default."""
+    sys.path.insert(0, str(SKILL / "scripts"))
+    import doctype
+    import frontmatter
+    problems = []
+    for length, cm in (("0.5in", 1.27), ("1.27cm", 1.27), ("12.7mm", 1.27), ("36.135pt", 1.27)):
+        if abs(doctype.length_cm(length) - cm) > 1e-6:
+            problems.append(f"length_cm({length}) is {doctype.length_cm(length)}, not {cm}")
+    if abs(doctype.text_width_cm("0.5in") - 18.46) > 1e-6:
+        problems.append("A4 text width at 0.5in margins is not 18.46 cm")
+    flags = frontmatter.md2tex_flags({"type": "formula-sheet", "margin_x": "0.6in"})
+    if flags[-2:] != ["--margin-x", "0.6in"]:
+        problems.append(f"front matter margin_x must come after --type so it wins: {flags}")
+    expanded = doctype.expand(["x", "--type", "formula-sheet"], "build")
+    if expanded[expanded.index("--margin-x") + 1] != "0.4in":
+        problems.append("formula-sheet type no longer sets --margin-x 0.4in")
+    print(f"{'ok' if not problems else 'FAILED':8} margins")
+    for p in problems:
+        print("  " + p)
+    return len(problems)
+
+
+def check_coverdata():
+    """The facts the covers show are read from the body, not typed in: parts, formula rows, questions, paper times."""
+    import argparse
+    import coverdata
+    problems = []
+    theory = ("\\section{Part 1 --- Lectures 24, 25, 26: Frequency Modulation}\\label{sec:p1}\n"
+              "\\subsection{Lecture 24 --- PM bandwidth}\\label{sec:l24}\n\\begin{examplebox}x\\end{examplebox}\n"
+              "\\subsection{Lecture 25 --- FM methods}\n\\begin{selfcheckbox}x\\end{selfcheckbox}\n"
+              "\\section{Part 2 --- Lecture 27: Sampling}\n\\subsection{Lecture 27 --- Sampling}\n")
+    items, n = coverdata.parts(theory)
+    if n != 2 or "Frequency Modulation" not in items[0] or "L24--26" not in items[0] or "2 lectures" not in items[0] \
+            or "worked examples" not in items[0] or "self-check" not in items[0] or "L27" not in items[1]:
+        problems.append(f"parts(): {items}")
+    rows = coverdata.tracker(theory)
+    if len(rows) != 3 or "sec:l24" not in rows[0] or "{L25}" not in rows[1] or not rows[2].endswith("{2}"):
+        problems.append(f"tracker(): {rows}")
+    sheet = ("\\section{Formula Sheet}\n\\subsection{Angle modulation (L24)}\n\\begin{tabularx}{\\textwidth}{|l|l|l|l|}\n"
+             "\\hline\nT & E & N & R \\\\ \\hline\n\\endhead\nA & $x$ & n & r \\\\ \\hline\nB & \\tallcell{$y$} & n & r \\\\ \\hline\n"
+             "\\rowcolor{white}\n\\caption{Angle}\n\\end{tabularx}\n")
+    items, total, n = coverdata.topics(sheet)
+    if (total, n) != (2, 1) or "2 formulas" not in items[0] or "CoverSoft}L24}" not in items[0]:
+        problems.append(f"topics(): {items}, {total}, {n}")
+    if coverdata.sample_row(sheet) != "\\coversamplerow{A}{$x$}{n}{r}":
+        problems.append(f"sample_row(): {coverdata.sample_row(sheet)}")
+    bank = ("\\subsection{A1 FM}\n\\phantomsection\\label{q:n1}\n\\begin{questionbox}{N1}{sol:n1}x\\end{questionbox}\n"
+            "\\label{q:s1}\n\\begin{questionbox}{S1}{sol:s1}x\\end{questionbox}\n\\begin{solutionbox}{Solution N1}{q:n1}x\\end{solutionbox}\n")
+    stats, groups, log = coverdata.bank(bank)
+    if stats != ["\\coverstat{1}{Numericals}", "\\coverstat{1}{Short questions}", "\\coverstat{1}{Solutions}"] \
+            or groups != ["\\covergroup{A1}{FM}{2}"] or "\\coverlog{N1}{q:n1}" not in log:
+        problems.append(f"bank(): {stats} {groups} {log}")
+    paper = ("\\begin{questionblock}[1(a) Entropy]{1.(a) Find it. Marks: 6}\n\\begin{questionblock}[1(b) Modes]{1.(b) Discuss. Marks: 4+5}\n"
+             "\\begin{questionblock}[2(a) AM]{2.(a) AM. Marks: 10}\n")
+    facts, prow, note = coverdata.paper(paper, ["Total Marks: 100", "Total Time: 3 Hours"],
+                                       ["Part-A: 1-2 | [Answer any one of the following questions]"], True)
+    if facts != ["\\paperfact{3 h}{Total time}", "\\paperfact{100}{Total marks}", "\\paperfact{1 of 2}{Questions to answer}",
+                 "\\paperfact{180 min}{Per question}"] or "& 9 & 16 min &" not in "".join(prow) or "sol-1a" not in "".join(prow):
+        problems.append(f"paper(): {facts} {prow}")
+    import formulasheet
+    sheet2 = ("\\begin{tabularx}{\\textwidth}{|l|l|l|l|}\n\\hline\nT & E & N & R \\\\ \\hline\n\\endhead\n"
+              "\\keyterm{Carson} & $B_T$ & \\tallcell{$B_T$ = bandwidth\\newline $a(t) = \\int m$} & r \\\\ \\hline\n"
+              "Plain & $x$ & $B_T$ = again\\newline k = constant & r \\\\ \\hline\n\\end{tabularx}\n")
+    marked, rows = formulasheet.mark_rows(sheet2)
+    syms = [(s, m) for s, m, _ in formulasheet.symbols(rows)]
+    if [r["key"] for r in rows] != [True, False] or "\\hypertarget{fsrow-1}{}" not in marked or "$\\bigstar$" not in marked \
+            or syms != [("$B_T$", "bandwidth"), ("k", "constant")]:
+        problems.append(f"formulasheet: keys {[r['key'] for r in rows]}, symbols {syms}")
+    if "Key formulas" not in formulasheet.pages(rows) or "Symbol index" not in formulasheet.pages(rows):
+        problems.append("formulasheet.pages(): a section is missing")
+    print(f"{'ok' if not problems else 'FAILED':8} cover data")
+    for p in problems:
+        print("  " + p)
+    return len(problems)
+
+
+def check_mindmap_fit():
+    """Mind maps: the outline parses at any depth, and a column that is too tall is fitted in the agreed order
+    (gaps, grey lines, collapsing non-star cards first, a split, a continuation), with the split guard. Made-up
+    card heights, so no LaTeX is needed."""
+    import mindmap
+    problems = []
+    spec, errs = mindmap.parse("# Course | L1--9\n## One | L1\n- **A** ★: $x$\n  - def: what A is\n  - **B**\n    - **C**\n"
+                               "  - → D\n- **D**\n  - plain detail\n## Two\n- **E**\n")
+    a = spec["parts"][0]["kids"][0]
+    if errs or spec["sub"] != "L1--9" or not a["star"] or a["defn"] != "what A is" or a["chips"] != ["D"] \
+            or a["kids"][0]["kids"][0]["title"] != "C" or spec["parts"][0]["kids"][1]["kids"][0]["title"] != "plain detail":
+        problems.append(f"parse: {errs} {a}")
+    if not any("no card or item" in e for e in mindmap.parse("## P\n- **A**\n  - → Nowhere\n")[1]):
+        problems.append("a → chip naming no card is not reported")
+    if not mindmap.has_map(a) or mindmap.has_map(spec["parts"][0]["kids"][1]):
+        problems.append("has_map: a card with grandchildren needs a sub-map, one with a single detail does not")
+
+    def card(t, star=False, kids=0):
+        return {"title": t, "key": t.lower(), "star": star, "formula": "f", "defn": "", "chips": [],
+                "kids": [{"title": f"{t}{i}", "key": f"{t}{i}", "star": False, "formula": "", "defn": "", "chips": [], "kids": []}
+                         for i in range(kids)]}
+    z = dict(mindmap.SIZE["a4"])
+
+    def fitter(parts, h_full, h_nogrey, h_title, width=27.16, head=1.0, narrow=False):
+        mp = mindmap.Map({"title": "", "sub": "", "detail": None, "parts": parts}, 1)
+        H = {}
+        for x in mindmap.walk(mp.parts):
+            for w in set(mindmap.main_widths(mp, z, width).values()) | {mindmap.sub_width(z, width)}:
+                r = 4.8 / w if narrow else 1.0   # narrower columns wrap more: taller cards
+                H[(mp.p, x["id"], w, "full")] = (h_full + (0.4 if x["kids"] else 0)) * r
+                H[(mp.p, x["id"], w, "nogrey")] = h_nogrey * r
+                H[(mp.p, x["id"], w, "title")] = h_title * r
+        for p in mp.parts:
+            for slots in range(len(parts), 2 * len(parts) + 1):
+                for k in (1, 2):
+                    H[(mp.p, f"head{p['n']}", round(k * mindmap.slot(z, width, slots) - z["sgap"], 3), "head")] = head
+        return mp, mindmap.Fitter(mp, z, H)
+    one = [card("A", kids=2), card("B", star=True), card("C", kids=2), card("D")]
+    mp, fit = fitter([{"name": "P", "sub": "", "kids": one}], 1.0, 0.6, 0.4)
+    w = list(mindmap.main_widths(mp, z, 27.16).values())[0]
+    steps = []
+    for avail in (10, 6.8, 6.0, 5.0, 4.5):   # card heights + padding 0.31: 1.71 1.31 1.71 1.31, as grey-less 0.91, as title 0.71
+        f = fit.one_column(one, w, avail)
+        steps.append((f.step, f.hidden, f.collapsed) if f else None)
+    if steps != [(0, 0, 0), (1, 0, 0), (2, 1, 0), (2, 2, 0), (3, 2, 1)]:
+        problems.append(f"steps 1-3 in order, as little as needed: {steps}")
+    f = fit.one_column(one, w, 4.0)
+    if not f or f.variant[one[1]["id"]] == "title" or [f.variant[c["id"]] for c in one] != ["title", "full", "title", "title"]:
+        problems.append("collapsing: the star card is kept while the others can go: "
+                        f"{[f.variant[c['id']] for c in one] if f else None}")
+    def five(first, h):   # four small parts and one that is too tall for one column
+        parts = [{"name": f"P{i}", "sub": "", "kids": [card(f"Q{i}{j}") for j in range(3)]} for i in range(4)]
+        parts[0]["kids"] = [card(f"R{j}", kids=2) for j in range(first)]
+        parts.append({"name": "Big", "sub": "", "kids": [card(f"K{i}") for i in range(14)]})
+        mp, fit = fitter(parts, h, h, 0.5, narrow=True)
+        calm, _ = mindmap.layout_main(mp, fit, z, 27.16, 17.11, split=False)
+        main, _ = mindmap.fit_main(mp, fit, z, 27.16, 17.11)
+        return calm, main
+    calm, main = five(6, 0.8)    # narrower columns cost part 1 nothing: Big splits
+    if len(main[5].columns) != 2 or main[5].moved or main[1].step != calm[1].step:
+        problems.append(f"guard: a harmless split was refused (Big: {len(main[5].columns)} columns)")
+    calm, main = five(6, 1.0)    # a split would make part 1 hide grey lines: Big continues instead
+    if len(main[5].columns) != 1 or not main[5].moved or main[1].step != calm[1].step:
+        problems.append(f"guard: a split that makes another part take a later step was kept (part 1 step {main[1].step})")
+    for p in problems:
+        print("FAILED   mind-map fit: " + p)
+    if not problems:
+        print("ok       mind-map parse and fitting")
     return len(problems)
 
 
@@ -260,6 +417,149 @@ def run_builds(cases):
     return failed
 
 
+def run_print_layout():
+    """Print copies of a document with a cover: page 2 is the back of the cover (or blank), the back cover is the
+    last page, and the page count is even (a multiple of 4 for a booklet); without a back cover, still even."""
+    failed = 0
+    body = FIXTURES / ".print-layout.tex"
+    side = body.with_suffix(".build.json")
+    body.write_text((EXPECTED / "front-matter.tex").read_text(encoding="utf-8"), encoding="utf-8")
+    side.write_text((EXPECTED / "front-matter.build.json").read_text(encoding="utf-8"), encoding="utf-8")
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            for flags, group, back in (([], 2, True), (["--print-layout", "booklet"], 4, True), (["--no-back-cover"], 2, False)):
+                out = Path(tmp) / "p.pdf"
+                r = subprocess.run([sys.executable, str(BUILD), str(body), "--out", str(out), "--print", *flags],
+                                   capture_output=True, text=True)
+                name = "print layout " + (" ".join(flags) or "duplex")
+                if r.returncode or not out.exists():
+                    failed += 1
+                    print(f"FAILED   {name}: build failed\n{r.stdout[-800:]}")
+                    continue
+                info = subprocess.run(["pdfinfo", str(out)], capture_output=True, text=True).stdout
+                pages = int(re.search(r"Pages:\s+(\d+)", info).group(1))
+                last = subprocess.run(["pdftotext", "-f", str(pages), "-l", str(pages), str(out), "-"],
+                                      capture_output=True, text=True).stdout
+                problems = []
+                if pages % group:
+                    problems.append(f"{pages} pages, not a multiple of {group}")
+                if back != ("ABOUT THIS DOCUMENT" in last):
+                    problems.append("the back cover is not the last page" if back else "a back cover was added")
+                print(f"{'ok' if not problems else 'FAILED':8} {name} ({pages} pages)")
+                for p in problems:
+                    print("  " + p)
+                failed += bool(problems)
+    finally:
+        body.unlink(missing_ok=True)
+        side.unlink(missing_ok=True)
+    return failed
+
+
+def run_edge_tabs():
+    """Edge tabs: every chip is a link over its whole area (not only its number) to a destination that exists."""
+    import logging
+    from pypdf import PdfReader
+    logging.getLogger("pypdf").setLevel(logging.ERROR)
+    body = FIXTURES / ".edge-tabs.tex"
+    side = body.with_suffix(".build.json")
+    body.write_text((EXPECTED / "front-matter.tex").read_text(encoding="utf-8"), encoding="utf-8")
+    side.write_text((EXPECTED / "front-matter.build.json").read_text(encoding="utf-8"), encoding="utf-8")
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "t.pdf"
+            r = subprocess.run([sys.executable, str(BUILD), str(body), "--out", str(out), "--edge-tabs"],
+                               capture_output=True, text=True)
+            if r.returncode or not out.exists():
+                print(f"FAILED   edge tabs: build failed\n{r.stdout[-800:]}")
+                return 1
+            pdf = PdfReader(out)
+            names, problems, chips = pdf.named_destinations, [], 0
+            width = float(pdf.pages[0].mediabox.width)
+            for page in pdf.pages:
+                for annot in page.get("/Annots", []) or []:
+                    annot = annot.get_object()
+                    x0, y0, x1, y1 = (float(v) for v in annot["/Rect"])
+                    if x1 < width - 1:
+                        continue
+                    chips += 1
+                    target = str(annot["/A"].get_object().get("/D"))
+                    if x1 - x0 < 10 or y1 - y0 < 25:
+                        problems.append(f"a chip link of {x1 - x0:.0f}x{y1 - y0:.0f}pt covers only part of the chip")
+                    if target not in names:
+                        problems.append(f"a chip links to a missing destination {target}")
+            if not chips:
+                problems.append("no edge-tab links found")
+            print(f"{'ok' if not problems else 'FAILED':8} edge tabs ({chips} chip links)")
+            for p in sorted(set(problems))[:5]:
+                print("  " + p)
+            return bool(problems)
+    finally:
+        body.unlink(missing_ok=True)
+        side.unlink(missing_ok=True)
+
+
+def run_bundle():
+    """doc.py bundle: two built PDFs become one pack with its own cover and "In this pack" page, and in print one
+    back cover; the parts' own back covers are left out, every link still resolves, and the print pack starts each part on an
+    odd page and has an even page count."""
+    import logging
+    from pypdf import PdfReader
+    logging.getLogger("pypdf").setLevel(logging.ERROR)
+    failed = 0
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = Path(tmp)
+        for case in ("front-matter", "core-elements"):
+            body = FIXTURES / f".bundle-{case}.tex"
+            side = body.with_suffix(".build.json")
+            body.write_text((EXPECTED / f"{case}.tex").read_text(encoding="utf-8"), encoding="utf-8")
+            if (EXPECTED / f"{case}.build.json").exists():
+                side.write_text((EXPECTED / f"{case}.build.json").read_text(encoding="utf-8"), encoding="utf-8")
+            try:
+                for extra, name in (([], f"{case}.pdf"), (["--print"], f"{case}_print.pdf")):
+                    subprocess.run([sys.executable, str(BUILD), str(body), "--out", str(tmp / name), *extra],
+                                   capture_output=True, text=True)
+            finally:
+                body.unlink(missing_ok=True)
+                side.unlink(missing_ok=True)
+        (tmp / "pack.yaml").write_text('title: "Test Pack"\ncourse_code: "VLSI"\nparts:\n'
+                                       '  - pdf: front-matter.pdf\n    title: "Report"\n'
+                                       '  - pdf: core-elements.pdf\n    title: "Core"\n', encoding="utf-8")
+        for extra in ([], ["--print"]):
+            name = "bundle" + (" --print" if extra else "")
+            r = subprocess.run([sys.executable, str(DOC), "bundle", str(tmp / "pack.yaml"), *extra], capture_output=True, text=True)
+            out = tmp / ("pack_print.pdf" if extra else "pack.pdf")
+            if r.returncode or not out.exists():
+                failed += 1
+                print(f"FAILED   {name}\n{r.stdout[-600:]}{r.stderr[-600:]}")
+                continue
+            pdf = PdfReader(out)
+            names, problems = pdf.named_destinations, []
+            for page in pdf.pages:
+                for annot in page.get("/Annots", []) or []:
+                    act = annot.get_object().get("/A")
+                    act = act.get_object() if act else {}
+                    if act.get("/S") == "/GoTo" and str(act.get("/D")) not in names:
+                        problems.append(f"broken link to {act.get('/D')}")
+            text = [re.sub(r"\s", "", p.extract_text() or "").upper() for p in pdf.pages]   # labels are letter-spaced
+            backs = sum("ABOUTTHISDOCUMENT" in t for t in text)
+            if extra and (backs != 1 or "ABOUTTHISDOCUMENT" not in text[-1]):
+                problems.append("expected exactly one back cover, the last page")
+            if not extra and backs:
+                problems.append("the screen pack has a back cover (it belongs to the print pack only)")
+            if "INTHISPACK" not in text[1]:
+                problems.append("page 2 is not the In this pack page")
+            if [o.title for o in pdf.outline if not isinstance(o, list)] != ["Report", "Core"]:
+                problems.append("bookmarks are not one per part")
+            starts = [pdf.get_destination_page_number(names[f"p0-bundle-part-{i}"]) + 1 for i in (1, 2)]
+            if extra and (len(pdf.pages) % 2 or any(s % 2 == 0 for s in starts)):
+                problems.append(f"print pack: {len(pdf.pages)} pages, parts start at {starts}")
+            print(f"{'ok' if not problems else 'FAILED':8} {name} ({len(pdf.pages)} pages, parts at {starts})")
+            for p in problems[:5]:
+                print("  " + p)
+            failed += bool(problems)
+    return failed
+
+
 def corpus(entries, folder, mode):
     folder.mkdir(parents=True, exist_ok=True)
     failed = 0
@@ -298,9 +598,9 @@ def main():
         failed = corpus(a.corpus, a.snapshot or a.compare, "snapshot" if a.snapshot else "compare")
     else:
         cases = json.loads((TESTS / "cases.json").read_text())
-        failed = check_skill() + run_cases(cases, a.update) + run_lint(a.update) + run_templates(a.build)
+        failed = check_skill() + check_margins() + check_coverdata() + check_mindmap_fit() + run_cases(cases, a.update) + run_lint(a.update) + run_templates(a.build)
         if a.build:
-            failed += run_builds(cases) + run_commands_add()
+            failed += run_builds(cases) + run_print_layout() + run_edge_tabs() + run_bundle() + run_commands_add()
     print("\nAll passed." if not failed else f"\n{failed} failed.")
     sys.exit(1 if failed else 0)
 

@@ -1,0 +1,6 @@
+{
+  "description": "A one-page mind map of a course (A4 or A3 landscape): parts in story order, cards with key formulas, links into the theory, then any compare tables.",
+  "md2tex": ["--landscape"],
+  "build": ["--landscape", "--no-toc"],
+  "cover": {"label": "MIND MAP", "signature": "2A9D8F"}
+}

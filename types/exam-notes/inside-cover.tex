@@ -1,0 +1,26 @@
+% Back of the cover for exam notes (B): a spaced-revision plan, one row per lecture (or section), with
+% confidence dots and lines for weak spots. Rows come from the headings (\CoverTracker), and each label links.
+\thispagestyle{empty}
+\bochead{BACK OF THE COVER}{My revision plan}
+{\color{CoverSoft}Revise each lecture on day 1, again on day 3 and day 7, then once before the exam: spacing the
+revisions is what makes it stick. Fill one dot per level of confidence.\par}
+\vspace{0.45cm}
+\newcommand{\confdots}{\tikz[baseline=-3pt]{\foreach \k in {0,1,2} \draw[black!40, line width=0.6pt] (\k*0.32,0) circle (0.11);}}
+\newcommand{\covertrackrow}[3]{\setpartcolor{#3}{\bfseries\color{\partcolor}#1} & {\footnotesize #2} & \tickbox & \tickbox & \tickbox & \tickbox & \confdots \\}
+\newcommand{\trackhead}[1]{{\color{CoverBandText}\bfseries #1}}
+% many lectures: tighter rows and no lines for weak spots, so the plan stays on one page
+\ifdefined\CoverTrackerCompact\renewcommand{\arraystretch}{1.12}\else\renewcommand{\arraystretch}{1.3}\fi
+\rowcolors{2}{CoverSig!5}{white}
+{\small
+\begin{tabularx}{\linewidth}{@{}l X c c c c c@{}}
+\rowcolor{CoverBand}\trackhead{Lecture} & \trackhead{Topic} & \trackhead{Day 1} & \trackhead{Day 3} & \trackhead{Day 7} & \trackhead{Exam eve} & \trackhead{Confidence} \\
+\CoverTracker
+\end{tabularx}}
+\rowcolors{1}{}{}
+\ifdefined\CoverTrackerCompact\else
+	\vspace{0.5cm}
+	\bocsection{Weak spots to look at again}
+	\foreach \k in {1,...,3}{\color{black!25}\rule{\linewidth}{0.5pt}\par\vspace{0.6cm}}
+\fi
+\bocinfo
+\clearpage

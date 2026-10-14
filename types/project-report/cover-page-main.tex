@@ -1,0 +1,28 @@
+% Project-report cover: formal and centred, inside a double frame. Course code and name are the institution
+% lines; the subtitle and note sit under the title. No bands.
+\thispagestyle{empty}
+\begin{tikzpicture}[remember picture, overlay]
+	\draw[CoverSig, line width=1.4pt] ($(current page.north west)+(1.1cm,-1.1cm)$) rectangle ($(current page.south east)+(-1.1cm,1.1cm)$);
+	\draw[CoverSig, line width=0.4pt] ($(current page.north west)+(1.3cm,-1.3cm)$) rectangle ($(current page.south east)+(-1.3cm,1.3cm)$);
+\end{tikzpicture}\par
+\begin{center}
+\vspace*{1.2cm}
+\ifdefempty{\CoverCourseName}{}{{\Large\bfseries\color{CoverInk}\CoverCourseName\par}\vspace{0.15cm}}
+\ifdefempty{\CoverCourseCode}{}{{\large\color{CoverSoft}\CoverCourseCode\par}}
+\vspace{2.6cm}
+{\small\color{CoverSig}\spaced{\CoverLabel}\par}
+\vspace{0.4cm}
+{\fontsize{32}{38}\selectfont\bfseries\color{CoverInk}\CoverTitle\par}
+\vspace{0.3cm}
+\ifdefempty{\CoverSubtitle}{}{{\Large\color{CoverSoft}\CoverSubtitle\par}\vspace{0.3cm}}
+{\color{CoverSig}\rule{3cm}{2pt}\par}
+\ifdefempty{\CoverNote}{}{\vspace{0.4cm}{\large\itshape\color{CoverSoft}\CoverNote\par}}
+\vfill
+\ifdefempty{\CoverContents}{}{\begin{minipage}{0.7\linewidth}\centering\color{CoverInk}
+	\begingroup\def\\{\par\smallskip}\CoverContents\par\endgroup\end{minipage}\par\vspace{1.2cm}}
+{\large\color{CoverInk}Prepared by \covbf{\CoverAuthor}\par}
+\vspace{0.2cm}
+{\color{CoverSoft}\CoverDate\par}
+\vspace{1.0cm}
+\end{center}
+\clearpage
