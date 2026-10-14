@@ -42,7 +42,7 @@ KEYS = {
     "conventions": ("str", "--conventions"),       # back of the cover: the textbook and conventions followed
     "edge_tabs": ("bool", "--edge-tabs"),     # a clickable tab per part on the page edge (false: none)
     "map_size": ("str", "--paper-size"),     # mind maps: a4 (screen, default) or a3 (print)
-    "map_detail": ("bool", None),            # mind maps: show the cards' detail lines (default: on A3 only)
+    "map_detail": ("bool", None),            # mind maps: false never shows the grey detail lines (default: where they fit)
     "margin_x": ("str", "--margin-x"),       # left/right margin, e.g. 0.6in (default: the type's, else 0.5in)
     "preamble": ("str", "--type-preamble"),
     "toc": ("bool", None),                   # false: no table of contents (build.py --no-toc)
@@ -89,7 +89,7 @@ DOCS = {
     "edge_tabs": ("Cover", "on for theory, exam notes, formula sheets", "A clickable tab per part on the page edge (screen PDF only)"),
     "print_layout": ("Print", "`duplex`", "Print copy page order: `duplex` (even pages) or `booklet` (a multiple of 4)"),
     "map_size": ("Mind map", "`a4`", "`a4` (screen) or `a3` (print) landscape"),
-    "map_detail": ("Mind map", "on A3 only", "Show the cards' detail lines"),
+    "map_detail": ("Mind map", "where they fit", "`false`: never show the grey detail lines on the cards"),
     "paper": ("Past paper", "`true`", "`false` leaves out the typeset question paper"),
     "paper_header": ("Past paper", "", "List: the paper's centred header lines (raw LaTeX)"),
     "paper_info": ("Past paper", "", "List: the marks / credits / time row; also feeds the paper-at-a-glance page"),

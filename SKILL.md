@@ -36,7 +36,7 @@ Section numbers (0–15) are shared across these files, so "Section 7" always me
 | `template/cover-kit.tex`, `cover-page-*.tex`, `back-cover.tex` | The **cover system** (Section 15): the shared kit, the default front cover (theory notes use it too), and the back cover. Each type may bring its own `cover-page-main.tex` and an `inside-cover.tex` (the back of the cover). `--cover-dir` uses one of the user's own covers instead. |
 | `template/edge-tabs.tex` | Clickable part tabs on the page edge (Section 15.5). |
 | `scripts/coverdata.py`, `formulasheet.py` | Read the facts the covers show from the bodies; add a formula sheet's Key formulas and Symbol index pages. |
-| `scripts/mindmap.py` | Turns a `::: {.mindmap}` list into the TikZ map (`types/mind-map/guide.md`). |
+| `scripts/mindmap.py` | Mind maps: md2tex writes a `::: {.mindmap}` outline into the body as data; the build measures every card, fits each column (six steps) and draws the main map, sub-maps and outline table (`types/mind-map/guide.md`). |
 | `scripts/bundle.py` | Combines finished PDFs into one pack (`doc.py bundle`, Section 15.7). |
 | `scripts/md2tex.py` + `scripts/house.lua` | A pandoc-based **draft converter** that applies the mechanical rules: headings, labels, table tiers, equations, figures, callouts, question/solution boxes, `eqnote` and Unicode. Its output still gets the Step 3 review. |
 | `scripts/setup.sh` | Installs XeLaTeX, every package the preamble loads, pandoc, PyYAML, Pillow, matplotlib and NumPy (Debian/Ubuntu). Re-running it is safe. |
@@ -63,7 +63,7 @@ A type is a preset for one kind of document. `type:` in the front matter (or `--
 | `question-bank` | Practice numericals, short and long questions, each linked to its solution |
 | `past-paper` | Solutions of a previous year's exam paper: the paper's questions with marks, then a solution block per sub-part (Theory, Answer, Keyword Explanation, Notes and Remarks, Final Concise Answer); tighter layout |
 | `project-report` | Multi-day project or lab reports (RTL-to-GDSII flow): one chapter per day, `extreport` at 14pt |
-| `mind-map` | A course on one landscape page (A4 for the screen, A3 for print): parts in story order, cards with key formulas, links between topics |
+| `mind-map` | A course as a clickable map (landscape A4 for the screen, A3 for print): a heading over its parts, cards with key formulas and two buttons, sub-maps for cards with more inside, an outline table with every definition |
 
 - **Choosing the type:** the user's request usually names it. For existing Markdown without `type:`, the linter and the converter suggest one from the content (`scripts/detect_type.py`); confirm it with the user before adding it to the front matter. When nothing fits (a derivation sheet, a traps sheet), use the house defaults with no type, then offer to add a type for that kind of document.
 - **New types:** a folder `types/NAME/` with `type.json`, `guide.md` and `template.md` (and `preamble.tex` if it needs its own commands). `tests/run_tests.py` checks that every type has them and that its template lints and builds clean.

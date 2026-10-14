@@ -163,6 +163,77 @@ def check_coverdata():
     return len(problems)
 
 
+def check_mindmap_fit():
+    """Mind maps: the outline parses at any depth, and a column that is too tall is fitted in the agreed order
+    (gaps, grey lines, collapsing non-star cards first, a split, a continuation), with the split guard. Made-up
+    card heights, so no LaTeX is needed."""
+    import mindmap
+    problems = []
+    spec, errs = mindmap.parse("# Course | L1--9\n## One | L1\n- **A** ★: $x$\n  - def: what A is\n  - **B**\n    - **C**\n"
+                               "  - → D\n- **D**\n  - plain detail\n## Two\n- **E**\n")
+    a = spec["parts"][0]["kids"][0]
+    if errs or spec["sub"] != "L1--9" or not a["star"] or a["defn"] != "what A is" or a["chips"] != ["D"] \
+            or a["kids"][0]["kids"][0]["title"] != "C" or spec["parts"][0]["kids"][1]["kids"][0]["title"] != "plain detail":
+        problems.append(f"parse: {errs} {a}")
+    if not any("no card or item" in e for e in mindmap.parse("## P\n- **A**\n  - → Nowhere\n")[1]):
+        problems.append("a → chip naming no card is not reported")
+    if not mindmap.has_map(a) or mindmap.has_map(spec["parts"][0]["kids"][1]):
+        problems.append("has_map: a card with grandchildren needs a sub-map, one with a single detail does not")
+
+    def card(t, star=False, kids=0):
+        return {"title": t, "key": t.lower(), "star": star, "formula": "f", "defn": "", "chips": [],
+                "kids": [{"title": f"{t}{i}", "key": f"{t}{i}", "star": False, "formula": "", "defn": "", "chips": [], "kids": []}
+                         for i in range(kids)]}
+    z = dict(mindmap.SIZE["a4"])
+
+    def fitter(parts, h_full, h_nogrey, h_title, width=27.16, head=1.0, narrow=False):
+        mp = mindmap.Map({"title": "", "sub": "", "detail": None, "parts": parts}, 1)
+        H = {}
+        for x in mindmap.walk(mp.parts):
+            for w in set(mindmap.main_widths(mp, z, width).values()) | {mindmap.sub_width(z, width)}:
+                r = 4.8 / w if narrow else 1.0   # narrower columns wrap more: taller cards
+                H[(mp.p, x["id"], w, "full")] = (h_full + (0.4 if x["kids"] else 0)) * r
+                H[(mp.p, x["id"], w, "nogrey")] = h_nogrey * r
+                H[(mp.p, x["id"], w, "title")] = h_title * r
+        for p in mp.parts:
+            for slots in range(len(parts), 2 * len(parts) + 1):
+                for k in (1, 2):
+                    H[(mp.p, f"head{p['n']}", round(k * mindmap.slot(z, width, slots) - z["sgap"], 3), "head")] = head
+        return mp, mindmap.Fitter(mp, z, H)
+    one = [card("A", kids=2), card("B", star=True), card("C", kids=2), card("D")]
+    mp, fit = fitter([{"name": "P", "sub": "", "kids": one}], 1.0, 0.6, 0.4)
+    w = list(mindmap.main_widths(mp, z, 27.16).values())[0]
+    steps = []
+    for avail in (10, 6.8, 6.0, 5.0, 4.5):   # card heights + padding 0.31: 1.71 1.31 1.71 1.31, as grey-less 0.91, as title 0.71
+        f = fit.one_column(one, w, avail)
+        steps.append((f.step, f.hidden, f.collapsed) if f else None)
+    if steps != [(0, 0, 0), (1, 0, 0), (2, 1, 0), (2, 2, 0), (3, 2, 1)]:
+        problems.append(f"steps 1-3 in order, as little as needed: {steps}")
+    f = fit.one_column(one, w, 4.0)
+    if not f or f.variant[one[1]["id"]] == "title" or [f.variant[c["id"]] for c in one] != ["title", "full", "title", "title"]:
+        problems.append("collapsing: the star card is kept while the others can go: "
+                        f"{[f.variant[c['id']] for c in one] if f else None}")
+    def five(first, h):   # four small parts and one that is too tall for one column
+        parts = [{"name": f"P{i}", "sub": "", "kids": [card(f"Q{i}{j}") for j in range(3)]} for i in range(4)]
+        parts[0]["kids"] = [card(f"R{j}", kids=2) for j in range(first)]
+        parts.append({"name": "Big", "sub": "", "kids": [card(f"K{i}") for i in range(14)]})
+        mp, fit = fitter(parts, h, h, 0.5, narrow=True)
+        calm, _ = mindmap.layout_main(mp, fit, z, 27.16, 17.11, split=False)
+        main, _ = mindmap.fit_main(mp, fit, z, 27.16, 17.11)
+        return calm, main
+    calm, main = five(6, 0.8)    # narrower columns cost part 1 nothing: Big splits
+    if len(main[5].columns) != 2 or main[5].moved or main[1].step != calm[1].step:
+        problems.append(f"guard: a harmless split was refused (Big: {len(main[5].columns)} columns)")
+    calm, main = five(6, 1.0)    # a split would make part 1 hide grey lines: Big continues instead
+    if len(main[5].columns) != 1 or not main[5].moved or main[1].step != calm[1].step:
+        problems.append(f"guard: a split that makes another part take a later step was kept (part 1 step {main[1].step})")
+    for p in problems:
+        print("FAILED   mind-map fit: " + p)
+    if not problems:
+        print("ok       mind-map parse and fitting")
+    return len(problems)
+
+
 def run_cases(cases, update):
     failed = 0
     EXPECTED.mkdir(exist_ok=True)
@@ -527,7 +598,7 @@ def main():
         failed = corpus(a.corpus, a.snapshot or a.compare, "snapshot" if a.snapshot else "compare")
     else:
         cases = json.loads((TESTS / "cases.json").read_text())
-        failed = check_skill() + check_margins() + check_coverdata() + run_cases(cases, a.update) + run_lint(a.update) + run_templates(a.build)
+        failed = check_skill() + check_margins() + check_coverdata() + check_mindmap_fit() + run_cases(cases, a.update) + run_lint(a.update) + run_templates(a.build)
         if a.build:
             failed += run_builds(cases) + run_print_layout() + run_edge_tabs() + run_bundle() + run_commands_add()
     print("\nAll passed." if not failed else f"\n{failed} failed.")

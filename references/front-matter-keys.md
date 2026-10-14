@@ -51,7 +51,7 @@ Values are raw LaTeX: `--` is an en-dash, `\&` an ampersand; quote a value that 
 | Key | Default | What it does |
 |---|---|---|
 | `map_size` | `a4` | `a4` (screen) or `a3` (print) landscape |
-| `map_detail` | on A3 only | Show the cards' detail lines |
+| `map_detail` | where they fit | `false`: never show the grey detail lines on the cards |
 
 ## Past paper
 

@@ -108,7 +108,7 @@ A type is a preset for one kind of document: page settings, a writing guide, a s
 | `question-bank` | Practice numericals, short and long questions, linked to solutions | 12pt; cover with the counts; practice-log page |
 | `past-paper` | Full solutions of a previous year's paper | tight layout; solutions cover with a question map; paper-at-a-glance page; the typeset question paper linked to the solutions |
 | `project-report` | Multi-day lab or project report, one chapter per day | 14pt report (chapters); formal framed cover |
-| `mind-map` | A whole course on one page | landscape A4 (screen) or A3 (print); its own cover |
+| `mind-map` | A whole course as a map you can click through | landscape A4 (screen) or A3 (print); its own cover |
 
 Every type has 0.5in left and right margins unless the table says otherwise. No type fits (a derivation sheet, a traps sheet)? Leave `type:` out and the house defaults apply. Ask Claude to add a new type if you'll make that kind of document again.
 
@@ -171,9 +171,15 @@ Every type has 0.5in left and right margins unless the table says otherwise. No 
 
 ### mind-map
 
-- **What you get:** the course on one landscape page. The parts run left to right in the order they are taught, each part's key ideas sit above and below it as cards with their formula, a ★ marks what exams ask most, and small "→ TDM" chips show where an idea is used again (tap one to jump to that card). Card titles can link into the theory PDF. Anything after the map (a compare-and-contrast table) follows on its own pages.
-- **Two sizes:** `map_size: a4` (the default) for reading on screen; `map_size: a3` for printing, with an extra detail line on every card. Build both if you want both.
-- **You give:** the theory notes, or the topics you want on it. You write it as a plain list (`types/mind-map/guide.md`); Claude never places boxes by hand.
+- **What you get:**
+  - **The main map:** the course name on top, joined to every part (numbered, in teaching order); under each part, its key ideas as cards with their formula. A ★ marks what exams ask most, and grey text on a card names what is inside it.
+  - **Two buttons on every card,** in a strip on its right edge: **i** opens the idea's definition and formula in the outline table; **▸3** (only on cards with more inside) opens its sub-map with 3 more cards. Each button is clickable over its whole area.
+  - **Sub-maps** carry on from a card without repeating it: the heading is that card (tap it to go back), its parts are the cards below. Several share a page.
+  - **The outline table:** every idea in one table, each level in its own column, with *What it is*, *Key formula* and a ↩ map link back to its card. Cards are coloured; details (the grey lines) are dark grey.
+  - Small "→ TDM" chips show where an idea is used again (tap one to jump there); card titles can link into the theory PDF. Anything after the map (a compare-and-contrast table) follows on its own pages.
+- **Two sizes, one structure:** `map_size: a4` (the default) for reading on screen; `map_size: a3` for printing, with room for more on each card. Build both if you want both.
+- **When a part has too many cards,** the build shortens it step by step (tighter gaps, then the grey lines, then cards shown as their title alone, then two columns, then "+n more" carrying on to a sub-map page) and says what it did. Nothing is ever cut: everything stays in the outline table.
+- **You give:** the theory notes, or the topics you want on it. It is written as a nested list with a `def:` line per idea (`types/mind-map/guide.md`); Claude never places boxes by hand.
 - **Ask:** "Make a mind map of COM I Lectures 24–38 (engineering-docs, mind-map type), A4 and A3."
 
 ---
@@ -424,7 +430,8 @@ Before you call a document done:
 | The print copy says "text naming a colour without a line style" | Those sentences say "the red curve" and mean nothing in grey. Reword them to name the style too ("the dotted red curve") in the Markdown. |
 | The skill copy in the repo changed at session start | The hook pulled a newer master copy. Commit it. |
 | A cover's panel lists the wrong parts, or none | The cover reads the document's top headings. A hand-written `cover_contents` list replaces them on theory covers. |
-| "mind map: … too many for A4" | A part has more than three cards on one side. Move a card, split the part, or use `map_size: a3`. |
+| "mind map: part … does not fit" | Even "+n more" cannot fit that part. Move cards into a sub-map (give a card children), to another part, or use `map_size: a3`. |
+| "mind map: part 3 …: step 3" in the build output | Not an error: that part was shortened to fit (here: some cards show only their title). Moving cards into a sub-map gives them back their room. |
 | "'→ X' … no card has that title" | The chip must name another card's title exactly as written (markup and case don't matter). |
 | `doc.py bundle` says it needs pypdf | Run `scripts/setup.sh`, or `pip install pypdf`. |
 | The edge tab highlights the wrong part | It needs the second LaTeX run; `build.py` does that. On a hand compile, compile twice. |

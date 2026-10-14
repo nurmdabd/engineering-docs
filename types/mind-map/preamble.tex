@@ -1,5 +1,5 @@
-% Mind-map type: styles for the map page that scripts/mindmap.py writes (\mmpart, \mmcard, \mmref, \mmstory
-% inside a mindmappage). Pages are landscape (type.json); map_size: a3 gives A3.
+% Mind-map type: styles for the pages scripts/mindmap.py draws at build time (the main map, the sub-maps and the
+% outline table). Pages are landscape (type.json); map_size: a3 gives A3.
 \usetikzlibrary{calc, arrows.meta, shadows}
 % part colours, in story order (the covers use the same list)
 \definecolor{CoverPart1}{HTML}{2E6FB7}
@@ -10,42 +10,88 @@
 \definecolor{CoverPart6}{HTML}{0A9396}
 \definecolor{CoverPart7}{HTML}{8D6E3F}
 \definecolor{CoverPart8}{HTML}{5C6B7A}
+\colorlet{CoverPartw}{black!55}   % the legend's neutral buttons
 \providecommand{\setpartcolor}[1]{\pgfmathtruncatemacro{\partcolorn}{mod(#1-1,8)+1}\edef\partcolor{CoverPart\partcolorn}}
 \colorlet{mmink}{black!82}
 \colorlet{mmsoft}{black!55}
 \colorlet{mmstar}{orange!80!black}
+\colorlet{mmcoursecol}{black!72}
 \providecolor{CoverSoft}{gray}{0.45}
 % print copy (print-bw.tex is read after this file): every part grey, the cards told apart by position
 \AtBeginDocument{\ifdefined\HousePrintCopy
 	\colorlet{CoverPart1}{black!60}\colorlet{CoverPart2}{black!60}\colorlet{CoverPart3}{black!60}\colorlet{CoverPart4}{black!60}\colorlet{CoverPart5}{black!60}\colorlet{CoverPart6}{black!60}\colorlet{CoverPart7}{black!60}\colorlet{CoverPart8}{black!60}\colorlet{mmstar}{black}\fi}
 
 \tikzset{
-	mmpart/.style={rounded corners=6pt, fill=#1, text=white, font=\bfseries\large, minimum height=1.55cm,
-		align=center, inner sep=4pt, drop shadow={opacity=0.22}, mmpartw},
-	mmcard/.style={rounded corners=4pt, draw=#1, line width=0.8pt, fill=#1!6, text=mmink, align=left, inner sep=4pt, mmcardw},
+	mmnohyph/.style={execute at begin node=\hyphenpenalty10000\exhyphenpenalty10000\relax},   % headings never break words
+	mmpart/.style={rounded corners=6pt, fill=#1, text=white, align=center, inner sep=4pt, drop shadow={opacity=0.22}, mmnohyph},
+	mmcard/.style={rounded corners=4pt, draw=#1, line width=0.8pt, fill=#1!6, text=mmink, align=left},
+	mmsubhead/.style={rounded corners=6pt, fill=#1, text=white, align=left, inner sep=6pt, drop shadow={opacity=0.22}, mmnohyph},
+	mmcourse/.style={rounded corners=7pt, fill=mmcoursecol, text=white, align=center, inner xsep=14pt, inner ysep=6pt,
+		drop shadow={opacity=0.22}},
+	mmmore/.style={rounded corners=4pt, draw=#1, dashed, line width=0.8pt, fill=white, text=#1!80!black, inner sep=6pt, align=left},
 	mmstem/.style={#1!70, line width=1.1pt},
-	mmstoryarrow/.style={-{Latex[length=3.5mm]}, line width=3pt, black!35},
+	mmbus/.style={draw=black!40, line width=1.4pt},
+	mmbtn/.style={text width=, minimum height=0pt, minimum width=0pt, align=center},
 }
-% the page: #1 card font, #2 title font, #3 map title (may be empty)
-\newenvironment{mindmappage}[3]{\clearpage
-	\def\mmfont{#1}%
-	\noindent{\color{mmsoft}\footnotesize\tikz[baseline=-3pt]\draw[mmstoryarrow, line width=2pt](0,0)--(0.8,0); story order\quad
-		{\color{CoverPart5!70!black}$\rightarrow$\,TDM} used again in\quad {\color{mmstar}$\bigstar$} often asked\quad
-		tap a part or a card to open it}\par
-	\ifstrempty{#3}{}{\vspace{0.15cm}{#2\selectfont\bfseries\color{mmink}#3\par}}
-	\vfill\begin{center}\mmfont}
-	{\end{center}\vfill\clearpage}
-% \mmpart{n}{x}{name}{sub}: a part on the spine
-\newcommand{\mmpart}[4]{\setpartcolor{#1}%
-	\node[mmpart=\partcolor] (mmp#1) at (#2,0) {#3\ifstrempty{#4}{}{\\[-1pt]{\normalfont\footnotesize #4}}};}
-% \mmcard{part}{name}{x}{y}{title}{star}{body}{chips}: a card, joined to its part by a stem
-\newcommand{\mmcard}[8]{\setpartcolor{#1}%
-	\node[mmcard=\partcolor] (#2) at (#3,#4) {\hypertarget{#2}{}{\bfseries #5}\ifnum#6=1\hfill{\color{mmstar}$\bigstar$}\fi
-		\ifstrempty{#7}{}{\\[1pt]#7}\ifstrempty{#8}{}{\\[2pt]#8}};
-	\ifdim#4pt>0pt \draw[mmstem=\partcolor] ($(mmp#1.north west)+(0.12,0)$) |- (#2.west);
-	\else \draw[mmstem=\partcolor] ($(mmp#1.south west)+(0.12,0)$) |- (#2.west); \fi}
-% \mmref{part}{target}{text}: "used again in" chip, a link to the card it names
-\newcommand{\mmref}[3]{\setpartcolor{#1}\hyperlink{#2}{\tcbox[on line, arc=2pt, colback=\partcolor!15, colframe=\partcolor!60,
-	boxsep=0pt, left=2pt, right=2pt, top=0.5pt, bottom=0.5pt, boxrule=0.5pt]{\scriptsize\color{\partcolor!70!black}$\rightarrow$ #3}}\ }
-% \mmstory{a}{b}: the story arrow between two parts
-\newcommand{\mmstory}[2]{\draw[mmstoryarrow] (mmp#1) -- (mmp#2);}
+
+% Links the size of what they cover. XeTeX makes a \hyperref exactly as big as the glyphs inside it, so a button
+% would only be clickable on its letters; these write the link annotation themselves.
+\newsavebox\mmlb
+% \mmlinkbox{target}{content}: the whole box of the content is the link (no link when the target is empty)
+\newcommand\mmlinkbox[2]{\leavevmode\ifstrempty{#1}{#2}{\sbox\mmlb{#2}\special{pdf:ann width \the\wd\mmlb\space height \the\ht\mmlb\space
+	depth \the\dp\mmlb\space << /Type /Annot /Subtype /Link /Border [0 0 0] /A << /S /GoTo /D (#1) >> >>}\usebox\mmlb}}
+% \mmannot{width}{height}{target}, inside a tikzpicture: a link with its lower-left corner at (0,0)
+\newcommand\mmannot[3]{\node[inner sep=0pt, outer sep=0pt] at (0,0) {\special{pdf:ann width #1 height #2 depth 0pt
+	<< /Type /Annot /Subtype /Link /Border [0 0 0] /A << /S /GoTo /D (#3) >> >>}};}
+% \mmnodelink{node}{target}: the whole node is a link
+\newcommand\mmnodelink[2]{%
+	\path (#1.north east); \pgfgetlastxy{\mmxa}{\mmya}%
+	\path (#1.south west); \pgfgetlastxy{\mmxb}{\mmyb}%
+	\pgfmathsetlengthmacro\mmw{\mmxa-\mmxb}\pgfmathsetlengthmacro\mmh{\mmya-\mmyb}%
+	\begin{scope}[shift={(\mmxb,\mmyb)}]\mmannot{\mmw}{\mmh}{#2}\end{scope}}
+
+% The button strip on a card's right edge: the definition button (top, or all of it), and the sub-map button
+% (bottom half) when the card has a sub-map. \mmifont, \mmisep and \mmmfont set the sizes per paper.
+\def\mmifont{\scriptsize}\def\mmisep{0.5pt}\def\mmmfont{\scriptsize}
+% \mmstrip{card node}{part}{strip width cm}{definition target}{sub-map target or empty}{count}
+\newcommand\mmstrip[6]{%
+	\path (#1.north east); \pgfgetlastxy{\mmxa}{\mmya}%
+	\path (#1.south east); \pgfgetlastxy{\mmxb}{\mmyb}%
+	\pgfmathsetlengthmacro\mmsw{#3cm}%
+	\pgfmathsetlengthmacro\mmh{\mmya-\mmyb}%
+	\ifstrempty{#5}{\pgfmathsetlengthmacro\mmhi{\mmh}}{\pgfmathsetlengthmacro\mmhi{\mmh/2}}%
+	\begin{scope}
+		\clip[rounded corners=4pt] (#1.north west) rectangle (#1.south east);
+		\fill[CoverPart#2!13] (\mmxa-\mmsw,\mmya) rectangle (\mmxa,\mmya-\mmhi);
+		\ifstrempty{#5}{}{\fill[CoverPart#2] (\mmxa-\mmsw,\mmyb) rectangle (\mmxa,\mmya-\mmhi);}
+	\end{scope}
+	\draw[CoverPart#2, line width=0.8pt, rounded corners=4pt] (#1.north west) rectangle (#1.south east);
+	\draw[CoverPart#2!45, line width=0.5pt] (\mmxa-\mmsw,\mmya) -- (\mmxa-\mmsw,\mmyb);
+	\node[circle, draw=CoverPart#2, fill=white, line width=0.6pt, inner sep=\mmisep, font=\mmifont\bfseries\itshape,
+		text=CoverPart#2!80!black] at (\mmxa-\mmsw/2,\mmya-\mmhi/2) {i};
+	\begin{scope}[shift={(\mmxa-\mmsw,\mmya-\mmhi)}]\mmannot{\mmsw}{\mmhi}{#4}\end{scope}
+	\ifstrempty{#5}{}{%
+		\node[font=\mmmfont\bfseries, text=white, align=center, inner sep=0pt] at (\mmxa-\mmsw/2,\mmyb+\mmh/4) {$\blacktriangleright$\!#6};
+		\begin{scope}[shift={(\mmxa-\mmsw,\mmyb)}]\mmannot{\mmsw}{\mmhi}{#5}\end{scope}}}
+
+% Legend icons, chips and the small pieces of text around the maps
+\newcommand\mmiconinfo[1]{\tikz[baseline=-0.6ex]\node[mmbtn, circle, draw=CoverPart#1, fill=white, line width=0.6pt, inner sep=0.8pt,
+	font=\scriptsize\bfseries\itshape, text=CoverPart#1!80!black]{i};}
+\newcommand\mmiconmap[2]{\tikz[baseline=-0.6ex]\node[mmbtn, rounded corners=2pt, fill=CoverPart#1, inner xsep=2pt, inner ysep=1pt,
+	font=\scriptsize\bfseries, text=white]{$\blacktriangleright$#2};}
+% \mmchip{part}{target}{text}: "used again in", a link to the card it names
+\newcommand\mmchip[3]{\mmlinkbox{#2}{\scriptsize\color{CoverPart#1!75!black}$\rightarrow$\ used again in {\bfseries #3}}}
+% \mmback{part}{target}: the outline table's way back to the card
+\newcommand\mmback[2]{\mmlinkbox{#2}{\tikz[baseline=(b.base)]\node[mmbtn, draw=CoverPart#1!70, fill=CoverPart#1!8, rounded corners=5pt,
+	line width=0.5pt, inner xsep=3pt, inner ysep=1.4pt, font=\scriptsize, text=CoverPart#1!80!black](b){$\hookleftarrow$\,map};}}
+% \mmfit{equation}: as is, or scaled down to the line when it is wider
+\newsavebox\mmfb
+\newcommand\mmfit[1]{\sbox\mmfb{#1}\ifdim\wd\mmfb>\linewidth\resizebox{\linewidth}{!}{\usebox\mmfb}\else\usebox\mmfb\fi}
+\newcommand\mmname[2]{{\bfseries\color{CoverPart#1!75!black}#2}}   % table: a card
+\newcommand\mmdetail[1]{{\color{black!70}#1}}                         % table: a detail (a grey line on its card)
+\newcommand\mmsep{\ {\color{mmsoft}$\blacktriangleright$}\ }
+\newcommand\mmarrow{$\blacktriangleright$}
+\newcommand\mmheader[2]{\noindent{\small\color{mmink}#1\hfill #2}\par\vspace{2pt}{\color{black!25}\hrule height 0.6pt}\vspace{5pt}}
+\newcommand\mmlegend{\noindent{\color{mmsoft}\scriptsize {\color{mmstar}$\bigstar$} often asked\quad \mmiconinfo{w} its definition
+	and formula (outline table)\quad \mmiconmap{w}{3} its sub-map, 3 more cards\quad $\hookleftarrow$ back to the card it
+	extends\quad {\color{CoverPart5!75!black}$\rightarrow$ used again in}}\par\vspace{3pt}}

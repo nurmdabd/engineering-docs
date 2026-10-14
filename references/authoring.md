@@ -162,4 +162,4 @@ Any registered command can be written directly: a box as `::: {.repocard title="
 
 A single real past-exam question inside other material goes in `::: mainquestion` … `:::` (`references/latex-rules.md`, Section 12); a whole past paper uses the `past-paper` type.
 
-A mind map is a list inside `::: {.mindmap}` … `:::`, with its own syntax (parts as `##`, cards as `- **Title**: formula`, `→ Title` chips): `types/mind-map/guide.md`. The linter checks it.
+A mind map is a nested list inside `::: {.mindmap}` … `:::`, with its own syntax (`#` the course heading, `##` parts, `- **Title**: formula` cards at any depth, `def:` definitions, `→ Title` chips): `types/mind-map/guide.md`. The linter checks it; the build draws it.

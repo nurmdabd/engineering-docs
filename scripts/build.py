@@ -41,6 +41,7 @@ from pathlib import Path
 
 import coverdata
 import formulasheet
+import mindmap
 import doctype
 import json
 
@@ -534,6 +535,9 @@ def main():
                                   f"left={a.margin_x}, right={a.margin_x}}}")}.items():
         main = main.replace(f"<<{key}>>", val)
     (build / "main.tex").write_text(main)
+    # mind maps: measured with this build's own preamble, then laid out (scripts/mindmap.py)
+    mindmap.render([c for _, c in bodies], build, main, a.paper_size,
+                   doctype.text_width_cm(a.margin_x, doctype.paper_width_cm(a.paper_size, a.landscape)))
 
     ok = compile_tex(build)
     report(build / "main.log")

@@ -90,7 +90,7 @@ def main():
     ap.add_argument("--textwidth", type=float, help="text width in cm (default: paper width minus both --margin-x)")
     ap.add_argument("--paper-size", default="a4", choices=["a4", "a3"])
     ap.add_argument("--landscape", action="store_true")
-    ap.add_argument("--map-detail", choices=["true", "false"], help="mind maps: show the cards' detail lines (default: on A3 only)")
+    ap.add_argument("--map-detail", choices=["true", "false"], help="mind maps: false never shows the grey detail lines on the cards (default: where they fit)")
     first = ap.parse_known_args()[0]          # only to find the Markdown file and read its front matter
     meta, body, problems = frontmatter.split(first.md.read_text(encoding="utf-8"))
     for p in problems:
@@ -134,11 +134,10 @@ def main():
     house_meta = ["-M", f"house_class={a.cls}", "-M", f"house_fontsize={a.fontsize}", "-M", f"house_textwidth={a.textwidth}", "-M", f"house_structure={a.structure}", "-M", f"house_prefix={a.label_prefix}",
            "-M", f"house_shift={shift}", "-M", f"house_guards={0 if a.no_guards else 1}", "-M", f"house_cmds={commands.encode(registry)}",
            "-M", "house_gfm=" + " ".join(slugs.heading_slugs(body))]   # GitHub anchors, so [..](#gh-anchor) links work
-    for i, block in enumerate(maps):   # each ::: {.mindmap} block becomes the TikZ map (scripts/mindmap.py)
+    for i, block in enumerate(maps):   # each ::: {.mindmap} block becomes its data line; build.py draws it (scripts/mindmap.py)
         heads = "\n\n".join(re.findall(r"^#{1,6} .*$", re.sub(r"^(```|~~~).*?^\1", "", body, flags=re.M | re.S), re.M))
-        tex, problems = mindmap.convert(block, a.paper_size, a.textwidth,
-                                        None if a.map_detail is None else a.map_detail == "true",
-                                        pandoc_args=house_meta, context=heads)
+        tex, problems = mindmap.convert(block, None if a.map_detail is None else a.map_detail == "true",
+                                        pandoc_args=house_meta, context=heads, wrap=wrap_bangla if a.bangla else None)
         if problems:
             sys.exit("\n".join(f"{first.md.name}: mind map: {p}" for p in problems))
         body = body.replace(f"MINDMAPBLOCK{i}X", "```{=latex}\n" + tex + "\n```")

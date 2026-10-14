@@ -15,6 +15,8 @@ What is read, per type (the default applies to any type not named):
 """
 import re
 
+import mindmap
+
 SEP = "\\quad$\\cdot$\\quad "
 SECTION = re.compile(r"\\(chapter|section|subsection)\*?\{")
 
@@ -317,7 +319,8 @@ def stats_for(kind, tex):
     elif kind == "question-bank":
         out += [(tex.count("\\begin{questionbox}"), "questions"), (tex.count("\\begin{solutionbox}"), "solutions")]
     elif kind == "mind-map":
-        out += [(tex.count("\\mmpart{"), "parts"), (tex.count("\\mmcard{"), "cards")]
+        parts, cards = mindmap.stats(tex)
+        out += [(parts, "parts"), (cards, "cards")]
     elif kind == "past-paper":
         out += [(len(re.findall(r"\\begin\{mainquestion\}", tex)), "questions"),
                 (len(re.findall(r"\\begin\{questionblock\}", tex)), "solved sub-parts")]

@@ -7,5 +7,5 @@
   {"name": "past-paper", "print": true, "pdf_has": ["Solution of Session 2020–21", "EM spectrum—radio waves", "1. Answer\n", "2. Answer\n", "1.(c) Write short notes on: (i) Thermal Noise (ii) Transit Time Noise Marks: 4", "Marks: 6", "Explain why the modulation index must stay below 1."], "pdf_lacks": ["Answer:", "@@"]},
   {"name": "custom-commands", "pdf_has": ["OpenLane & PDK repos", "A note over two paragraphs", "The second paragraph, still inside the same box.", "jump back", "peak deviation", "A div with an unknown class", "picorv32a.placement.def"], "pdf_lacks": ["{.", ":::", "{carrier}", "\\_"]},
   {"name": "table-layout", "build_flags": ["--type", "past-paper", "--no-toc"]},
-  {"name": "mind-map", "pdf_has": ["Ohm’s law", "a detail line", "Power", "Compare"], "pdf_lacks": [":::", "mindmap"], "print": true}
+  {"name": "mind-map", "pdf_has": ["Ohm’s law", "a detail line", "Power", "Compare", "Sub-maps", "Mesh analysis", "Outline table", "Energy delivered per second"], "pdf_lacks": [":::", "mindmap", "MMDATA"], "print": true}
 ]
