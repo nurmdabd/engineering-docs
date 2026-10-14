@@ -18,7 +18,7 @@
   formula, ★ and a button strip (i: the definition; ▸n: the card's sub-map); sub-maps that extend a card; an
   outline table with every definition (cards coloured, details grey). The build measures every card in LaTeX
   and fits a column that is too tall in six steps (gaps, grey lines, title-only cards, two columns, again,
-  "+n more"), splitting only when no other part pays for it.
+  "+n more", a solid card in the part colour), splitting only when no other part pays for it.
 - **Formula sheets:** a Key formulas page (bold rows, starred in the sheet) and a Symbol index, both linked.
 - **Edge tabs:** a clickable tab per part on the page edge for theory notes, exam notes and formula sheets;
   the whole chip is the link; light grey chips, the current part in its colour.

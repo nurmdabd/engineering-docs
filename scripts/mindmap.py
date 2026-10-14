@@ -590,9 +590,10 @@ def main_page(mp, main, s, z):
         out.append(rf"\node[mmcourse, anchor=south, font=\bfseries{z['headfont']}] ({mp.p}course) at ({mid:.3f},0.55) "
                    rf"{{{d['title']}" + (rf"\\[-1pt]{{\normalfont\footnotesize {d['sub']}}}" if d["sub"] else "") + "};\n"
                    rf"\mmnodelink{{{mp.p}course}}{{{mp.p}table}}")
-        out.append(rf"\draw[mmbus] ({mp.p}course.south) -- ({mid:.3f},0.27);")
-        out.append(rf"\draw[mmbus] ({heads[0][1]:.3f},0.27) -- ({heads[-1][1]:.3f},0.27);")
-        out += [rf"\draw[mmbus] ({cx:.3f},0.27) -- ({h}.north);" for h, cx in heads]
+        # every line straight: drops fall from each heading's own centre, the bus runs between the outer ones
+        out.append(rf"\draw[mmbus] ({mp.p}course.south) -- ({mp.p}course.south |- 0,0.27);")
+        out.append(rf"\draw[mmbus] ({heads[0][0]}.north |- 0,0.27) -- ({heads[-1][0]}.north |- 0,0.27);")
+        out += [rf"\draw[mmbus] ({h}.north |- 0,0.27) -- ({h}.north);" for h, _ in heads]
     out.append(r"\end{tikzpicture}\end{center}\vfill")
     return "\n".join(out)
 
