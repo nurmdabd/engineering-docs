@@ -264,8 +264,8 @@ def lines(mp, n, z, grey=True, full=True):
     return r"\\[1pt]".join(out)
 
 
-def star(n):
-    return r"\,{\color{mmstar}$\bigstar$}" if n["star"] else ""
+def star(n, space=r"\,"):
+    return space + r"{\color{mmstar}$\bigstar$}" if n["star"] else ""
 
 
 VARIANTS = {"full": dict(grey=True, full=True), "nogrey": dict(grey=False, full=True), "title": dict(grey=False, full=False)}
@@ -651,7 +651,7 @@ class Table:
 
     def name(self, n):
         label = rf"\mmname{{{n['part']}}}{{{n['title']}}}" if is_card(n) else rf"\mmdetail{{{n['title']}}}"
-        return rf"\hypertarget{{{self.mp.row(n)}}}{{}}{label}{star(n)}"
+        return rf"\hypertarget{{{self.mp.row(n)}}}{{}}{label}{star(n, ' ')}"   # the star may wrap in a narrow column
 
     def leaf(self, label_w, label, n, level, back, rules=1):
         """[label | what it is | key formula | map] as one tabular; label None: the node's own "in general" row."""

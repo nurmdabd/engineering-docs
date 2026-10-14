@@ -80,7 +80,7 @@
 \newcommand\mmiconmap[2]{\tikz[baseline=-0.6ex]\node[mmbtn, rounded corners=2pt, fill=CoverPart#1, inner xsep=2pt, inner ysep=1pt,
 	font=\scriptsize\bfseries, text=white]{$\blacktriangleright$#2};}
 % \mmchip{part}{target}{text}: "used again in", a link to the card it names
-\newcommand\mmchip[3]{\mmlinkbox{#2}{\scriptsize\color{CoverPart#1!75!black}$\rightarrow$\ used again in {\bfseries #3}}}
+\newcommand\mmchip[3]{\mmlinkbox{#2}{\mmfit{\scriptsize\color{CoverPart#1!75!black}$\rightarrow$\ {\bfseries #3}}}}   % scaled down if wider than the card
 % \mmback{part}{target}: the outline table's way back to the card
 \newcommand\mmback[2]{\mmlinkbox{#2}{\tikz[baseline=(b.base)]\node[mmbtn, draw=CoverPart#1!70, fill=CoverPart#1!8, rounded corners=5pt,
 	line width=0.5pt, inner xsep=3pt, inner ysep=1.4pt, font=\scriptsize, text=CoverPart#1!80!black](b){$\hookleftarrow$\,map};}}
