@@ -67,7 +67,8 @@ plain words: what the document is and how it teaches, one or two sentences.
 ## 15.5 Edge tabs
 
 `template/edge-tabs.tex`: a tab per part (the same parts as the cover) on the right edge of every body page;
-the current part's chip is wider and in full colour; the whole chip is a link to its part (not only its number). On by default for theory notes,
+the chips are light grey so they stay out of the way while reading, except the current part's, which is wider
+and in that part's colour (the colour it has on the cover); the whole chip is a link to its part (not only its number). On by default for theory notes,
 exam notes and formula sheets (`edge_tabs: false` turns them off; `--edge-tabs` adds them to any build).
 Never in the print copy: printers cannot print to the edge.
 

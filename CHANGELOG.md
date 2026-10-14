@@ -17,7 +17,7 @@
   (print), with parts in story order, starred key cards, detail lines and "used again in" chips.
 - **Formula sheets:** a Key formulas page (bold rows, starred in the sheet) and a Symbol index, both linked.
 - **Edge tabs:** a clickable tab per part on the page edge for theory notes, exam notes and formula sheets;
-  the whole chip is the link.
+  the whole chip is the link; light grey chips, the current part in its colour.
 - **Docs:** `references/front-matter-keys.md` lists every setting (generated, drift-tested);
   `references/covers-and-print.md` (Section 15); the user guide has an "I want to…" table and sections on
   covers, printing and packs.
