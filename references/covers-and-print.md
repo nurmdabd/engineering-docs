@@ -10,11 +10,12 @@ Part of the engineering-docs rules; SKILL.md has the workflow. Every front-matte
 | 1 | the type's front cover | same, light tints instead of solid bands |
 | 2 | the back-of-the-cover page, if the type has one | same; a blank page if the type has none |
 | 3 ... | (past paper: the question paper), contents, body | same, starting on a right-hand page |
-| end | the back cover | blank pages first, so the back cover is the last page of a full sheet |
+| end | nothing (`back_cover: true` adds the back cover) | blank pages, then the back cover, so it is the back of the last sheet |
 
 With a cover, the title is not repeated above the contents (the cover carries it). `cover: false` removes the
 cover and with it the back-of-cover page and the back cover; `inside_cover: false` and `back_cover: false`
-remove one of them.
+remove one of them. The back cover is for the printed copy: the screen PDF ends with the last body page unless
+the front matter says `back_cover: true`.
 
 ## 15.2 The covers
 
@@ -58,7 +59,7 @@ It is in English also for a Bangla document (see ROADMAP.md).
 
 ## 15.4 The back cover
 
-`template/back-cover.tex`, for every type: an accent strip on the right edge (the spine side) carrying course,
+`template/back-cover.tex`, for every type, in the print copy (and the screen PDF with `back_cover: true`): an accent strip on the right edge (the spine side) carrying course,
 title and subtitle; faint rings; "About this document" with the title, `back_blurb` and up to three numbers
 counted from the document plus the page count; course, author and date at the foot. Write `back_blurb` in
 plain words: what the document is and how it teaches, one or two sentences.
@@ -66,7 +67,7 @@ plain words: what the document is and how it teaches, one or two sentences.
 ## 15.5 Edge tabs
 
 `template/edge-tabs.tex`: a tab per part (the same parts as the cover) on the right edge of every body page;
-the current part's tab is wide and numbered; every tab links to its part. On by default for theory notes,
+the current part's chip is wider and in full colour; the whole chip is a link to its part (not only its number). On by default for theory notes,
 exam notes and formula sheets (`edge_tabs: false` turns them off; `--edge-tabs` adds them to any build).
 Never in the print copy: printers cannot print to the edge.
 
@@ -81,7 +82,7 @@ covers turn to light tints, and the page order above makes double-sided printing
 `doc.py bundle pack.yaml` (scripts/bundle.py; its docstring shows the YAML) combines finished PDFs:
 
 - a pack cover (the default cover, label `STUDY PACK` or `label:`), an "In this pack" page with each part's
-  pages, linked; the parts; one back cover;
+  pages, linked; the parts; one back cover (print pack; a screen pack too with `back_cover: true`);
 - each part keeps its layout, cover, links and bookmarks; its own back cover is left out;
 - links from one part into another (`file.pdf#label`) become links inside the pack, so the folder rule of
   Section 13 no longer applies to them;
@@ -92,5 +93,6 @@ Build every part first, then the pack. Rebuild the pack after any part changes.
 ## 15.8 Checking
 
 - Look at page 1, page 2, the first body page and the last page of every build (Step 5).
+- Edge tabs: each chip is a link over its whole area (a link annotation the size of the chip); click two of them.
 - A print copy: the page count is even (a multiple of 4 for a booklet) and the back cover is last.
 - A pack: open the "In this pack" links and two links that cross between parts.

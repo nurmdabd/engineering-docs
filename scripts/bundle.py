@@ -16,7 +16,7 @@ pack.yaml (paths are relative to it; the cover fields are raw LaTeX, as in front
     accent: 2F5D3A                         # optional, the subject's colour
     date: "October 2026"                   # optional; author: optional
     back_blurb: "..."                      # optional, for the back cover
-    back_cover: true                       # optional; false: no back cover
+    back_cover: true                       # optional; unset: print pack only; true: screen pack too; false: none
     print_layout: duplex                   # optional, for --print: duplex or booklet
     out: pdf/eee329-exam-pack.pdf          # optional (default: the YAML name, .pdf)
     parts:
@@ -257,7 +257,8 @@ def main():
         prefix(reader, f"p{i}")
         w.append(reader, outline_item=title, pages=pages)
         w.add_named_destination(f"p0-bundle-part-{i}", start - 1)
-    if spec.get("back_cover", True):
+    back = spec.get("back_cover", "print")
+    if back is True or (back == "print" and a.bw):
         group = 4 if spec.get("print_layout") == "booklet" else 2
         while a.bw and (len(w.pages) + 1) % group:
             w.add_blank_page()

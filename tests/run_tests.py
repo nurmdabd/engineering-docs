@@ -384,9 +384,52 @@ def run_print_layout():
     return failed
 
 
+def run_edge_tabs():
+    """Edge tabs: every chip is a link over its whole area (not only its number) to a destination that exists."""
+    import logging
+    from pypdf import PdfReader
+    logging.getLogger("pypdf").setLevel(logging.ERROR)
+    body = FIXTURES / ".edge-tabs.tex"
+    side = body.with_suffix(".build.json")
+    body.write_text((EXPECTED / "front-matter.tex").read_text(encoding="utf-8"), encoding="utf-8")
+    side.write_text((EXPECTED / "front-matter.build.json").read_text(encoding="utf-8"), encoding="utf-8")
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "t.pdf"
+            r = subprocess.run([sys.executable, str(BUILD), str(body), "--out", str(out), "--edge-tabs"],
+                               capture_output=True, text=True)
+            if r.returncode or not out.exists():
+                print(f"FAILED   edge tabs: build failed\n{r.stdout[-800:]}")
+                return 1
+            pdf = PdfReader(out)
+            names, problems, chips = pdf.named_destinations, [], 0
+            width = float(pdf.pages[0].mediabox.width)
+            for page in pdf.pages:
+                for annot in page.get("/Annots", []) or []:
+                    annot = annot.get_object()
+                    x0, y0, x1, y1 = (float(v) for v in annot["/Rect"])
+                    if x1 < width - 1:
+                        continue
+                    chips += 1
+                    target = str(annot["/A"].get_object().get("/D"))
+                    if x1 - x0 < 10 or y1 - y0 < 25:
+                        problems.append(f"a chip link of {x1 - x0:.0f}x{y1 - y0:.0f}pt covers only part of the chip")
+                    if target not in names:
+                        problems.append(f"a chip links to a missing destination {target}")
+            if not chips:
+                problems.append("no edge-tab links found")
+            print(f"{'ok' if not problems else 'FAILED':8} edge tabs ({chips} chip links)")
+            for p in sorted(set(problems))[:5]:
+                print("  " + p)
+            return bool(problems)
+    finally:
+        body.unlink(missing_ok=True)
+        side.unlink(missing_ok=True)
+
+
 def run_bundle():
-    """doc.py bundle: two built PDFs become one pack with its own cover, "In this pack" page and back cover; the
-    parts' own back covers are left out, every link still resolves, and the print pack starts each part on an
+    """doc.py bundle: two built PDFs become one pack with its own cover and "In this pack" page, and in print one
+    back cover; the parts' own back covers are left out, every link still resolves, and the print pack starts each part on an
     odd page and has an even page count."""
     import logging
     from pypdf import PdfReader
@@ -427,8 +470,11 @@ def run_bundle():
                     if act.get("/S") == "/GoTo" and str(act.get("/D")) not in names:
                         problems.append(f"broken link to {act.get('/D')}")
             text = [re.sub(r"\s", "", p.extract_text() or "").upper() for p in pdf.pages]   # labels are letter-spaced
-            if sum("ABOUTTHISDOCUMENT" in t for t in text) != 1 or "ABOUTTHISDOCUMENT" not in text[-1]:
+            backs = sum("ABOUTTHISDOCUMENT" in t for t in text)
+            if extra and (backs != 1 or "ABOUTTHISDOCUMENT" not in text[-1]):
                 problems.append("expected exactly one back cover, the last page")
+            if not extra and backs:
+                problems.append("the screen pack has a back cover (it belongs to the print pack only)")
             if "INTHISPACK" not in text[1]:
                 problems.append("page 2 is not the In this pack page")
             if [o.title for o in pdf.outline if not isinstance(o, list)] != ["Report", "Core"]:
@@ -483,7 +529,7 @@ def main():
         cases = json.loads((TESTS / "cases.json").read_text())
         failed = check_skill() + check_margins() + check_coverdata() + run_cases(cases, a.update) + run_lint(a.update) + run_templates(a.build)
         if a.build:
-            failed += run_builds(cases) + run_print_layout() + run_bundle() + run_commands_add()
+            failed += run_builds(cases) + run_print_layout() + run_edge_tabs() + run_bundle() + run_commands_add()
     print("\nAll passed." if not failed else f"\n{failed} failed.")
     sys.exit(1 if failed else 0)
 

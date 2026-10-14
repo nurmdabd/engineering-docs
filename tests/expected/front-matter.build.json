@@ -13,6 +13,7 @@
   ["--cover-subtitle", "Days 1--2"],
   ["--cover-contents", "Synthesis and floorplan"],
   ["--cover-contents", "Commands, outputs and results"],
-  ["--margin-x", "0.6in"]
+  ["--margin-x", "0.6in"],
+  ["--back-cover", "both"]
  ]
 }

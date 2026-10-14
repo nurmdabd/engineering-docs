@@ -35,7 +35,7 @@ KEYS = {
     "cover_contents": ("list", "--cover-contents"),
     "accent": ("str", "--accent"),           # the subject's colour on cover and back cover, hex like 5B3A8C
     "inside_cover": ("bool", None),          # false: no page on the back of the cover
-    "back_cover": ("bool", None),            # false: no back cover
+    "back_cover": ("bool", None),            # unset: print copy only; true: screen PDF too; false: none
     "back_blurb": ("str", "--back-blurb"),
     "print_layout": ("str", "--print-layout"),   # print copy: duplex (default) or booklet (pages padded to a multiple of 4)   # back cover: one or two sentences on what the document is
     "prerequisites": ("list", "--prerequisite"),   # back of the cover (theory notes): what to know first
@@ -82,7 +82,7 @@ DOCS = {
     "cover_contents": ("Cover", "the parts, read from the document", "A hand-written \"Inside\" list (theory and default covers)"),
     "accent": ("Cover", "`005F73` (ocean)", "The subject's colour on the cover, back cover and spine, as hex"),
     "inside_cover": ("Cover", "`true` when the type has one", "`false`: no page on the back of the cover"),
-    "back_cover": ("Cover", "`true` with a cover", "`false`: no back cover"),
+    "back_cover": ("Cover", "in the print copy only", "`true`: also in the screen PDF; `false`: no back cover at all"),
     "back_blurb": ("Cover", "", "One or two sentences on the back cover about the document"),
     "prerequisites": ("Cover", "", "List shown as \"Before you start\" on the back of a theory-notes cover"),
     "conventions": ("Cover", "", "One line on the textbook and conventions, at the foot of the back-of-cover page"),
@@ -192,6 +192,8 @@ def build_flags(meta):
         flags.append(["--no-inside-cover"])
     if meta.get("back_cover") is False:
         flags.append(["--no-back-cover"])
+    elif meta.get("back_cover") is True:
+        flags.append(["--back-cover", "both"])
     if meta.get("edge_tabs") is False:
         flags.append(["--no-edge-tabs"])
     if meta.get("paper") is False:   # turns off the question paper the past-paper type adds by default

@@ -345,7 +345,10 @@ def main():
     ap.add_argument("--accent")                        # the subject's colour, hex (front matter: accent)
     ap.add_argument("--inside-cover-file", type=Path)  # set by --type: types/NAME/inside-cover.tex
     ap.add_argument("--no-inside-cover", dest="inside_cover", action="store_false")
-    ap.add_argument("--no-back-cover", dest="back_cover", action="store_false")
+    ap.add_argument("--back-cover", choices=["print", "both", "none"], default="print",
+                    help="where a document with a cover gets its back cover: the print copy only (default), both copies, "
+                         "or neither")
+    ap.add_argument("--no-back-cover", dest="back_cover", action="store_const", const="none")
     ap.add_argument("--back-blurb", default="")
     ap.add_argument("--prerequisite", action="append", default=[])
     ap.add_argument("--conventions", default="")
@@ -385,7 +388,7 @@ def main():
             shutil.copy(src, build)
     covered = a.cover or a.cover_dir
     inside = bool(covered and a.inside_cover and a.inside_cover_file and a.inside_cover_file.exists())
-    back = bool(covered and a.back_cover)
+    back = bool(covered and (a.back_cover == "both" or (a.back_cover == "print" and a.bw)))
     if covered:
         shutil.copy(TEMPLATE / "cover-kit.tex", build)
     if inside:
@@ -393,7 +396,10 @@ def main():
     if back:
         shutil.copy(TEMPLATE / "back-cover.tex", build)
 
-    used, includes, gdirs = set(), [], []
+    # a body never takes the name of a file the build copies in (edge-tabs.tex, back-cover.tex, preamble.tex, ...)
+    used = {f.stem for f in TEMPLATE.glob("*.tex")} | {f.stem for f in (TEMPLATE.parent / "types").glob("*/*.tex")}
+    used |= {"main", "formula-pages", "paper-page"}
+    includes, gdirs = [], []
     bodies = []
     for body in a.bodies:
         body = body.resolve()

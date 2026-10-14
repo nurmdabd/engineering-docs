@@ -67,8 +67,10 @@
 }
 
 %-----Page Layout and Spacing-----
-% Configures page margins
-\geometry{top=1in, bottom=.7in, left=.7in, right=.7in}
+% Configures page margins. The header takes no height (see \headheight below), so top is where the body starts;
+% 0.83in keeps the look of the earlier builds, where the header height was dropped after the layout was set.
+\setlength{\headheight}{0pt}
+\geometry{top=0.83in, bottom=.7in, left=.7in, right=.7in}
 
 
 % Level 1: Standard Solid Bullet

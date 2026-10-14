@@ -193,11 +193,11 @@ With `cover: true` (past papers have it by default), a document gets three extra
   | past paper | The paper at a glance: time, marks, how many to answer, and every sub-part with its marks and minutes |
   | question bank | How to practise, and a practice log with two boxes per question |
 
-- **The back cover** (last page), in its own style: a strip on the right edge with the course and document name, faint rings, a short "About this document" (`back_blurb:`), a few numbers and the page count.
+- **The back cover** (last page of the print copy; add `back_cover: true` to have it in the screen PDF too), in its own style: a strip on the right edge with the course and document name, faint rings, a short "About this document" (`back_blurb:`), a few numbers and the page count.
 
 **Colours:** each type has its own colour, and each subject has one too (`accent:`). Give every document of a subject the same `accent`, and they look like a set. Headings and boxes keep the house colours.
 
-**Turning parts off:** `inside_cover: false` (no page 2), `back_cover: false` (no back cover), `cover: false` (none of the three).
+**Turning parts off:** `inside_cover: false` (no page 2), `back_cover: false` (no back cover, not even in print), `cover: false` (none of the three).
 
 **Edge tabs:** theory notes, exam notes and formula sheets also get a clickable coloured tab per part on the right edge of every page; the wide tab is the part you are reading. `edge_tabs: false` removes them. They are never printed.
 
@@ -367,7 +367,7 @@ parts:
 Then run `python3 scripts/doc.py bundle pack.yaml` (add `--print` for the print pack). You get one PDF with:
 - a pack cover and an "In this pack" page with each part's pages, linked;
 - every part as it was built, its own cover kept as a divider (its back cover is left out);
-- one back cover;
+- one back cover (in the print pack; `back_cover: true` adds it to the screen pack);
 - bookmarks with one entry per part and that part's outline under it;
 - links between the parts working inside the file, so the "same folder" rule no longer applies.
 

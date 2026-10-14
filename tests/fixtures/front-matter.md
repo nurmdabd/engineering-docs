@@ -14,6 +14,7 @@ cover_contents:
   - "Synthesis and floorplan"
   - "Commands, outputs and results"
 date: "October 2026"
+back_cover: true
 ---
 
 # Day 01: Synthesis

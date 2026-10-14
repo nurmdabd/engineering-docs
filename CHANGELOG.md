@@ -7,7 +7,7 @@
 - **Covers:** a front cover per type in one family (theory notes, exam notes, formula sheet, question bank,
   project report, mind map; the past-paper cover is unchanged), each showing facts counted from the document.
   A back-of-the-cover page per type (how to use, revision plan, how to read a row, the paper at a glance, how to
-  practise) and a back cover in its own style. `accent` gives each subject its colour. With a cover, the
+  practise) and a back cover in its own style, in the print copy (`back_cover: true` adds it on screen). `accent` gives each subject its colour. With a cover, the
   title is no longer repeated above the contents.
 - **Print copy:** laid out for double-sided printing (page 2 is the back of the cover; the back cover is the
   back of the last sheet); `print_layout: booklet` pads to a multiple of 4.
@@ -16,8 +16,10 @@
 - **Mind maps:** the `mind-map` type draws a `::: {.mindmap}` list as a one-page TikZ map, A4 (screen) or A3
   (print), with parts in story order, starred key cards, detail lines and "used again in" chips.
 - **Formula sheets:** a Key formulas page (bold rows, starred in the sheet) and a Symbol index, both linked.
-- **Edge tabs:** a clickable tab per part on the page edge for theory notes, exam notes and formula sheets.
+- **Edge tabs:** a clickable tab per part on the page edge for theory notes, exam notes and formula sheets;
+  the whole chip is the link.
 - **Docs:** `references/front-matter-keys.md` lists every setting (generated, drift-tested);
   `references/covers-and-print.md` (Section 15); the user guide has an "I want to…" table and sections on
   covers, printing and packs.
-- **Fixes:** the EXAM and NOTE markers read as words in PDF bookmarks.
+- **Fixes:** the EXAM and NOTE markers read as words in PDF bookmarks; the top margin is 0.83in as the
+  earlier builds had it in effect (the header height used to be dropped after the layout was set).

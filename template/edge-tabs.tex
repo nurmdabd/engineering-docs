@@ -19,17 +19,27 @@
 \newcommand{\HouseTabsOn}{\ifdefined\HousePrintCopy\else\global\HouseTabstrue\fi}
 \newcommand{\HouseTabsOff}{\clearpage\global\HouseTabsfalse}
 \newcount\housetabcount
+% Chip sizes (cm): the current part's chip is wider; \housetabgap is the space between two chips
+\def\housetabwide{0.6}\def\housetabnarrow{0.4}\def\housetabgap{0.06}
+% A chip: the fill, then a link annotation exactly the chip's size (XeTeX sizes a \hyperref by the glyphs inside
+% it, which would leave only the number clickable)
+\newcommand{\housetabchip}[3]{% {fill colour}{width cm}{label}
+	\fill[#1] ($(current page.north east)+(-#2,-\housetabtop)$) rectangle ++(#2,-\housetabh);
+	\node[inner sep=0pt, outer sep=0pt] at ($(current page.north east)+(-#2,-\housetabtop-\housetabh)$)
+		{\special{pdf:ann width #2cm height \housetabh cm depth 0pt
+			<< /Type /Annot /Subtype /Link /Border [0 0 0] /A << /S /GoTo /D (#3) >> >>}};}
 \newcommand{\housetabitem}[2]{%
 	\setpartcolor{#1}%
 	\pgfmathsetmacro{\housetabtop}{2.6 + (#1-1)*\housetabstep}%
+	\pgfmathsetmacro{\housetabh}{\housetabstep-\housetabgap}%
 	\ifnum#1=\housecurrent\relax
-		\fill[\partcolor] ($(current page.north east)+(-0.75,-\housetabtop)$) rectangle ++(0.75,-\housetabstep+0.12);
+		\housetabchip{\partcolor}{\housetabwide}{#2}%
 		\node[rotate=-90, text=white, font=\bfseries\footnotesize, anchor=center]
-			at ($(current page.north east)+(-0.38,-\housetabtop-\housetabstep/2+0.06)$) {\hyperref[#2]{#1}};
+			at ($(current page.north east)+(-\housetabwide/2,-\housetabtop-\housetabh/2)$) {#1};
 	\else
-		\fill[\partcolor!35] ($(current page.north east)+(-0.4,-\housetabtop)$) rectangle ++(0.4,-\housetabstep+0.12);
+		\housetabchip{\partcolor!35}{\housetabnarrow}{#2}%
 		\node[rotate=-90, text=\partcolor!60!black, font=\scriptsize, anchor=center]
-			at ($(current page.north east)+(-0.2,-\housetabtop-\housetabstep/2+0.06)$) {\hyperref[#2]{#1}};
+			at ($(current page.north east)+(-\housetabnarrow/2,-\housetabtop-\housetabh/2)$) {#1};
 	\fi}
 % first pass over the list: find the current part
 \newcommand{\housetabscan}[2]{\ifnum\getpagerefnumber{#2}>\value{page}\else\def\housecurrent{#1}\fi}
@@ -37,6 +47,6 @@
 	\def\housecurrent{0}%
 	\begingroup\let\housetabitem\housetabscan\HouseTabList\expandafter\endgroup\expandafter\def\expandafter\housecurrent\expandafter{\housecurrent}%
 	\put(0,0){\begin{tikzpicture}[remember picture, overlay, x=1cm, y=1cm]
-		\pgfmathsetmacro{\housetabstep}{min(2.4, (\paperheight/1cm - 5.2)/\HouseTabCount)}%
+		\pgfmathsetmacro{\housetabstep}{min(1.6, (\paperheight/1cm - 5.2)/\HouseTabCount)}%
 		\HouseTabList
 	\end{tikzpicture}}\fi}

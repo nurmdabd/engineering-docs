@@ -129,7 +129,7 @@ python3 <skill>/scripts/build.py body1.tex [body2.tex ...] --out path/Name.pdf \
 ```
 
 - **Settings from front matter:** if `NAME.build.json` sits beside the first body, its settings are applied first and printed. A flag you pass overrides it; your `--title` or `--cover-contents` lines replace the saved ones.
-- **Covers (Section 15):** add `--cover` (or `cover: true`) for study notes, unless the type's guide says otherwise (past papers get their own cover by default; `cover: false` leaves it out; they also get the typeset question paper, see `types/past-paper/guide.md`, which `paper: false` leaves out). A cover brings the type's back-of-the-cover page and the back cover with it. Give `accent` (the subject's colour) the same value on every document of one subject, and a `back_blurb`. When the sources give no course code or name, leave the cover out rather than invent them, and say so. The cover fields are raw LaTeX, so write `--` for an en-dash and `\&` for `&`. Use `--cover-dir DIR` to use another cover pair instead.
+- **Covers (Section 15):** add `--cover` (or `cover: true`) for study notes, unless the type's guide says otherwise (past papers get their own cover by default; `cover: false` leaves it out; they also get the typeset question paper, see `types/past-paper/guide.md`, which `paper: false` leaves out). A cover brings the type's back-of-the-cover page with it, and a back cover in the print copy (`back_cover: true` puts it in the screen PDF too). Give `accent` (the subject's colour) the same value on every document of one subject, and a `back_blurb`. When the sources give no course code or name, leave the cover out rather than invent them, and say so. The cover fields are raw LaTeX, so write `--` for an en-dash and `\&` for `&`. Use `--cover-dir DIR` to use another cover pair instead.
 - **Margins:** 0.5in left and right by default; a type may set its own (formula sheets 0.4in) and `margin_x` sets one document's. The converter sizes table columns from the margin, so set it before converting.
 - **Several documents:** when one project produces several PDFs, write a small `build-all.sh` next to the bodies that calls `build.py` once per document. Commit it so the PDFs can be rebuilt later.
 
@@ -154,7 +154,7 @@ Check the following, and fix the body file and rebuild if anything is off:
 - No equation overflows the margin.
 - Figures are sized sensibly. Use `width=0.8\linewidth` by default and narrower for tall images.
 - Nothing is blank where a glyph should be.
-- With a cover: page 1, page 2 (the back of the cover) and the last page (the back cover) look right, and the numbers on them match the document (Section 15.8).
+- With a cover: page 1, page 2 (the back of the cover) and the last page (the back cover, print copy) look right, and the numbers on them match the document (Section 15.8).
 
 ### Step 6: Deliver
 Give the user:

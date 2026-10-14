@@ -34,7 +34,7 @@ Values are raw LaTeX: `--` is an en-dash, `\&` an ampersand; quote a value that 
 | `cover_contents` | the parts, read from the document | A hand-written "Inside" list (theory and default covers) |
 | `accent` | `005F73` (ocean) | The subject's colour on the cover, back cover and spine, as hex |
 | `inside_cover` | `true` when the type has one | `false`: no page on the back of the cover |
-| `back_cover` | `true` with a cover | `false`: no back cover |
+| `back_cover` | in the print copy only | `true`: also in the screen PDF; `false`: no back cover at all |
 | `back_blurb` |  | One or two sentences on the back cover about the document |
 | `prerequisites` |  | List shown as "Before you start" on the back of a theory-notes cover |
 | `conventions` |  | One line on the textbook and conventions, at the foot of the back-of-cover page |
