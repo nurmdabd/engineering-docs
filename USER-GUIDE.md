@@ -178,7 +178,8 @@ Every type has 0.5in left and right margins unless the table says otherwise. No 
   - **The outline table:** every idea in one table, each level in its own column, with *What it is*, *Key formula* and a ↩ map link back to its card. Cards are coloured; details (the grey lines) are dark grey.
   - Small "→ TDM" chips show where an idea is used again (tap one to jump there); card titles can link into the theory PDF. Anything after the map (a compare-and-contrast table) follows on its own pages.
 - **Two sizes, one structure:** `map_size: a4` (the default) for reading on screen; `map_size: a3` for printing, with room for more on each card. Build both if you want both.
-- **When a part has too many cards,** the build shortens it step by step (tighter gaps, then the grey lines, then cards shown as their title alone, then two columns, then "+n more" carrying on to a sub-map page) and says what it did. Nothing is ever cut: everything stays in the outline table.
+- **When a part has too many cards,** the build shortens it step by step (tighter gaps, then the grey lines, then two columns where there is room, then cards shown as their title alone, then "+n more" carrying on right after the main map) and says what it did. Nothing is ever cut: everything stays in the outline table.
+- **More than six parts** continue the main map on the next page (spread evenly), and a sub-map sits right beside its card wherever a page has room left over.
 - **You give:** the theory notes, or the topics you want on it. It is written as a nested list with a `def:` line per idea (`types/mind-map/guide.md`); Claude never places boxes by hand.
 - **Ask:** "Make a mind map of COM I Lectures 24–38 (engineering-docs, mind-map type), A4 and A3."
 

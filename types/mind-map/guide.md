@@ -15,7 +15,8 @@ Anything after the map (compare-and-contrast tables, notes) follows on normal la
   opens the card's row in the outline table (definition and formula); **▸n** (bottom, only on cards with a
   sub-map) opens the sub-map with its n cards.
 - **Sub-maps** extend a card, never repeat it: the heading is the card (click it to go back), its children are
-  the cards below. Several sub-maps share a page, in course order.
+  the cards below. Several sub-maps share a page, in course order. Where the page has room right of a card's
+  column, its sub-map sits there instead, level with the card and joined to its ▸ button by a line.
 - **The outline table:** one row per idea, every level in its own column, with *What it is*, *Key formula* and a
   ↩ map link back to the card. Cards are bold and coloured; details (grey lines on a card) are dark grey.
 
@@ -38,7 +39,10 @@ never place a box by hand.
 :::
 ```
 
-- **Parts** (`##`) go left to right in course order. Five parts fit A4 well; up to seven work on A3.
+- **Parts** (`##`) go left to right in course order. A page holds up to six (on A4 and on A3; A3 has bigger
+  cards, not more columns); five fit A4 best. More parts continue the main map on the next page, spread evenly
+  (7 parts: 4 + 3; 20 parts: 4 pages of 5), each page under the course heading with "page 2 of 3" and a link
+  to the next. A ninth part takes the first part's colour again.
 - **Cards** (`- **Title**: formula`): one idea and one formula each. The formula is scaled down if it is wider
   than the card, so keep it short; a text formula wraps.
 - **Children** decide the shape. A card with 1 to 3 children, none of which has children of its own, lists them
@@ -54,18 +58,48 @@ never place a box by hand.
 ## When a column is too tall
 
 The build measures every card in LaTeX and fits each column, one step at a time, each step as little as
-needed, and says in its output which step each part needed:
+needed, and says in its output which step each part needed. A split keeps every formula on the map, so it comes
+before cards lose theirs, whenever there is room for a second column:
 
-1. tighten the gaps between cards;
-2. hide the grey detail lines, bottom card first (they stay in the outline table);
-3. show cards with only the i button as their title alone, non-★ first, bottom first;
-4. split the part into two columns under its heading, with formulas and grey lines back where they fit;
-5. shorten cards again inside the two columns;
-6. keep the first cards and end the column with **+n more ▸**; the rest continue on a sub-map page.
+| Step | Room for two columns | No room |
+|---|---|---|
+| 1 | tighten the gaps between cards | tighten the gaps |
+| 2 | hide the grey detail lines, bottom card first (they stay in the outline table) | hide the grey lines |
+| 3 | split the part into two columns under its heading; grey lines come back on cards where they fit | show cards with only the i button as their title alone, non-★ first, bottom first |
+| 4 | title-only cards inside the two columns | **+n more ▸** |
+| 5 | keep the first cards and end the column with **+n more ▸**; the rest continue on a sub-map page | |
 
-A split narrows every column of the main map, so it is used only if no other part needs a later step because
-of it; otherwise the part continues (step 6) instead. If even that cannot fit, the build stops and names the
-part. `map_detail: false` never shows the grey lines.
+**Room for two columns:** on a sub-map page, a free slot (there nearly always is one). On the main map a split
+narrows every column, so a part splits only if each column stays at least the narrowest width and no other part
+needs a later step because of it; otherwise it takes the one-column steps. A main-map page with fewer parts than
+the fullest page keeps that page's column width, so its parts split for free.
+
+**+n more** keeps as many whole cards as fit (formulas back, grey lines hidden), not the title-only ones.
+
+If even that cannot fit, the build stops and names the part. `map_detail: false` never shows the grey lines.
+
+## Page order
+
+1. **The main map,** on as many pages as its parts need.
+2. **Continuations** of every part that ended with **+n more**, first on the sub-map pages, in part order, so
+   the main map is complete before anything deeper. A continuation that is too tall again carries on in the
+   next group beside it.
+3. **Sub-maps,** in course order, filling the rest of those pages.
+4. **The outline table.**
+
+**A sub-map beside its card.** A sub-map leaves the sub-map pages and sits right of its card when all of this
+holds:
+
+- the space is left over after the page is laid out: no column is narrowed for it (on the main map that means
+  fewer than about five parts on the page; on a sub-map page, free slots at the end of the page, or the next
+  sub-map in order extending a card of the group just before it);
+- its card is in the column directly to its left (the line never crosses a column);
+- it fits in one column with at most tighter gaps and hidden grey lines (never title-only cards, two columns or
+  **+n more**: then it stays on a sub-map page at full size);
+- it starts level with its card; only the first one in a column may start higher, as low as it fits.
+
+Several can stack in one column, in course order, and a card in one of them can take the next column the same
+way. The build output names every sub-map placed beside its card.
 
 ## Front matter
 

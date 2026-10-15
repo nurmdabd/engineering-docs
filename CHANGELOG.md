@@ -1,5 +1,18 @@
 # Changelog
 
+## October 2026: mind-map pages
+
+- **Fitting order:** with room for a second column, a part that is too tall splits before its cards lose their
+  formulas (gaps, grey lines, two columns, title-only cards, "+n more"); without room, the same minus the
+  split. Grey lines come back after a split wherever they fit.
+- **Main map over several pages:** more parts than a page holds (six) continue on the next page, spread evenly,
+  with "page n of m" and a link to the next page. Before, seven or more parts stopped the build with a Python
+  error. Part colours repeat after the eighth part.
+- **Page order:** every part's continuation comes first after the main map, then the sub-maps.
+- **Sub-maps beside their cards:** where a page has space left over right of a card's column, the card's
+  sub-map sits there, level with it and joined to its ▸ button by a line, if it fits in one column without
+  title-only cards or "+n more".
+
 ## October 2026: covers, print layout, packs, mind maps
 
 - **Margins:** 0.5in left and right for every document by default; a type may set its own (formula sheets
