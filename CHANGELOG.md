@@ -2,7 +2,8 @@
 
 ## October 2026: pack cover
 
-- **A pack has its own cover** (`template/pack-cover.tex`) instead of the default study-notes cover: the parts
+- **A pack has its own cover** (`template/pack-cover.tex`) instead of the default study-notes cover: a faint fan
+  of pages in the white middle (light tints, fading out at both ends, clear of the title); the parts
   as fanned sheets on the band, each with a strip in its document type's colour; a strip under the band and the
   spine split into the parts by their page counts; the parts as linked cards (type, title, pages, page count)
   in an "In this pack" panel. Its signature colour is plum (`8E3B5E`). The type of a part is read from the

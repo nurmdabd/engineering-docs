@@ -84,7 +84,7 @@ covers turn to light tints, and the page order above makes double-sided printing
 `doc.py bundle pack.yaml` (scripts/bundle.py; its docstring shows the YAML) combines finished PDFs:
 
 - the pack's own cover (`template/pack-cover.tex`, label `STUDY PACK` or `label:`, signature colour plum
-  `8E3B5E`): the parts drawn as fanned sheets on the band, each with a strip in its type's colour; under the
+  `8E3B5E`): a faint fan of pages in the white middle, fading out at both ends; the parts drawn as fanned sheets on the band, each with a strip in its type's colour; under the
   band a strip, and down the spine a line, split into the parts in proportion to their pages; the parts as
   linked cards (type, title, pages, page count) pinned above the footer. A part's type is read from the label
   on its cover (`type:` on the part sets it; a part without a cover is grey, "DOCUMENT"). In print the parts

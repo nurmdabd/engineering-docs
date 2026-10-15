@@ -18,16 +18,17 @@
 \thispagestyle{empty}
 \pgfmathtruncatemacro{\packk}{0}\foreach \s in \PackSheets {\xdef\packk{\s}}
 \begin{tikzpicture}[remember picture, overlay]
-	% faint pages in the white middle, in the parts' colours, fading out towards the title (like the other covers)
+	% the white middle: a faint fan of pages between the title and the panel, thin lines in a light tint of the pack colour,
+	% fading in and out at both ends so neither edge of the page is the strongest part
 	\begin{scope}[shift={(current page.south west)}]
-		\foreach \row/\y/\dx in {0/8.7/0.55, 1/10.7/0, 2/12.7/0.85} \foreach \x [count=\i] in {5.0,6.75,...,19.5} {
-			\fadeop{\x+\dx}{0.42}
-			\pgfmathtruncatemacro{\c}{mod(\i+\row,\packk)+1}
-			\pgfmathsetmacro{\tilt}{12*sin(\i*67+\row*41)}
-			\begin{scope}[shift={(\x+\dx,\y)}, rotate=\tilt, opacity=\op]
-				\draw[PackType\c, line width=0.9pt, line join=round] (0,0) -- (1.1,0) -- (1.1,1.1) -- (0.75,1.45) -- (0,1.45) -- cycle;
-				\draw[PackType\c, line width=0.7pt] (0.75,1.45) -- (0.75,1.1) -- (1.1,1.1);
-				\foreach \l/\w in {0.95/0.5, 0.7/0.75, 0.45/0.6, 0.2/0.7} \draw[PackType\c, line width=0.9pt, line cap=round] (0.18,\l) -- ++(\w,0);
+		\foreach \k in {0,...,8} {
+			\pgfmathsetmacro{\x}{3.9+\k*1.75}
+			\pgfmathsetmacro{\tint}{22*sin(180*(\k+1)/10)^1.5}
+			\colorlet{packfan}{CoverSig!\tint!white}
+			\begin{scope}[shift={(\x,11.0)}, rotate=14-\k*3.5]
+				\filldraw[fill=white, draw=packfan, line width=0.5pt, rounded corners=1.5pt] (-1.0,-1.3) rectangle (1.0,1.3);
+				\foreach \l/\w in {0.85/1.2, 0.5/1.45, 0.15/1.0, -0.2/1.35, -0.55/0.9}
+					\draw[packfan, line width=0.5pt, line cap=round] (-0.72,\l) -- ++(\w,0);
 			\end{scope}}
 	\end{scope}
 	% the band
