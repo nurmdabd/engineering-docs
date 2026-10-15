@@ -254,7 +254,8 @@ def main():
     a = ap.parse_args()
     try:
         from pypdf import PdfReader, PdfWriter
-        from pypdf.generic import ArrayObject, NameObject, TextStringObject
+        from pypdf.generic import (ArrayObject, DictionaryObject, FloatObject, NameObject, NullObject, NumberObject,
+                                   TextStringObject, Fit)
     except ImportError:
         sys.exit("bundle needs pypdf: pip install pypdf (or run scripts/setup.sh)")
     logging.getLogger("pypdf").setLevel(logging.ERROR)   # it warns about every link it re-targets
@@ -362,8 +363,7 @@ def main():
     for i, (p, start) in enumerate(zip(parts, starts), 1):
         while len(w.pages) + 1 < start:   # print: a blank page so the part starts on a right-hand page
             w.add_blank_page()
-        prefix(p["reader"], f"p{i}")
-        w.append(p["reader"], outline_item=plain(p["title"]), pages=p["pages"])
+        w.append(p["reader"], pages=p["pages"], import_outline=False)
         w.add_named_destination(f"p0-bundle-part-{i}", start - 1)
         for k, (_, idx) in enumerate(p["outline"], 1):   # the lines of the "In this pack" page
             w.add_named_destination(f"p0-bundle-p{i}-{k}", start - 1 + idx)
@@ -384,23 +384,110 @@ def main():
     if len(w.pages) != total:
         sys.exit(f"the pack came out as {len(w.pages)} pages, but its covers say {total}")
 
-    # links into another part of the pack become links inside it
-    moved = 0
-    for pg in w.pages:
-        for annot in pg.get("/Annots", []) or []:
-            act = annot.get_object().get("/A")
-            act = act.get_object() if act else None
-            if act and act.get("/S") == "/GoToR" and Path(str(act.get("/F"))).name in names:
-                act[NameObject("/S")] = NameObject("/GoTo")
-                act[NameObject("/D")] = TextStringObject(f"{names[Path(str(act['/F'])).name]}-{act['/D']}")
-                del act["/F"]
-                moved += 1
+    # The parts' links and bookmarks, rebuilt: pypdf drops a link to a named destination when it copies pages,
+    # and two parts can use the same names (Doc-Start, toc). Every link and bookmark is pointed at its page in the
+    # pack instead: a link inside a part, and a link from one part into another (file.pdf#label), alike.
+    def where(i, dest):
+        """(pack page index, the destination's view after the page) of a part's destination, or None."""
+        p, reader = parts[i - 1], parts[i - 1]["reader"]
+        if isinstance(dest, str):
+            dest = reader.named_destinations.get(dest)
+            if dest is None:
+                return None
+        try:
+            pg = reader.get_destination_page_number(dest)
+        except Exception:
+            return None
+        if pg not in p["pages"]:
+            return None
+        arr = dest.dest_array if hasattr(dest, "dest_array") else dest
+        return starts[i - 1] - 1 + p["pages"].index(pg), list(arr[1:])
+
+    def explicit(target):
+        k, view = target
+        return ArrayObject([w.pages[k].indirect_reference] + [v if not isinstance(v, (int, float)) else
+                                                               FloatObject(v) for v in view])
+
+    def resolve(i, annot):
+        """The pack destination of one link of part i, or ("keep", action) for a link out of the pack."""
+        act = annot.get("/A")
+        act = act.get_object() if act else None
+        if annot.get("/Dest") is not None:
+            d = annot["/Dest"]
+            return where(i, d if isinstance(d, list) else str(d))
+        if act is None:
+            return None
+        kind = act.get("/S")
+        if kind == "/GoTo":
+            d = act.get("/D")
+            return where(i, d if isinstance(d, list) else str(d))
+        if kind == "/GoToR" and Path(str(act.get("/F"))).name in names:
+            return where(int(names[Path(str(act["/F"])).name][1:]), str(act.get("/D")))
+        return ("keep", act)
+
+    def fit(view):
+        """A bookmark's view on its page: the same spot as the part's own bookmark (/XYZ left top zoom)."""
+        if view and str(view[0]) == "/XYZ":
+            num = lambda v: None if v is None or isinstance(v, NullObject) else float(v)
+            return Fit.xyz(*(num(v) for v in (list(view[1:4]) + [None] * 3)[:3]))
+        return Fit.fit()
+
+    relinked = lost = moved = 0
+    for i, (p, start) in enumerate(zip(parts, starts), 1):
+        reader = p["reader"]
+        for j, src in enumerate(p["pages"]):
+            page = w.pages[start - 1 + j]
+            old = page.get("/Annots")
+            kept = [x for x in (old.get_object() if old else []) if x.get_object().get("/Subtype") != "/Link"]
+            new = []
+            src_links = reader.pages[src].get("/Annots")
+            for x in (src_links.get_object() if src_links else []):
+                x = x.get_object()
+                if x.get("/Subtype") != "/Link":
+                    continue
+                target = resolve(i, x)
+                if target is None:
+                    lost += 1
+                    continue
+                link = DictionaryObject({NameObject("/Type"): NameObject("/Annot"), NameObject("/Subtype"): NameObject("/Link"),
+                                         NameObject("/Rect"): ArrayObject([FloatObject(v) for v in x["/Rect"]]),
+                                         NameObject("/Border"): ArrayObject([NumberObject(0)] * 3)})
+                if target[0] == "keep":   # a web link or a link to a PDF outside the pack
+                    link[NameObject("/A")] = target[1].clone(w)
+                else:
+                    link[NameObject("/A")] = DictionaryObject({NameObject("/S"): NameObject("/GoTo"),
+                                                               NameObject("/D"): explicit(target)})
+                    relinked += 1
+                    act = x.get("/A")
+                    moved += bool(act and act.get_object().get("/S") == "/GoToR")
+                new.append(w._add_object(link))
+            if kept or new:
+                page[NameObject("/Annots")] = ArrayObject(kept + new)
+
+        # bookmarks: the part's title, with its own outline under it
+        top = w.add_outline_item(plain(p["title"]), start - 1)
+        def copy(items, parent):
+            last = None
+            for it in items:
+                if isinstance(it, list):
+                    if last is not None:
+                        copy(it, last)
+                    continue
+                target = where(i, it)
+                last = w.add_outline_item(str(it.title), target[0], parent=parent, fit=fit(target[1])) if target else None
+        try:
+            copy(reader.outline, top)
+        except Exception as e:
+            print(f"note: part {i}: its bookmarks could not be copied ({e})")
+    if lost:
+        print(f"note: {lost} links lead to pages left out of the pack (a part's back cover) and were dropped")
+
     w.add_metadata({"/Title": plain(spec.get("title") or out.stem), "/Author": spec.get("author") or "Nur Mohammad"})
     w.page_mode = "/UseOutlines"
     out.parent.mkdir(parents=True, exist_ok=True)
     with open(out, "wb") as f:
         w.write(f)
-    print(f"PDF: {out} ({len(w.pages)} pages, {len(parts)} parts; {moved} links between parts now point inside the pack)")
+    print(f"PDF: {out} ({len(w.pages)} pages, {len(parts)} parts; {relinked} links, {moved} of them between parts)")
     print(f"Build folder (the pack's cover pages): {build}")
 
 

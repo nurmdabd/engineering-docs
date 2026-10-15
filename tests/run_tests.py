@@ -567,12 +567,26 @@ def run_bundle():
                 continue
             pdf = PdfReader(out)
             names, problems = pdf.named_destinations, []
-            for page in pdf.pages:
+            pages = {pg.indirect_reference.idnum for pg in pdf.pages}
+            links = 0
+            for k, page in enumerate(pdf.pages):
                 for annot in page.get("/Annots", []) or []:
                     act = annot.get_object().get("/A")
                     act = act.get_object() if act else {}
-                    if act.get("/S") == "/GoTo" and str(act.get("/D")) not in names:
-                        problems.append(f"broken link to {act.get('/D')}")
+                    if act.get("/S") != "/GoTo":
+                        continue
+                    links += k >= 2   # the parts' links (pages 1-2 are the pack's own)
+                    d = act.get("/D")
+                    if isinstance(d, list) and d[0].idnum not in pages or not isinstance(d, list) and str(d) not in names:
+                        problems.append(f"broken link to {d}")
+            # every link of the parts is in the pack (a part's own back cover is left out, with its links)
+            own = 0
+            for part in ("front-matter", "core-elements"):
+                src = PdfReader(tmp / (f"{part}_print.pdf" if extra else f"{part}.pdf"))
+                for pg in src.pages[:-1] if extra else src.pages:
+                    own += sum(1 for x in pg.get("/Annots", []) or [] if (x.get_object().get("/A") or {}).get("/S") == "/GoTo")
+            if links < own:
+                problems.append(f"the pack has {links} links in its parts, the parts have {own}")
             text = [re.sub(r"\s", "", p.extract_text() or "").upper() for p in pdf.pages]   # labels are letter-spaced
             backs = sum("ABOUTTHISDOCUMENT" in t or "ABOUTTHISPACK" in t for t in text)
             if extra and (backs != 1 or "ABOUTTHISPACK" not in text[-1]):

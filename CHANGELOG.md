@@ -14,7 +14,16 @@
   columns (each line linked to its page); long outlines are cut to fit the page.
 - **Page count on the back cover:** the whole PDF's, blank pages and the back cover included, so it matches the
   viewer (before, a print copy left out its padding pages and the back cover). A pack's covers say the same.
-- **Fix:** a part's bookmark showed its raw title ("2020--21"); bookmarks and the PDF title now show real dashes.
+- **Fix: links inside a pack.** pypdf dropped every link of every part when it merged them (the parts' named
+  destinations were renamed so two parts could not clash, and pypdf drops a link whose name it cannot find), so
+  contents pages, the question paper's sub-part links and every cross-reference did nothing; links from one part
+  into another pointed nowhere. The pack now rebuilds each part's links and bookmarks after the merge, pointing
+  each at its page and position in the pack. The test checks that the pack keeps every link of its parts.
+- **Fix: links into a past paper.** A sub-part's question box had no label, so a link to its heading (from a
+  formula sheet or mind map, `2020-21-term-final.md#2a-elmore-delay`, or "see 3(d)" inside the paper) went
+  nowhere. Each box now carries `sec:<GitHub anchor>` (`sec:2a_elmore_delay`; pandoc's own id drops the leading
+  number). Reconvert a past paper to get them.
+ showed its raw title ("2020--21"); bookmarks and the PDF title now show real dashes.
 - **Fix:** the links on the pack's cover and "In this pack" page were dropped when the pages were merged (pypdf
   drops a link whose destination the page's own file does not define), so they did nothing. They are copied
   after the parts are in, and the test checks that both pages link to every part.
