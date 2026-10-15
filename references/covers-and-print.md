@@ -55,8 +55,9 @@ footer and the faint motifs. Each type draws its own front cover from those piec
 | `past-paper` | The paper at a glance: time, marks, how many to answer, each sub-part's marks and minutes | `paper_info`, `paper_parts`, `[Marks: n]` |
 | `question-bank` | How to practise, and a practice log with two boxes per question | the question labels |
 
-The foot of every such page says when and from which Markdown it was built, plus `conventions` if given.
-It is in English also for a Bangla document (see ROADMAP.md).
+The foot of every such page carries `conventions` (the textbook and conventions) if given, and nothing
+otherwise; the build date and source file are not shown. It is in English also for a Bangla document (see
+ROADMAP.md).
 
 ## 15.4 The back cover
 

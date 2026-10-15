@@ -147,9 +147,9 @@
 	{\footnotesize\color{CoverSoft}#1\par}}
 \newcommand{\bocsection}[1]{{\bfseries\color{CoverAccent}#1\par}\vspace{0.25cm}}
 \newcommand{\tickbox}{\tikz[baseline=-0.5pt]\draw[black!45, line width=0.6pt, rounded corners=1pt] (0,0) rectangle (0.34,0.34);}
-% the line at the foot of every back-of-cover page
-\newcommand{\bocinfo}{\docinfo{\ifdefempty{\CoverSource}{Built \CoverDate.}{Built \CoverDate\ from \texttt{\CoverSource}.}%
-	\ifdefempty{\CoverConventions}{}{\quad$\cdot$\quad\CoverConventions}}}
+% the foot of every back-of-cover page: the textbook and conventions, when the document names them (no build
+% date or source file: the reader does not need them)
+\newcommand{\bocinfo}{\ifdefempty{\CoverConventions}{}{\docinfo{\CoverConventions}}}
 
 % ---------- print copy: page order for double-sided printing ----------
 % The back of the cover is page 2 (a blank page when the type has none), so the content starts on a

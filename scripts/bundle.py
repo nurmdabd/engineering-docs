@@ -238,7 +238,6 @@ def cover_tex(spec, parts, starts, total, bw, with_map=True):
 \bochead{{IN THIS PACK}}{{{fields["CoverTitle"]}}}
 {{\color{{CoverSoft}}Tap a heading to open that document, or a line to go straight to that page. Each document keeps its own cover, contents and links; the bookmarks panel lists them all.\par}}
 \PackMap
-\docinfo{{{len(parts)} documents, {total} pages.}}
 \clearpage
 \xdef\HouseTotalPages{{{total}}}
 \input{{back-cover}}
