@@ -13,7 +13,7 @@ A Claude Code skill that turns engineering Markdown into LaTeX in Nur Mohammad's
 | `USER-GUIDE.md` | For you: how to use every feature, with example prompts |
 | `SKILL.md` | Workflow, output rules, when to ask |
 | `references/` | `authoring.md` (how to write the Markdown), `front-matter-keys.md` (every setting, generated), `commands.md` (custom commands: registry, adding new ones), `latex-rules.md` (Sections 1–12), `pdf-links.md` (13), `bangla.md` (14), `covers-and-print.md` (15: covers, print copies, packs) |
-| `template/` | House preamble, `main.tex`, the cover kit, default cover and back cover, edge tabs, `print-bw.tex` (black-and-white print copy) |
+| `template/` | House preamble, `main.tex`, the cover kit, default cover and back cover, the pack cover (`pack-cover.tex`: a pack's cover and "In this pack" page), edge tabs, `print-bw.tex` (black-and-white print copy) |
 | `scripts/` | `doc.py` (one command: types, new, check, build, bundle, keys; `--print` for the black-and-white copy), `build.py`, `md2tex.py` + `house.lua` (converter), `lint_md.py` (Markdown checks), `check_structure.py`, `coverdata.py` (the facts covers show), `formulasheet.py` (Key formulas, Symbol index), `mindmap.py` (mind-map layout), `bundle.py` (packs), `figures_bw.py` (grey print copies of matplotlib figures), `commands.py` (custom-command registry), `setup.sh` |
 | `examples/` | A body file that uses every rule |
 | `types/` | Document types (theory-notes, exam-notes, formula-sheet, question-bank, past-paper, project-report, mind-map): settings (`type.json`), writing and layout guide (`guide.md`), starting file (`template.md`), own commands (`preamble.tex`), front cover (`cover-page-main.tex`) and back-of-cover page (`inside-cover.tex`), the last three optional |

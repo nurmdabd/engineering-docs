@@ -448,7 +448,7 @@ def run_builds(cases):
 
 def run_print_layout():
     """Print copies of a document with a cover: page 2 is the back of the cover (or blank), the back cover is the
-    last page, and the page count is even (a multiple of 4 for a booklet); without a back cover, still even."""
+    last page and gives the PDF's whole page count, and the page count is even (a multiple of 4 for a booklet); without a back cover, still even."""
     failed = 0
     body = FIXTURES / ".print-layout.tex"
     side = body.with_suffix(".build.json")
@@ -474,6 +474,9 @@ def run_print_layout():
                     problems.append(f"{pages} pages, not a multiple of {group}")
                 if back != ("ABOUT THIS DOCUMENT" in last):
                     problems.append("the back cover is not the last page" if back else "a back cover was added")
+                said = [int(n) for n in re.findall(r"(\d+)\s+pages", last)]
+                if back and said != [pages]:
+                    problems.append(f"the back cover says {said} pages, the PDF has {pages}")
                 print(f"{'ok' if not problems else 'FAILED':8} {name} ({pages} pages)")
                 for p in problems:
                     print("  " + p)
@@ -528,7 +531,8 @@ def run_edge_tabs():
 
 
 def run_bundle():
-    """doc.py bundle: two built PDFs become one pack with its own cover and "In this pack" page, and in print one
+    """doc.py bundle: two built PDFs become one pack with its own cover and "In this pack" page (both linking to
+    each part), and in print one
     back cover; the parts' own back covers are left out, every link still resolves, and the print pack starts each part on an
     odd page and has an even page count."""
     import logging
@@ -563,20 +567,43 @@ def run_bundle():
                 continue
             pdf = PdfReader(out)
             names, problems = pdf.named_destinations, []
-            for page in pdf.pages:
+            pages = {pg.indirect_reference.idnum for pg in pdf.pages}
+            links = 0
+            for k, page in enumerate(pdf.pages):
                 for annot in page.get("/Annots", []) or []:
                     act = annot.get_object().get("/A")
                     act = act.get_object() if act else {}
-                    if act.get("/S") == "/GoTo" and str(act.get("/D")) not in names:
-                        problems.append(f"broken link to {act.get('/D')}")
+                    if act.get("/S") != "/GoTo":
+                        continue
+                    links += k >= 2   # the parts' links (pages 1-2 are the pack's own)
+                    d = act.get("/D")
+                    if isinstance(d, list) and d[0].idnum not in pages or not isinstance(d, list) and str(d) not in names:
+                        problems.append(f"broken link to {d}")
+            # every link of the parts is in the pack (a part's own back cover is left out, with its links)
+            own = 0
+            for part in ("front-matter", "core-elements"):
+                src = PdfReader(tmp / (f"{part}_print.pdf" if extra else f"{part}.pdf"))
+                for pg in src.pages[:-1] if extra else src.pages:
+                    own += sum(1 for x in pg.get("/Annots", []) or [] if (x.get_object().get("/A") or {}).get("/S") == "/GoTo")
+            if links < own:
+                problems.append(f"the pack has {links} links in its parts, the parts have {own}")
             text = [re.sub(r"\s", "", p.extract_text() or "").upper() for p in pdf.pages]   # labels are letter-spaced
-            backs = sum("ABOUTTHISDOCUMENT" in t for t in text)
-            if extra and (backs != 1 or "ABOUTTHISDOCUMENT" not in text[-1]):
-                problems.append("expected exactly one back cover, the last page")
+            backs = sum("ABOUTTHISDOCUMENT" in t or "ABOUTTHISPACK" in t for t in text)
+            if extra and (backs != 1 or "ABOUTTHISPACK" not in text[-1]):
+                problems.append("expected exactly one back cover, the pack's own, as the last page")
             if not extra and backs:
                 problems.append("the screen pack has a back cover (it belongs to the print pack only)")
+            said = [int(n) for n in re.findall(r"(\d+)PAGES", text[-1])] if extra else []
+            if extra and (not said or max(said) != len(pdf.pages)):   # the largest number is the whole pack's
+                problems.append(f"the back cover says {said} pages, the pack has {len(pdf.pages)}")
             if "INTHISPACK" not in text[1]:
                 problems.append("page 2 is not the In this pack page")
+            for k, what in ((0, "cover"), (1, "In this pack page")):   # each part's card or heading is a link
+                annots = pdf.pages[k].get("/Annots")
+                targets = {str(a.get_object()["/A"].get_object().get("/D")) for a in (annots.get_object() if annots else [])
+                           if a.get_object().get("/A")}
+                if not {"p0-bundle-part-1", "p0-bundle-part-2"} <= targets:
+                    problems.append(f"the {what} does not link to both parts")
             if [o.title for o in pdf.outline if not isinstance(o, list)] != ["Report", "Core"]:
                 problems.append("bookmarks are not one per part")
             starts = [pdf.get_destination_page_number(names[f"p0-bundle-part-{i}"]) + 1 for i in (1, 2)]

@@ -3,8 +3,9 @@
 % is set like the back of a book. The blurb is the front matter's back_blurb; the numbers come from the
 % document (\CoverBackStats: \coverstat{number}{label}, plus the page count).
 \clearpage
-% the pages before the back cover (a print copy counts them before its blank padding pages)
-\ifdefined\HouseContentPages\else\xdef\HouseContentPages{\the\ReadonlyShipoutCounter}\fi
+% the whole PDF's page count: every page so far, blank padding included, and the back cover itself (the last
+% page); a pack sets \HouseTotalPages itself, since its back cover is built before the parts are added
+\ifdefined\HouseTotalPages\else\pgfmathtruncatemacro{\HouseTotalPages}{\ReadonlyShipoutCounter+1}\fi
 \thispagestyle{empty}
 \begin{tikzpicture}[remember picture, overlay]
 	\coordinate (SW) at (current page.south west); \coordinate (SE) at (current page.south east);
@@ -22,12 +23,13 @@
 	\end{tikzpicture}\hspace{0.5cm}}
 \begin{minipage}{0.82\linewidth}
 \vspace*{1.6cm}
-{\small\color{CoverSig!80!black}\spaced{ABOUT THIS DOCUMENT}\par}
+{\small\color{CoverSig!80!black}\spaced{\CoverBackLabel}\par}
 \vspace{0.4cm}
 {\fontsize{24}{30}\selectfont\color{CoverInk}\CoverTitle\ifdefempty{\CoverSubtitle}{}{, \CoverSubtitle}\par}
 \ifdefempty{\CoverBlurb}{}{\vspace{0.5cm}{\large\color{CoverInk!85}\linespread{1.25}\selectfont\CoverBlurb\par}}
 \vspace{1.1cm}
-\noindent\CoverBackStats\coverstat{\HouseContentPages}{pages}
+\noindent\CoverBackStats\coverstat{\HouseTotalPages}{pages}
+\CoverBackExtra
 \end{minipage}
 \vfill
 \begin{minipage}{0.82\linewidth}

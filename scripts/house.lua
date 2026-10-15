@@ -297,7 +297,7 @@ local function past_paper_group(blocks, i, out)
       body:remove(1)
     end
     content:extend(body)
-    out:insert(pandoc.Div(content, pandoc.Attr("", { "qblock" }, { key = key })))
+    out:insert(pandoc.Div(content, pandoc.Attr("", { "qblock" }, { key = key, label = idmap[h.identifier] or "" })))
   end
   return i
 end
@@ -310,7 +310,13 @@ local structure_filter = {
     end
     local out = pandoc.List()
     local cur_sec, eqn, tabn, cur_title = "doc", {}, {}, ""
-    -- first, labels for every header (links may point forward)
+    -- GitHub anchors: the n-th heading md2tex.py saw is the n-th top-level Header, if the counts agree
+    local heads, gfm = {}, {}
+    for _, b in ipairs(blocks) do if b.t == "Header" then heads[#heads + 1] = b end end
+    if #heads == #GFM then for n, b in ipairs(heads) do gfm[b] = GFM[n] end end
+    -- first, labels for every header (links may point forward). A past paper's sub-part heading is named after
+    -- its GitHub anchor ("2a-elmore-delay" -> sec:2a_elmore_delay; pandoc's own id drops the leading number),
+    -- since a formula sheet or mind map links to it as file.pdf#sec:<GitHub anchor>.
     for _, b in ipairs(blocks) do
       if b.t == "Header" then
         local txt = header_text(b)
@@ -318,12 +324,10 @@ local structure_filter = {
         local s = txt:match(S_PAT)
         if q then idmap[b.identifier] = unique("q:" .. slug(q))
         elseif s then idmap[b.identifier] = unique("sol:" .. slug(s))
+        elseif STRUCT == "past-paper" and b.level == 2 and gfm[b] then idmap[b.identifier] = unique(id_to_label(gfm[b]))
         else idmap[b.identifier] = unique(id_to_label(b.identifier)) end
       end
     end
-    -- GitHub anchors: the n-th heading md2tex.py saw is the n-th top-level Header, if the counts agree
-    local heads = {}
-    for _, b in ipairs(blocks) do if b.t == "Header" then heads[#heads + 1] = b end end
     if #heads == #GFM then
       for n, b in ipairs(heads) do
         if not idmap[GFM[n]] then idmap[GFM[n]] = idmap[b.identifier] end
@@ -916,7 +920,11 @@ local block_filter = {
         if not key:find("?", 1, true) and not q:match("^%s*%d") then q = key:gsub("^(%d+)%(", "%1.(") .. " " .. q end
       end
       q = q or PP.qtext[d.attributes["key"]] or title
-      local out = pandoc.List({ rawb("\\begin{questionblock}[" .. title .. "]{" .. soul_safe(q) .. "}") })
+      -- the sub-part heading's label, so a link to it (from this file, or file.pdf#label from another) lands here
+      local lbl = d.attributes["label"] or ""
+      local out = pandoc.List()
+      if lbl ~= "" then out:insert(rawb("\\phantomsection\\label{" .. lbl .. "}")) end
+      out:insert(rawb("\\begin{questionblock}[" .. title .. "]{" .. soul_safe(q) .. "}"))
       out:extend(rest); out:insert(rawb("\\end{questionblock}"))
       return out
     elseif CMDS[cls] and CMDS[cls].kind == "environment" then   -- ::: {.name attr="..."} for a registered environment

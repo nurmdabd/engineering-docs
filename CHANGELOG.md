@@ -1,5 +1,37 @@
 # Changelog
 
+## October 2026: pack cover
+
+- **A pack has its own cover** (`template/pack-cover.tex`) instead of the default study-notes cover: a faint fan
+  of pages in the white middle (light tints, fading out at both ends, clear of the title); the parts
+  as fanned sheets on the band, each with a strip in its document type's colour; a strip under the band and the
+  spine split into the parts by their page counts; the parts as linked cards (type, title, pages, page count)
+  in an "In this pack" panel. Its signature colour is plum (`8E3B5E`). The type of a part is read from the
+  label on its cover; `type:` on a part sets it.
+- **The pack's back cover** says "ABOUT THIS PACK" and lists the parts in their colours under a strip split
+  like the front's (`\CoverBackLabel` and `\CoverBackExtra` in the cover kit; other types are unchanged).
+- **"In this pack" page:** each part's heading now carries its type and colour, followed by its outline in two
+  columns (each line linked to its page); long outlines are cut to fit the page.
+- **Page count on the back cover:** the whole PDF's, blank pages and the back cover included, so it matches the
+  viewer (before, a print copy left out its padding pages and the back cover). A pack's covers say the same.
+- **No build line:** the back of the cover no longer ends with "Built <date> from <file>.md", and the pack's
+  "In this pack" page no longer ends with its documents-and-pages line. `conventions`, when given, still shows.
+- **Key formulas page:** taller rows, and a row with a fraction, root or sum gets extra height, so the formula no
+  longer touches the lines above and below it.
+- **Fix: links inside a pack.** pypdf dropped every link of every part when it merged them (the parts' named
+  destinations were renamed so two parts could not clash, and pypdf drops a link whose name it cannot find), so
+  contents pages, the question paper's sub-part links and every cross-reference did nothing; links from one part
+  into another pointed nowhere. The pack now rebuilds each part's links and bookmarks after the merge, pointing
+  each at its page and position in the pack. The test checks that the pack keeps every link of its parts.
+- **Fix: links into a past paper.** A sub-part's question box had no label, so a link to its heading (from a
+  formula sheet or mind map, `2020-21-term-final.md#2a-elmore-delay`, or "see 3(d)" inside the paper) went
+  nowhere. Each box now carries `sec:<GitHub anchor>` (`sec:2a_elmore_delay`; pandoc's own id drops the leading
+  number). Reconvert a past paper to get them.
+ showed its raw title ("2020--21"); bookmarks and the PDF title now show real dashes.
+- **Fix:** the links on the pack's cover and "In this pack" page were dropped when the pages were merged (pypdf
+  drops a link whose destination the page's own file does not define), so they did nothing. They are copied
+  after the parts are in, and the test checks that both pages link to every part.
+
 ## October 2026: mind-map pages
 
 - **Fitting order:** more columns come before cards lose their formulas: on the main map a part takes up to

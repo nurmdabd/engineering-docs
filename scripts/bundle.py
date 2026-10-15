@@ -2,6 +2,10 @@
 """
 bundle.py -- combine finished PDFs into one pack: one cover, an "In this pack" page, the parts, one back cover.
 
+The pack has its own cover (template/pack-cover.tex): the parts drawn as a stack of sheets, each in its type's
+colour (read from the label on the part's cover, or the part's 'type:'), a strip and a spine split into the
+parts by their pages, and the parts as linked cards. The "In this pack" page lists every part with its outline.
+
     python3 bundle.py pack.yaml [--print] [--out pdf/pack.pdf]
     (or: python3 doc.py bundle pack.yaml ...)
 
@@ -25,6 +29,7 @@ pack.yaml (paths are relative to it; the cover fields are raw LaTeX, as in front
       - pdf: ../level-2/pdf/1-formula-sheet.pdf
         title: "Formula Sheet"
         keep_back_cover: false             # optional: a part's own back cover is left out by default
+        type: formula-sheet                # optional: the part's type (its colour and label); read from its cover otherwise
 
 Build each part first (doc.py build). Each part keeps its own layout, links and bookmarks; its cover stays as
 the divider before it. Links from one part into another (a formula sheet's Reference into the theory) become
@@ -49,8 +54,64 @@ import build as house   # compile_tex, report, tex_escape, spaced_caps
 
 KEYS = {"title", "subtitle", "note", "label", "course_code", "course_name", "accent", "date", "author",
         "back_blurb", "back_cover", "print_layout", "out", "parts"}
-PART_KEYS = {"pdf", "title", "keep_back_cover"}
+PART_KEYS = {"pdf", "title", "keep_back_cover", "type"}
 BACK_MARK = "ABOUT THIS DOCUMENT"
+PACK_SIGNATURE = "8E3B5E"                                    # the pack cover's own colour
+DEFAULT_TYPE = ("STUDY NOTES", "0A9396")                     # a cover without a type label (the default cover)
+OTHER_TYPE = ("DOCUMENT", "5C6B7A")                          # a part without a cover
+PRINT_GREYS = (80, 55, 68, 45)                               # print copy: neighbouring parts in different greys
+MAP_LINES = 46                                               # lines of outline that fit on the "In this pack" page
+
+
+def types():
+    """{type name: (cover label, signature colour)} from types/*/type.json."""
+    import json
+    found = {}
+    for f in sorted((HERE.parent / "types").glob("*/type.json")):
+        cover = json.loads(f.read_text(encoding="utf-8")).get("cover") or {}
+        if cover.get("label"):
+            found[f.parent.name] = (cover["label"], cover.get("signature") or DEFAULT_TYPE[1])
+    return found
+
+
+def part_type(reader, given, known):
+    """(label, colour) of a part: its 'type:' if given, else the type label on its first page."""
+    if given:
+        if given not in known:
+            sys.exit(f"type '{given}' is not one of: {', '.join(sorted(known))}")
+        return known[given]
+    if reader.pages:
+        for label, colour in sorted(known.values(), key=lambda t: -len(t[0])):
+            if has_mark(reader.pages[0], label):
+                return label, colour
+        if has_mark(reader.pages[0], DEFAULT_TYPE[0]):
+            return DEFAULT_TYPE
+    return OTHER_TYPE
+
+
+def outline(reader, pages):
+    """The part's outline as [(title, page index in the part)]: the top level, or one level deeper when the top
+    level has fewer than four entries (a solution's one "Question Paper" entry holding every sub-part)."""
+    def entries(items, deep):
+        out = []
+        for it in items:
+            if isinstance(it, list):
+                if deep:
+                    out += entries(it, False)
+                continue
+            try:
+                out.append((str(it.title), reader.get_destination_page_number(it)))
+            except Exception:
+                pass
+        return out
+    try:
+        top = reader.outline
+    except Exception:
+        return []
+    flat = entries(top, False)
+    if len(flat) < 4:
+        flat = entries(top, True)
+    return [(t, pages.index(pg)) for t, pg in flat if pg in pages]
 
 
 def load(path):
@@ -98,13 +159,20 @@ def part_pages(reader, keep_back):
     return keep
 
 
-def cover_tex(spec, parts, starts, total, bw):
+def plain(text):
+    """A raw-LaTeX title as plain text for bookmarks and metadata: -- and --- as dashes, no braces or commands."""
+    text = str(text).replace("---", "\u2014").replace("--", "\u2013")
+    return re.sub(r"\\[A-Za-z]+\*?|[{}$\\]", "", text).strip()
+
+
+def cover_tex(spec, parts, starts, total, bw, with_map=True):
     """main.tex of the pack's own pages: front cover, "In this pack", back cover (three pages)."""
     esc = lambda s: s if s is not None else ""
     fields = {"CoverCourseCode": esc(spec.get("course_code")), "CoverCourseName": esc(spec.get("course_name")),
               "CoverTitle": esc(spec.get("title")), "CoverSubtitle": esc(spec.get("subtitle")),
               "CoverNote": esc(spec.get("note")), "CoverAuthor": esc(spec.get("author")) or "Nur Mohammad",
-              "CoverLabel": esc(spec.get("label")) or "STUDY PACK", "CoverBlurb": esc(spec.get("back_blurb"))}
+              "CoverLabel": esc(spec.get("label")) or "STUDY PACK", "CoverBlurb": esc(spec.get("back_blurb")),
+              "CoverSignatureHex": PACK_SIGNATURE, "CoverBackLabel": "ABOUT THIS PACK"}
     fields["CoverSpine"] = "\\quad$\\cdot$\\quad ".join(house.spaced_caps(x) for x in
                                                          (fields["CoverCourseCode"], fields["CoverTitle"], fields["CoverSubtitle"]) if x)
     if spec.get("accent"):
@@ -113,42 +181,65 @@ def cover_tex(spec, parts, starts, total, bw):
         fields["CoverAccentHex"] = str(spec["accent"]).lstrip("#").upper()
     if spec.get("date"):
         fields["CoverDate"] = spec["date"]
-    items, rows = [], []
-    for n, ((title, _r, pages), start) in enumerate(zip(parts, starts), 1):
-        rng = f"pages {start}--{start + len(pages) - 1}"
-        items.append(f"\\coveritem{{{n}}}{{{title}}}{{{rng}}}")
-        rows.append(f"\\packrow{{{n}}}{{{title}}}{{{rng}}}{{{start}}}")
-    fields["CoverItems"] = "%\n".join(items)
     fields["CoverBackStats"] = f"\\coverstat{{{len(parts)}}}{{documents}}"
     defs = "\n".join(f"\\newcommand{{\\{k}}}{{{v}}}" for k, v in fields.items())
+
+    # the parts: colours, the strip, the cards, the map
+    content = sum(len(p["pages"]) for p in parts)
+    colours, segments, cards, backs, rows, done = [], [], [], [], [], 0
+    for n, (p, start) in enumerate(zip(parts, starts), 1):
+        label, hexc = p["type"]
+        grey = PRINT_GREYS[(n - 1) % len(PRINT_GREYS)]
+        colours.append(f"\\ifdefined\\HousePrintCopy\\colorlet{{PackType{n}}}{{black!{grey}}}"
+                       f"\\else\\definecolor{{PackType{n}}}{{HTML}}{{{hexc}}}\\fi")
+        a, done = done / content, done + len(p["pages"])
+        segments.append(f"{n}/{a:.4f}/{done / content:.4f}")
+        last = start + len(p["pages"]) - 1
+        cards.append(f"\\packcard{{{n}}}{{{p['title']}}}{{{label}}}{{{start}}}{{{last}}}{{{len(p['pages'])}}}")
+        backs.append(f"\\packbackpart{{{n}}}{{{p['title']}}}{{{label}}}{{{len(p['pages'])}}}")
+    # the map: every part's heading, its outline in two columns, cut to fit one page
+    budget = MAP_LINES - 3 * len(parts)
+    lines = [((len(p["outline"]) + 1) // 2) if with_map else 0 for p in parts]
+    while sum(lines) > budget and max(lines) > 0:
+        lines[lines.index(max(lines))] -= 1
+    for n, (p, start, k) in enumerate(zip(parts, starts, lines), 1):
+        label = p["type"][0]
+        rows.append(f"\\packmappart{{{n}}}{{{p['title']}}}{{{label}}}{{{start}}}{{{start + len(p['pages']) - 1}}}")
+        shown = p["outline"][:2 * k]
+        if shown:
+            entry = lambda j, t, i: f"\\packentry{{{n}}}{{{j}}}{{{house.tex_escape(t)}}}{{{start + i}}}"
+            items = [entry(j, t, i) for j, (t, i) in enumerate(shown, 1)]
+            half = (len(items) + 1) // 2
+            rows.append(f"\\packmapcols{{{''.join(items[:half])}}}{{{''.join(items[half:])}}}")
+        if len(p["outline"]) > len(shown) and shown:
+            rows.append(f"\\packmapmore{{{n}}}{{and {len(p['outline']) - len(shown)} more in the bookmarks}}")
+    sheets = ",".join(str(i) for i in range(1, min(len(parts), 5) + 1))
+    data = (f"\\newcommand{{\\PackTypeColours}}{{{''.join(colours)}}}\n"
+            f"\\newcommand{{\\PackSegments}}{{{','.join(segments)}}}\n"
+            f"\\newcommand{{\\PackSheets}}{{{sheets}}}\n"
+            f"\\newcommand{{\\PackCards}}{{{('%' + chr(10)).join(cards)}}}\n"
+            f"\\newcommand{{\\PackBackParts}}{{{('%' + chr(10)).join(backs)}}}\n"
+            f"\\newcommand{{\\PackMap}}{{{('%' + chr(10)).join(rows)}}}")
     bw_line = "\\input{print-bw.tex}" if bw else ""
     pdftitle = re.sub(r"[{}\\$]", "", fields["CoverTitle"])
-    rows = "".join(rows)
     return rf"""\documentclass[a4paper, 12pt]{{extarticle}}
 \newcommand{{\ReportHeader}}{{}}
 \newcommand{{\ReportHeaderRight}}{{}}
 {defs}
+{data}
 \input{{main-tex-preamble.tex}}
 {bw_line}
 \input{{cover-kit.tex}}
 \geometry{{left=0.5in, right=0.5in}}
 \hypersetup{{pdftitle={{{pdftitle}}}}}
-\newcommand{{\packrow}}[4]{{\setpartcolor{{#1}}\noindent\hyperlink{{bundle-part-#1}}{{\begin{{tikzpicture}}[baseline=(c.base)]
-	\node[circle, fill=\partcolor, text=white, font=\bfseries, minimum size=0.9cm, inner sep=0pt] (c) at (0,0) {{#1}};
-	\node[anchor=west, font=\Large, text=CoverInk, text width=13.2cm, align=left] at (0.75,0.18) {{#2}};
-	\node[anchor=west, font=\small\coversans, text=\partcolor!80!black] at (0.75,-0.35) {{#3}};
-	\node[anchor=east, font=\Large\bfseries, text=CoverSig] at (17.4,0) {{#4}};
-\end{{tikzpicture}}}}\par\vspace{{0.45cm}}}}
 \begin{{document}}
-\input{{cover-page-main}}
+\input{{pack-cover}}
 \thispagestyle{{empty}}
 \bochead{{IN THIS PACK}}{{{fields["CoverTitle"]}}}
-{{\color{{CoverSoft}}Tap a document to open it. Each one keeps its own cover, contents and links; the bookmarks panel lists them all.\par}}
-\vspace{{0.8cm}}
-{rows}
-\docinfo{{{len(parts)} documents, {total} pages.}}
+{{\color{{CoverSoft}}Tap a heading to open that document, or a line to go straight to that page. Each document keeps its own cover, contents and links; the bookmarks panel lists them all.\par}}
+\PackMap
 \clearpage
-\xdef\HouseContentPages{{{total}}}
+\xdef\HouseTotalPages{{{total}}}
 \input{{back-cover}}
 \end{{document}}
 """
@@ -162,7 +253,8 @@ def main():
     a = ap.parse_args()
     try:
         from pypdf import PdfReader, PdfWriter
-        from pypdf.generic import NameObject, TextStringObject
+        from pypdf.generic import (ArrayObject, DictionaryObject, FloatObject, NameObject, NullObject, NumberObject,
+                                   TextStringObject, Fit)
     except ImportError:
         sys.exit("bundle needs pypdf: pip install pypdf (or run scripts/setup.sh)")
     logging.getLogger("pypdf").setLevel(logging.ERROR)   # it warns about every link it re-targets
@@ -173,7 +265,7 @@ def main():
     if a.bw and not out.stem.endswith("_print"):
         out = out.with_name(f"{out.stem}_print{out.suffix}")
 
-    parts, names = [], {}
+    parts, names, known = [], {}, types()
     for i, p in enumerate(spec["parts"], 1):
         pdf = (base / p["pdf"]).resolve()
         if a.bw:
@@ -186,31 +278,47 @@ def main():
             sys.exit(f"part {i}: {pdf} not found (build it first: doc.py build ...)")
         reader = PdfReader(pdf)
         pages = part_pages(reader, p.get("keep_back_cover", False))
-        title = p.get("title") or pdf.stem
-        parts.append((title, reader, pages))
+        parts.append({"title": p.get("title") or pdf.stem, "reader": reader, "pages": pages,
+                      "type": part_type(reader, p.get("type"), known), "outline": outline(reader, pages)})
         for n in (pdf.name, pdf.name.replace("_print.pdf", ".pdf")):   # links name the screen PDF
             names[n] = f"p{i}"
 
     # where each part starts: after the cover and "In this pack" (pages 1-2); in print, on a right-hand page
     starts, page = [], 3
-    for _, _, pages in parts:
+    for p in parts:
         if a.bw and page % 2 == 0:
             page += 1
         starts.append(page)
-        page += len(pages)
+        page += len(p["pages"])
+    # the whole pack's page count (the back cover and the "In this pack" page show it): the parts, then in
+    # print the blank pages and the back cover that finish the last sheet
     total = page - 1
+    back = spec.get("back_cover", "print")
+    back = back is True or (back == "print" and a.bw)
+    group = 4 if spec.get("print_layout") == "booklet" else 2
+    if back:
+        while a.bw and (total + 1) % group:
+            total += 1
+        total += 1
+    elif a.bw:
+        while total % group:
+            total += 1
 
     build = out.parent / f"{out.stem}_build"
     shutil.rmtree(build, ignore_errors=True)
     build.mkdir(parents=True)
-    for f in ("main-tex-preamble.tex", "cover-kit.tex", "cover-page-main.tex", "back-cover.tex", "print-bw.tex"):
+    for f in ("main-tex-preamble.tex", "cover-kit.tex", "pack-cover.tex", "back-cover.tex", "print-bw.tex"):
         shutil.copy(TEMPLATE / f, build)
-    (build / "main.tex").write_text(cover_tex(spec, parts, starts, total, a.bw), encoding="utf-8")
-    ok = house.compile_tex(build)
-    house.report(build / "main.log")
-    if not ok or not (build / "main.pdf").exists():
-        sys.exit(f"BUILD FAILED -- see {build / 'main.log'}")
-    own = PdfReader(build / "main.pdf")
+    for with_map in (True, False):   # an outline too long for the "In this pack" page is left to the bookmarks
+        (build / "main.tex").write_text(cover_tex(spec, parts, starts, total, a.bw, with_map), encoding="utf-8")
+        ok = house.compile_tex(build)
+        house.report(build / "main.log")
+        if not ok or not (build / "main.pdf").exists():
+            sys.exit(f"BUILD FAILED -- see {build / 'main.log'}")
+        own = PdfReader(build / "main.pdf")
+        if len(own.pages) == 3:
+            break
+        print("note: the outlines do not fit on the \"In this pack\" page; it lists the documents only")
     if len(own.pages) != 3:
         sys.exit(f"the pack's own pages came out as {len(own.pages)} pages, not 3 -- see {build / 'main.tex'}")
 
@@ -251,39 +359,134 @@ def main():
     w = PdfWriter()
     prefix(own, "p0")
     w.append(own, pages=[0, 1], import_outline=False)
-    for i, ((title, reader, pages), start) in enumerate(zip(parts, starts), 1):
+    for i, (p, start) in enumerate(zip(parts, starts), 1):
         while len(w.pages) + 1 < start:   # print: a blank page so the part starts on a right-hand page
             w.add_blank_page()
-        prefix(reader, f"p{i}")
-        w.append(reader, outline_item=title, pages=pages)
+        w.append(p["reader"], pages=p["pages"], import_outline=False)
         w.add_named_destination(f"p0-bundle-part-{i}", start - 1)
-    back = spec.get("back_cover", "print")
-    if back is True or (back == "print" and a.bw):
-        group = 4 if spec.get("print_layout") == "booklet" else 2
+        for k, (_, idx) in enumerate(p["outline"], 1):   # the lines of the "In this pack" page
+            w.add_named_destination(f"p0-bundle-p{i}-{k}", start - 1 + idx)
+    # the links of the cover and "In this pack" go to destinations added above, which pypdf did not know when it
+    # copied those pages (it drops such links), so they are copied here
+    for k in (0, 1):
+        links = own.pages[k].get("/Annots")
+        if links:
+            w.pages[k][NameObject("/Annots")] = ArrayObject(
+                (lambda c: c.indirect_reference or w._add_object(c))(link.get_object().clone(w)) for link in links.get_object())
+    if back:
         while a.bw and (len(w.pages) + 1) % group:
             w.add_blank_page()
         w.append(own, pages=[2], import_outline=False)
     elif a.bw:
-        while len(w.pages) % (4 if spec.get("print_layout") == "booklet" else 2):
+        while len(w.pages) % group:
             w.add_blank_page()
+    if len(w.pages) != total:
+        sys.exit(f"the pack came out as {len(w.pages)} pages, but its covers say {total}")
 
-    # links into another part of the pack become links inside it
-    moved = 0
-    for pg in w.pages:
-        for annot in pg.get("/Annots", []) or []:
-            act = annot.get_object().get("/A")
-            act = act.get_object() if act else None
-            if act and act.get("/S") == "/GoToR" and Path(str(act.get("/F"))).name in names:
-                act[NameObject("/S")] = NameObject("/GoTo")
-                act[NameObject("/D")] = TextStringObject(f"{names[Path(str(act['/F'])).name]}-{act['/D']}")
-                del act["/F"]
-                moved += 1
-    w.add_metadata({"/Title": re.sub(r"[{}\\$]", "", spec.get("title") or out.stem), "/Author": spec.get("author") or "Nur Mohammad"})
+    # The parts' links and bookmarks, rebuilt: pypdf drops a link to a named destination when it copies pages,
+    # and two parts can use the same names (Doc-Start, toc). Every link and bookmark is pointed at its page in the
+    # pack instead: a link inside a part, and a link from one part into another (file.pdf#label), alike.
+    def where(i, dest):
+        """(pack page index, the destination's view after the page) of a part's destination, or None."""
+        p, reader = parts[i - 1], parts[i - 1]["reader"]
+        if isinstance(dest, str):
+            dest = reader.named_destinations.get(dest)
+            if dest is None:
+                return None
+        try:
+            pg = reader.get_destination_page_number(dest)
+        except Exception:
+            return None
+        if pg not in p["pages"]:
+            return None
+        arr = dest.dest_array if hasattr(dest, "dest_array") else dest
+        return starts[i - 1] - 1 + p["pages"].index(pg), list(arr[1:])
+
+    def explicit(target):
+        k, view = target
+        return ArrayObject([w.pages[k].indirect_reference] + [v if not isinstance(v, (int, float)) else
+                                                               FloatObject(v) for v in view])
+
+    def resolve(i, annot):
+        """The pack destination of one link of part i, or ("keep", action) for a link out of the pack."""
+        act = annot.get("/A")
+        act = act.get_object() if act else None
+        if annot.get("/Dest") is not None:
+            d = annot["/Dest"]
+            return where(i, d if isinstance(d, list) else str(d))
+        if act is None:
+            return None
+        kind = act.get("/S")
+        if kind == "/GoTo":
+            d = act.get("/D")
+            return where(i, d if isinstance(d, list) else str(d))
+        if kind == "/GoToR" and Path(str(act.get("/F"))).name in names:
+            return where(int(names[Path(str(act["/F"])).name][1:]), str(act.get("/D")))
+        return ("keep", act)
+
+    def fit(view):
+        """A bookmark's view on its page: the same spot as the part's own bookmark (/XYZ left top zoom)."""
+        if view and str(view[0]) == "/XYZ":
+            num = lambda v: None if v is None or isinstance(v, NullObject) else float(v)
+            return Fit.xyz(*(num(v) for v in (list(view[1:4]) + [None] * 3)[:3]))
+        return Fit.fit()
+
+    relinked = lost = moved = 0
+    for i, (p, start) in enumerate(zip(parts, starts), 1):
+        reader = p["reader"]
+        for j, src in enumerate(p["pages"]):
+            page = w.pages[start - 1 + j]
+            old = page.get("/Annots")
+            kept = [x for x in (old.get_object() if old else []) if x.get_object().get("/Subtype") != "/Link"]
+            new = []
+            src_links = reader.pages[src].get("/Annots")
+            for x in (src_links.get_object() if src_links else []):
+                x = x.get_object()
+                if x.get("/Subtype") != "/Link":
+                    continue
+                target = resolve(i, x)
+                if target is None:
+                    lost += 1
+                    continue
+                link = DictionaryObject({NameObject("/Type"): NameObject("/Annot"), NameObject("/Subtype"): NameObject("/Link"),
+                                         NameObject("/Rect"): ArrayObject([FloatObject(v) for v in x["/Rect"]]),
+                                         NameObject("/Border"): ArrayObject([NumberObject(0)] * 3)})
+                if target[0] == "keep":   # a web link or a link to a PDF outside the pack
+                    link[NameObject("/A")] = target[1].clone(w)
+                else:
+                    link[NameObject("/A")] = DictionaryObject({NameObject("/S"): NameObject("/GoTo"),
+                                                               NameObject("/D"): explicit(target)})
+                    relinked += 1
+                    act = x.get("/A")
+                    moved += bool(act and act.get_object().get("/S") == "/GoToR")
+                new.append(w._add_object(link))
+            if kept or new:
+                page[NameObject("/Annots")] = ArrayObject(kept + new)
+
+        # bookmarks: the part's title, with its own outline under it
+        top = w.add_outline_item(plain(p["title"]), start - 1)
+        def copy(items, parent):
+            last = None
+            for it in items:
+                if isinstance(it, list):
+                    if last is not None:
+                        copy(it, last)
+                    continue
+                target = where(i, it)
+                last = w.add_outline_item(str(it.title), target[0], parent=parent, fit=fit(target[1])) if target else None
+        try:
+            copy(reader.outline, top)
+        except Exception as e:
+            print(f"note: part {i}: its bookmarks could not be copied ({e})")
+    if lost:
+        print(f"note: {lost} links lead to pages left out of the pack (a part's back cover) and were dropped")
+
+    w.add_metadata({"/Title": plain(spec.get("title") or out.stem), "/Author": spec.get("author") or "Nur Mohammad"})
     w.page_mode = "/UseOutlines"
     out.parent.mkdir(parents=True, exist_ok=True)
     with open(out, "wb") as f:
         w.write(f)
-    print(f"PDF: {out} ({len(w.pages)} pages, {len(parts)} parts; {moved} links between parts now point inside the pack)")
+    print(f"PDF: {out} ({len(w.pages)} pages, {len(parts)} parts; {relinked} links, {moved} of them between parts)")
     print(f"Build folder (the pack's cover pages): {build}")
 
 

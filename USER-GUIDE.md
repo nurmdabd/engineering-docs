@@ -200,7 +200,7 @@ With `cover: true` (past papers have it by default), a document gets three extra
   | past paper | The paper at a glance: time, marks, how many to answer, and every sub-part with its marks and minutes |
   | question bank | How to practise, and a practice log with two boxes per question |
 
-- **The back cover** (last page of the print copy; add `back_cover: true` to have it in the screen PDF too), in its own style: a strip on the right edge with the course and document name, faint rings, a short "About this document" (`back_blurb:`), a few numbers and the page count.
+- **The back cover** (last page of the print copy; add `back_cover: true` to have it in the screen PDF too), in its own style: a strip on the right edge with the course and document name, faint rings, a short "About this document" (`back_blurb:`), a few numbers and the page count (the whole PDF, so it matches what your viewer shows).
 
 **Colours:** each type has its own colour, and each subject has one too (`accent:`). Give every document of a subject the same `accent`, and they look like a set. Headings and boxes keep the house colours.
 
@@ -372,9 +372,10 @@ parts:
 ```
 
 Then run `python3 scripts/doc.py bundle pack.yaml` (add `--print` for the print pack). You get one PDF with:
-- a pack cover and an "In this pack" page with each part's pages, linked;
+- the pack's own cover: the parts drawn as a stack of sheets in their types' colours, a strip split into the parts by their pages, and one linked card per part;
+- an "In this pack" page with every part and its outline (questions, sections), each line linked to its page;
 - every part as it was built, its own cover kept as a divider (its back cover is left out);
-- one back cover (in the print pack; `back_cover: true` adds it to the screen pack);
+- one back cover listing the parts (in the print pack; `back_cover: true` adds it to the screen pack);
 - bookmarks with one entry per part and that part's outline under it;
 - links between the parts working inside the file, so the "same folder" rule no longer applies.
 

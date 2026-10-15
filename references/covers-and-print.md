@@ -31,6 +31,7 @@ footer and the faint motifs. Each type draws its own front cover from those piec
 | `past-paper` | `types/past-paper/...` (own preamble too) | rings, side band | question map, how each answer is laid out |
 | `project-report` | `types/project-report/...` | double frame, no bands | institution lines (course name and code), `cover_contents` lines |
 | `mind-map` | `types/mind-map/...` | landscape band, node network | none |
+| a pack (`doc.py bundle`) | `template/pack-cover.tex` | a stack of sheets, one per part in its type's colour | the parts as linked cards: type, title, pages |
 
 - **Every number on a cover is counted** from the body (`scripts/coverdata.py`): parts from `\section`
   headings, lectures from `Lecture NN` subsections, formulas from table rows, questions from `questionbox`
@@ -54,14 +55,15 @@ footer and the faint motifs. Each type draws its own front cover from those piec
 | `past-paper` | The paper at a glance: time, marks, how many to answer, each sub-part's marks and minutes | `paper_info`, `paper_parts`, `[Marks: n]` |
 | `question-bank` | How to practise, and a practice log with two boxes per question | the question labels |
 
-The foot of every such page says when and from which Markdown it was built, plus `conventions` if given.
-It is in English also for a Bangla document (see ROADMAP.md).
+The foot of every such page carries `conventions` (the textbook and conventions) if given, and nothing
+otherwise; the build date and source file are not shown. It is in English also for a Bangla document (see
+ROADMAP.md).
 
 ## 15.4 The back cover
 
 `template/back-cover.tex`, for every type, in the print copy (and the screen PDF with `back_cover: true`): an accent strip on the right edge (the spine side) carrying course,
 title and subtitle; faint rings; "About this document" with the title, `back_blurb` and up to three numbers
-counted from the document plus the page count; course, author and date at the foot. Write `back_blurb` in
+counted from the document plus the page count (the whole PDF's, blank pages and the back cover included, so it matches the viewer); course, author and date at the foot. Write `back_blurb` in
 plain words: what the document is and how it teaches, one or two sentences.
 
 ## 15.5 Edge tabs
@@ -82,8 +84,18 @@ covers turn to light tints, and the page order above makes double-sided printing
 
 `doc.py bundle pack.yaml` (scripts/bundle.py; its docstring shows the YAML) combines finished PDFs:
 
-- a pack cover (the default cover, label `STUDY PACK` or `label:`), an "In this pack" page with each part's
-  pages, linked; the parts; one back cover (print pack; a screen pack too with `back_cover: true`);
+- the pack's own cover (`template/pack-cover.tex`, label `STUDY PACK` or `label:`, signature colour plum
+  `8E3B5E`): a faint fan of pages in the white middle, fading out at both ends; the parts drawn as fanned sheets on the band, each with a strip in its type's colour; under the
+  band a strip, and down the spine a line, split into the parts in proportion to their pages; the parts as
+  linked cards (type, title, pages, page count) pinned above the footer. A part's type is read from the label
+  on its cover (`type:` on the part sets it; a part without a cover is grey, "DOCUMENT"). In print the parts
+  take different greys;
+- an "In this pack" page: every part's heading (linked to its cover) with its outline in two columns, each
+  line linked to its page. The outline is the part's top-level bookmarks, or the level below when there are
+  fewer than four (a solution's sub-parts). Too many lines for one page: the longest lists are cut ("and n
+  more in the bookmarks"); if it still overflows, the page lists the parts only;
+- the parts; one back cover (print pack; a screen pack too with `back_cover: true`), labelled "ABOUT THIS
+  PACK", with the parts listed in their colours under the same split strip;
 - each part keeps its layout, cover, links and bookmarks; its own back cover is left out;
 - links from one part into another (`file.pdf#label`) become links inside the pack, so the folder rule of
   Section 13 no longer applies to them;
