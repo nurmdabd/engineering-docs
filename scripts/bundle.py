@@ -166,7 +166,7 @@ def cover_tex(spec, parts, starts, total, bw, with_map=True):
               "CoverTitle": esc(spec.get("title")), "CoverSubtitle": esc(spec.get("subtitle")),
               "CoverNote": esc(spec.get("note")), "CoverAuthor": esc(spec.get("author")) or "Nur Mohammad",
               "CoverLabel": esc(spec.get("label")) or "STUDY PACK", "CoverBlurb": esc(spec.get("back_blurb")),
-              "CoverSignatureHex": PACK_SIGNATURE}
+              "CoverSignatureHex": PACK_SIGNATURE, "CoverBackLabel": "ABOUT THIS PACK"}
     fields["CoverSpine"] = "\\quad$\\cdot$\\quad ".join(house.spaced_caps(x) for x in
                                                          (fields["CoverCourseCode"], fields["CoverTitle"], fields["CoverSubtitle"]) if x)
     if spec.get("accent"):
@@ -180,7 +180,7 @@ def cover_tex(spec, parts, starts, total, bw, with_map=True):
 
     # the parts: colours, the strip, the cards, the map
     content = sum(len(p["pages"]) for p in parts)
-    colours, segments, cards, rows, done = [], [], [], [], 0
+    colours, segments, cards, backs, rows, done = [], [], [], [], [], 0
     for n, (p, start) in enumerate(zip(parts, starts), 1):
         label, hexc = p["type"]
         grey = PRINT_GREYS[(n - 1) % len(PRINT_GREYS)]
@@ -190,6 +190,7 @@ def cover_tex(spec, parts, starts, total, bw, with_map=True):
         segments.append(f"{n}/{a:.4f}/{done / content:.4f}")
         last = start + len(p["pages"]) - 1
         cards.append(f"\\packcard{{{n}}}{{{p['title']}}}{{{label}}}{{{start}}}{{{last}}}{{{len(p['pages'])}}}")
+        backs.append(f"\\packbackpart{{{n}}}{{{p['title']}}}{{{label}}}{{{len(p['pages'])}}}")
     # the map: every part's heading, its outline in two columns, cut to fit one page
     budget = MAP_LINES - 3 * len(parts)
     lines = [((len(p["outline"]) + 1) // 2) if with_map else 0 for p in parts]
@@ -211,6 +212,7 @@ def cover_tex(spec, parts, starts, total, bw, with_map=True):
             f"\\newcommand{{\\PackSegments}}{{{','.join(segments)}}}\n"
             f"\\newcommand{{\\PackSheets}}{{{sheets}}}\n"
             f"\\newcommand{{\\PackCards}}{{{('%' + chr(10)).join(cards)}}}\n"
+            f"\\newcommand{{\\PackBackParts}}{{{('%' + chr(10)).join(backs)}}}\n"
             f"\\newcommand{{\\PackMap}}{{{('%' + chr(10)).join(rows)}}}")
     bw_line = "\\input{print-bw.tex}" if bw else ""
     pdftitle = re.sub(r"[{}\\$]", "", fields["CoverTitle"])

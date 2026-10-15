@@ -571,9 +571,9 @@ def run_bundle():
                     if act.get("/S") == "/GoTo" and str(act.get("/D")) not in names:
                         problems.append(f"broken link to {act.get('/D')}")
             text = [re.sub(r"\s", "", p.extract_text() or "").upper() for p in pdf.pages]   # labels are letter-spaced
-            backs = sum("ABOUTTHISDOCUMENT" in t for t in text)
-            if extra and (backs != 1 or "ABOUTTHISDOCUMENT" not in text[-1]):
-                problems.append("expected exactly one back cover, the last page")
+            backs = sum("ABOUTTHISDOCUMENT" in t or "ABOUTTHISPACK" in t for t in text)
+            if extra and (backs != 1 or "ABOUTTHISPACK" not in text[-1]):
+                problems.append("expected exactly one back cover, the pack's own, as the last page")
             if not extra and backs:
                 problems.append("the screen pack has a back cover (it belongs to the print pack only)")
             if "INTHISPACK" not in text[1]:

@@ -93,7 +93,8 @@ covers turn to light tints, and the page order above makes double-sided printing
   line linked to its page. The outline is the part's top-level bookmarks, or the level below when there are
   fewer than four (a solution's sub-parts). Too many lines for one page: the longest lists are cut ("and n
   more in the bookmarks"); if it still overflows, the page lists the parts only;
-- the parts; one back cover (print pack; a screen pack too with `back_cover: true`);
+- the parts; one back cover (print pack; a screen pack too with `back_cover: true`), labelled "ABOUT THIS
+  PACK", with the parts listed in their colours under the same split strip;
 - each part keeps its layout, cover, links and bookmarks; its own back cover is left out;
 - links from one part into another (`file.pdf#label`) become links inside the pack, so the folder rule of
   Section 13 no longer applies to them;

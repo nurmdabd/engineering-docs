@@ -7,6 +7,8 @@
   spine split into the parts by their page counts; the parts as linked cards (type, title, pages, page count)
   in an "In this pack" panel. Its signature colour is plum (`8E3B5E`). The type of a part is read from the
   label on its cover; `type:` on a part sets it.
+- **The pack's back cover** says "ABOUT THIS PACK" and lists the parts in their colours under a strip split
+  like the front's (`\CoverBackLabel` and `\CoverBackExtra` in the cover kit; other types are unchanged).
 - **"In this pack" page:** each part's heading now carries its type and colour, followed by its outline in two
   columns (each line linked to its page); long outlines are cut to fit the page.
 - **Fix:** the links on the pack's cover and "In this pack" page were dropped when the pages were merged (pypdf

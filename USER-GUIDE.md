@@ -375,7 +375,7 @@ Then run `python3 scripts/doc.py bundle pack.yaml` (add `--print` for the print 
 - the pack's own cover: the parts drawn as a stack of sheets in their types' colours, a strip split into the parts by their pages, and one linked card per part;
 - an "In this pack" page with every part and its outline (questions, sections), each line linked to its page;
 - every part as it was built, its own cover kept as a divider (its back cover is left out);
-- one back cover (in the print pack; `back_cover: true` adds it to the screen pack);
+- one back cover listing the parts (in the print pack; `back_cover: true` adds it to the screen pack);
 - bookmarks with one entry per part and that part's outline under it;
 - links between the parts working inside the file, so the "same folder" rule no longer applies.
 

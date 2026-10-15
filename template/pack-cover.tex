@@ -16,18 +16,24 @@
 
 % ---------- front cover ----------
 \thispagestyle{empty}
+\pgfmathtruncatemacro{\packk}{0}\foreach \s in \PackSheets {\xdef\packk{\s}}
 \begin{tikzpicture}[remember picture, overlay]
-	% faint stack in the white middle, right of the title
+	% faint pages in the white middle, in the parts' colours, fading out towards the title (like the other covers)
 	\begin{scope}[shift={(current page.south west)}]
-		\foreach \k/\o in {0/10,1/15,2/22}
-			\draw[CoverSig, opacity=0.\o, line width=1.1pt, rounded corners=3pt, rotate around={8-\k*7:(17.6,11.6)}]
-				(15.6,8.9) rectangle ++(4.0,5.4);
+		\foreach \row/\y/\dx in {0/8.7/0.55, 1/10.7/0, 2/12.7/0.85} \foreach \x [count=\i] in {5.0,6.75,...,19.5} {
+			\fadeop{\x+\dx}{0.42}
+			\pgfmathtruncatemacro{\c}{mod(\i+\row,\packk)+1}
+			\pgfmathsetmacro{\tilt}{12*sin(\i*67+\row*41)}
+			\begin{scope}[shift={(\x+\dx,\y)}, rotate=\tilt, opacity=\op]
+				\draw[PackType\c, line width=0.9pt, line join=round] (0,0) -- (1.1,0) -- (1.1,1.1) -- (0.75,1.45) -- (0,1.45) -- cycle;
+				\draw[PackType\c, line width=0.7pt] (0.75,1.45) -- (0.75,1.1) -- (1.1,1.1);
+				\foreach \l/\w in {0.95/0.5, 0.7/0.75, 0.45/0.6, 0.2/0.7} \draw[PackType\c, line width=0.9pt, line cap=round] (0.18,\l) -- ++(\w,0);
+			\end{scope}}
 	\end{scope}
 	% the band
 	\fill[CoverBand] (current page.north west) rectangle ($(current page.north east)+(0,-9.55cm)$);
 	% the parts as fanned sheets on the band, back to front; each has a strip in its type colour
 	\begin{scope}[shift={(current page.north west)}]
-		\pgfmathtruncatemacro{\packk}{0}\foreach \s in \PackSheets {\xdef\packk{\s}}
 		\foreach \s in \PackSheets {
 			\pgfmathsetmacro{\ang}{(\packk+1)/2*9-\s*9}
 			\begin{scope}[rotate around={\ang:(17.4,-8.6)}]
@@ -92,5 +98,12 @@
 \newcommand{\packmapcols}[2]{{\setlength{\parskip}{0.06cm}\noindent
 	\begin{minipage}[t]{0.475\linewidth}\raggedright#1\end{minipage}\hfill
 	\begin{minipage}[t]{0.475\linewidth}\raggedright#2\end{minipage}\par}}
+% the back cover lists the parts: \packbackpart{n}{title}{type}{pages}, under a strip split like the front's
+\newcommand{\packbackpart}[4]{\noindent\tikz[baseline=-0.6ex]\fill[PackType#1, rounded corners=1pt] (0,-0.22) rectangle (0.34,0.22);\hspace{0.3cm}%
+	{\scriptsize\color{PackType#1!80!black}\spaced{#3}}\hspace{0.25cm}{\color{CoverInk}#2}\hfill{\small\coversans\color{CoverSoft}#4 pages}\par\vspace{0.2cm}}
+\renewcommand{\CoverBackExtra}{\par\vspace{1.0cm}
+	\noindent\begin{tikzpicture}\foreach \n/\a/\b in \PackSegments \fill[PackType\n] (\a*\linewidth,0) rectangle (\b*\linewidth,0.18);
+		\foreach \n/\a/\b in \PackSegments {\ifdim\a pt>0pt \fill[white] (\a*\linewidth-0.04cm,0) rectangle (\a*\linewidth+0.04cm,0.18);\fi}\end{tikzpicture}\par
+	\vspace{0.4cm}\PackBackParts}
 % \packmapmore{n}{text}: what the list leaves out
 \newcommand{\packmapmore}[2]{{\small\itshape\color{CoverSoft}#2\par}}
