@@ -1,5 +1,18 @@
 # Changelog
 
+## October 2026: pack cover
+
+- **A pack has its own cover** (`template/pack-cover.tex`) instead of the default study-notes cover: the parts
+  as fanned sheets on the band, each with a strip in its document type's colour; a strip under the band and the
+  spine split into the parts by their page counts; the parts as linked cards (type, title, pages, page count)
+  in an "In this pack" panel. Its signature colour is plum (`8E3B5E`). The type of a part is read from the
+  label on its cover; `type:` on a part sets it.
+- **"In this pack" page:** each part's heading now carries its type and colour, followed by its outline in two
+  columns (each line linked to its page); long outlines are cut to fit the page.
+- **Fix:** the links on the pack's cover and "In this pack" page were dropped when the pages were merged (pypdf
+  drops a link whose destination the page's own file does not define), so they did nothing. They are copied
+  after the parts are in, and the test checks that both pages link to every part.
+
 ## October 2026: mind-map pages
 
 - **Fitting order:** more columns come before cards lose their formulas: on the main map a part takes up to

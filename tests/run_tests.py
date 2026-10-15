@@ -528,7 +528,8 @@ def run_edge_tabs():
 
 
 def run_bundle():
-    """doc.py bundle: two built PDFs become one pack with its own cover and "In this pack" page, and in print one
+    """doc.py bundle: two built PDFs become one pack with its own cover and "In this pack" page (both linking to
+    each part), and in print one
     back cover; the parts' own back covers are left out, every link still resolves, and the print pack starts each part on an
     odd page and has an even page count."""
     import logging
@@ -577,6 +578,12 @@ def run_bundle():
                 problems.append("the screen pack has a back cover (it belongs to the print pack only)")
             if "INTHISPACK" not in text[1]:
                 problems.append("page 2 is not the In this pack page")
+            for k, what in ((0, "cover"), (1, "In this pack page")):   # each part's card or heading is a link
+                annots = pdf.pages[k].get("/Annots")
+                targets = {str(a.get_object()["/A"].get_object().get("/D")) for a in (annots.get_object() if annots else [])
+                           if a.get_object().get("/A")}
+                if not {"p0-bundle-part-1", "p0-bundle-part-2"} <= targets:
+                    problems.append(f"the {what} does not link to both parts")
             if [o.title for o in pdf.outline if not isinstance(o, list)] != ["Report", "Core"]:
                 problems.append("bookmarks are not one per part")
             starts = [pdf.get_destination_page_number(names[f"p0-bundle-part-{i}"]) + 1 for i in (1, 2)]
