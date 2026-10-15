@@ -159,6 +159,12 @@ def part_pages(reader, keep_back):
     return keep
 
 
+def plain(text):
+    """A raw-LaTeX title as plain text for bookmarks and metadata: -- and --- as dashes, no braces or commands."""
+    text = str(text).replace("---", "\u2014").replace("--", "\u2013")
+    return re.sub(r"\\[A-Za-z]+\*?|[{}$\\]", "", text).strip()
+
+
 def cover_tex(spec, parts, starts, total, bw, with_map=True):
     """main.tex of the pack's own pages: front cover, "In this pack", back cover (three pages)."""
     esc = lambda s: s if s is not None else ""
@@ -345,7 +351,7 @@ def main():
         while len(w.pages) + 1 < start:   # print: a blank page so the part starts on a right-hand page
             w.add_blank_page()
         prefix(p["reader"], f"p{i}")
-        w.append(p["reader"], outline_item=p["title"], pages=p["pages"])
+        w.append(p["reader"], outline_item=plain(p["title"]), pages=p["pages"])
         w.add_named_destination(f"p0-bundle-part-{i}", start - 1)
         for k, (_, idx) in enumerate(p["outline"], 1):   # the lines of the "In this pack" page
             w.add_named_destination(f"p0-bundle-p{i}-{k}", start - 1 + idx)
@@ -377,7 +383,7 @@ def main():
                 act[NameObject("/D")] = TextStringObject(f"{names[Path(str(act['/F'])).name]}-{act['/D']}")
                 del act["/F"]
                 moved += 1
-    w.add_metadata({"/Title": re.sub(r"[{}\\$]", "", spec.get("title") or out.stem), "/Author": spec.get("author") or "Nur Mohammad"})
+    w.add_metadata({"/Title": plain(spec.get("title") or out.stem), "/Author": spec.get("author") or "Nur Mohammad"})
     w.page_mode = "/UseOutlines"
     out.parent.mkdir(parents=True, exist_ok=True)
     with open(out, "wb") as f:

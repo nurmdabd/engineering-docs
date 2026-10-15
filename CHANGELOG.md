@@ -12,6 +12,7 @@
   like the front's (`\CoverBackLabel` and `\CoverBackExtra` in the cover kit; other types are unchanged).
 - **"In this pack" page:** each part's heading now carries its type and colour, followed by its outline in two
   columns (each line linked to its page); long outlines are cut to fit the page.
+- **Fix:** a part's bookmark showed its raw title ("2020--21"); bookmarks and the PDF title now show real dashes.
 - **Fix:** the links on the pack's cover and "In this pack" page were dropped when the pages were merged (pypdf
   drops a link whose destination the page's own file does not define), so they did nothing. They are copied
   after the parts are in, and the test checks that both pages link to every part.
