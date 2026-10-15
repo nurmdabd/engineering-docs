@@ -1,5 +1,5 @@
 problems.md:1: error: lang must be one of en, bn, not 'fr'
-problems.md:1: error: unknown front matter key 'colour' (known: title, subtitle, type, lang, header, header_right, author, date, cover, course_code, course_name, cover_title, cover_subtitle, cover_note, cover_contents, accent, inside_cover, back_cover, back_blurb, print_layout, prerequisites, conventions, edge_tabs, map_size, map_detail, margin_x, preamble, toc, label_prefix, first_number, paper, paper_header, paper_info, paper_instruction, paper_parts, paper_appendix, exam, year)
+problems.md:1: error: unknown front matter key 'colour' (known: title, subtitle, type, lang, header, header_right, author, date, cover, course_code, course_name, cover_title, cover_subtitle, cover_note, cover_contents, accent, inside_cover, back_cover, back_blurb, print_layout, prerequisites, conventions, edge_tabs, map_size, map_detail, map_titles, margin_x, preamble, toc, label_prefix, first_number, paper, paper_header, paper_info, paper_instruction, paper_parts, paper_appendix, exam, year)
 problems.md:1: error: unknown type 'no-such-type' (available: exam-notes, formula-sheet, mind-map, past-paper, project-report, question-bank, theory-notes)
 problems.md:8: warning: heading ends with ':'; drop it, the colon is added automatically
 problems.md:10: warning: heading jumps from level 2 to 4

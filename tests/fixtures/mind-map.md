@@ -25,6 +25,12 @@ map_size: a3
 - **Power**: $P = VI$
   - def: Energy delivered per second.
 - **[Energy](#compare)**: $E = Pt$
+- **AC power**: $P = V_{rms} I_{rms} \cos\phi$
+  - def: Power in a circuit driven by a sine wave.
+  - **Average power**: $P = V I \cos\phi$
+  - **Reactive power**: $Q = V I \sin\phi$
+  - **Apparent power**: $S = V I$
+  - **Power factor**: $\cos\phi$
 :::
 
 # Compare

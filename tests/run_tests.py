@@ -165,8 +165,8 @@ def check_coverdata():
 
 def check_mindmap_fit():
     """Mind maps: the outline parses at any depth, and a column that is too tall is fitted in the agreed order
-    (gaps, grey lines, collapsing non-star cards first, a split, a continuation), with the split guard. Made-up
-    card heights, so no LaTeX is needed."""
+    (gaps, grey lines, then a split before title-only cards when a second column is free, a continuation last),
+    with the split guard; parts are spread over main-map pages. Made-up card heights, so no LaTeX is needed."""
     import mindmap
     problems = []
     spec, errs = mindmap.parse("# Course | L1--9\n## One | L1\n- **A** ★: $x$\n  - def: what A is\n  - **B**\n    - **C**\n"
@@ -188,43 +188,72 @@ def check_mindmap_fit():
 
     def fitter(parts, h_full, h_nogrey, h_title, width=27.16, head=1.0, narrow=False):
         mp = mindmap.Map({"title": "", "sub": "", "detail": None, "parts": parts}, 1)
+        mp.paginate(z, width)
         H = {}
         for x in mindmap.walk(mp.parts):
-            for w in set(mindmap.main_widths(mp, z, width).values()) | {mindmap.sub_width(z, width)}:
+            for w in set(mindmap.main_widths(mp.P, z, width).values()) | {mindmap.sub_width(z, width)}:
                 r = 4.8 / w if narrow else 1.0   # narrower columns wrap more: taller cards
                 H[(mp.p, x["id"], w, "full")] = (h_full + (0.4 if x["kids"] else 0)) * r
                 H[(mp.p, x["id"], w, "nogrey")] = h_nogrey * r
                 H[(mp.p, x["id"], w, "title")] = h_title * r
         for p in mp.parts:
-            for slots in range(len(parts), 2 * len(parts) + 1):
+            for slots in range(mp.P, 2 * mp.P + 1):
                 for k in (1, 2):
                     H[(mp.p, f"head{p['n']}", round(k * mindmap.slot(z, width, slots) - z["sgap"], 3), "head")] = head
         return mp, mindmap.Fitter(mp, z, H)
     one = [card("A", kids=2), card("B", star=True), card("C", kids=2), card("D")]
     mp, fit = fitter([{"name": "P", "sub": "", "kids": one}], 1.0, 0.6, 0.4)
-    w = list(mindmap.main_widths(mp, z, 27.16).values())[0]
+    w = list(mindmap.main_widths(mp.P, z, 27.16).values())[0]
     steps = []
     for avail in (10, 6.8, 6.0, 5.0, 4.5):   # card heights + padding 0.31: 1.71 1.31 1.71 1.31, as grey-less 0.91, as title 0.71
         f = fit.one_column(one, w, avail)
         steps.append((f.step, f.hidden, f.collapsed) if f else None)
-    if steps != [(0, 0, 0), (1, 0, 0), (2, 1, 0), (2, 2, 0), (3, 2, 1)]:
-        problems.append(f"steps 1-3 in order, as little as needed: {steps}")
+    if steps != [(0, 0, 0), (1, 0, 0), (2, 1, 0), (2, 2, 0), (4, 2, 1)]:
+        problems.append(f"steps gaps, grey lines, title-only in order, as little as needed: {steps}")
+    f = fit.one_column(one, w, 4.0)   # three non-star cards could go, but a third of four cards is 2 (the minimum)
+    if f is not None:
+        problems.append("title-only cards: more than a third of the column (at least 2) were shortened")
+    fit.titles = 1.0
     f = fit.one_column(one, w, 4.0)
-    if not f or f.variant[one[1]["id"]] == "title" or [f.variant[c["id"]] for c in one] != ["title", "full", "title", "title"]:
+    if not f or [f.variant[c["id"]] for c in one] != ["title", "full", "title", "title"]:
         problems.append("collapsing: the star card is kept while the others can go: "
                         f"{[f.variant[c['id']] for c in one] if f else None}")
+    fit.titles = 0
+    if fit.one_column(one, w, 4.5) is not None:
+        problems.append("map_titles 0: a card was still shown as its title only")
+    fit.titles = 1 / 3
+    if [fit.limit([0] * n) for n in (4, 6, 12, 15)] != [2, 2, 4, 5]:
+        problems.append(f"title-only limit: {[fit.limit([0] * n) for n in (4, 6, 12, 15)]}")
+    f = fit.columns(one, w, 4.5, 2)   # two columns come before title-only cards
+    if not f or len(f.columns) != 2 or f.collapsed or f.step != mindmap.SPLIT:
+        problems.append(f"two-column sequence: a split before title-only cards ({f and (len(f.columns), f.collapsed, f.step)})")
+    f = fit.sub_column(one * 1, w, 2.0, 4)   # sub-map pages: more columns, never title-only cards
+    if not f or f.collapsed or len(f.columns) < 3:
+        problems.append(f"sub-map page: up to the page's columns, no title-only cards ({f and (len(f.columns), f.collapsed)})")
+    g = mindmap.Fit(one)
+    g.gap = z["gap"]
+    cols = fit.balance(one, g, w, 3)   # heights 1.71 1.31 1.71 1.31 (gap 0.36): the tallest column can be 3.38, no less (plus padding)
+    if len(cols) != 3 or not all(cols) or max(fit.col_h(c, g, w) for c in cols) > 3.39:
+        problems.append(f"balance into three columns: {[len(c) for c in cols]}")
+    if mindmap.describe(fit.one_column(one, w, 4.5), z) != "step 3 (gaps tightened, grey lines hidden on 2 cards, 1 card shown as the title only)":
+        problems.append("one-column sequence: title-only cards are step 3: " + mindmap.describe(fit.one_column(one, w, 4.5), z))
+    if mindmap.page_sizes(7, 6) != [4, 3] or mindmap.page_sizes(20, 6) != [5, 5, 5, 5] or mindmap.page_sizes(5, 6) != [5]:
+        problems.append(f"main-map pages: {mindmap.page_sizes(7, 6)} {mindmap.page_sizes(20, 6)}")
+    if mindmap.per_page(z, 27.16) != 6 or mindmap.per_page(mindmap.SIZE["a3"], 39.46) != 6:
+        problems.append("parts per main-map page: 6 on A4 and on A3")
+
     def five(first, h):   # four small parts and one that is too tall for one column
         parts = [{"name": f"P{i}", "sub": "", "kids": [card(f"Q{i}{j}") for j in range(3)]} for i in range(4)]
         parts[0]["kids"] = [card(f"R{j}", kids=2) for j in range(first)]
         parts.append({"name": "Big", "sub": "", "kids": [card(f"K{i}") for i in range(14)]})
         mp, fit = fitter(parts, h, h, 0.5, narrow=True)
-        calm, _ = mindmap.layout_main(mp, fit, z, 27.16, 17.11, split=False)
-        main, _ = mindmap.fit_main(mp, fit, z, 27.16, 17.11)
+        calm, _ = mindmap.layout_main(mp, mp.parts, fit, z, 27.16, 17.11 - mindmap.RESERVE_MAIN, split=False)
+        main, _ = mindmap.fit_main(mp, mp.parts, fit, z, 27.16, 17.11 - mindmap.RESERVE_MAIN)
         return calm, main
     calm, main = five(6, 0.8)    # narrower columns cost part 1 nothing: Big splits
     if len(main[5].columns) != 2 or main[5].moved or main[1].step != calm[1].step:
         problems.append(f"guard: a harmless split was refused (Big: {len(main[5].columns)} columns)")
-    calm, main = five(6, 1.0)    # a split would make part 1 hide grey lines: Big continues instead
+    calm, main = five(6, 1.0)    # a split would make part 1 hide grey lines: Big takes the one-column sequence
     if len(main[5].columns) != 1 or not main[5].moved or main[1].step != calm[1].step:
         problems.append(f"guard: a split that makes another part take a later step was kept (part 1 step {main[1].step})")
     for p in problems:

@@ -91,6 +91,7 @@ def main():
     ap.add_argument("--paper-size", default="a4", choices=["a4", "a3"])
     ap.add_argument("--landscape", action="store_true")
     ap.add_argument("--map-detail", choices=["true", "false"], help="mind maps: false never shows the grey detail lines on the cards (default: where they fit)")
+    ap.add_argument("--map-titles", type=float, help="mind maps: the share of a main-map column's cards that may be shown as their title only (default 1/3; 0: never)")
     first = ap.parse_known_args()[0]          # only to find the Markdown file and read its front matter
     meta, body, problems = frontmatter.split(first.md.read_text(encoding="utf-8"))
     for p in problems:
@@ -137,7 +138,8 @@ def main():
     for i, block in enumerate(maps):   # each ::: {.mindmap} block becomes its data line; build.py draws it (scripts/mindmap.py)
         heads = "\n\n".join(re.findall(r"^#{1,6} .*$", re.sub(r"^(```|~~~).*?^\1", "", body, flags=re.M | re.S), re.M))
         tex, problems = mindmap.convert(block, None if a.map_detail is None else a.map_detail == "true",
-                                        pandoc_args=house_meta, context=heads, wrap=wrap_bangla if a.bangla else None)
+                                        pandoc_args=house_meta, context=heads, wrap=wrap_bangla if a.bangla else None,
+                                        titles=a.map_titles)
         if problems:
             sys.exit("\n".join(f"{first.md.name}: mind map: {p}" for p in problems))
         body = body.replace(f"MINDMAPBLOCK{i}X", "```{=latex}\n" + tex + "\n```")
