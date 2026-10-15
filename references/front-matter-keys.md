@@ -52,6 +52,7 @@ Values are raw LaTeX: `--` is an en-dash, `\&` an ampersand; quote a value that 
 |---|---|---|
 | `map_size` | `a4` | `a4` (screen) or `a3` (print) landscape |
 | `map_detail` | where they fit | `false`: never show the grey detail lines on the cards |
+| `map_titles` | `1/3` | Share of a main-map column's cards that may be shown as their title only (at least 2); `0`: never, `0.5`: half |
 
 ## Past paper
 

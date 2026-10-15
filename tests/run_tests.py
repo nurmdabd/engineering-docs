@@ -210,13 +210,31 @@ def check_mindmap_fit():
         steps.append((f.step, f.hidden, f.collapsed) if f else None)
     if steps != [(0, 0, 0), (1, 0, 0), (2, 1, 0), (2, 2, 0), (4, 2, 1)]:
         problems.append(f"steps gaps, grey lines, title-only in order, as little as needed: {steps}")
+    f = fit.one_column(one, w, 4.0)   # three non-star cards could go, but a third of four cards is 2 (the minimum)
+    if f is not None:
+        problems.append("title-only cards: more than a third of the column (at least 2) were shortened")
+    fit.titles = 1.0
     f = fit.one_column(one, w, 4.0)
-    if not f or f.variant[one[1]["id"]] == "title" or [f.variant[c["id"]] for c in one] != ["title", "full", "title", "title"]:
+    if not f or [f.variant[c["id"]] for c in one] != ["title", "full", "title", "title"]:
         problems.append("collapsing: the star card is kept while the others can go: "
                         f"{[f.variant[c['id']] for c in one] if f else None}")
-    f = fit.column(one, w, 4.5, room=True)   # with room for a second column the split comes before title-only cards
+    fit.titles = 0
+    if fit.one_column(one, w, 4.5) is not None:
+        problems.append("map_titles 0: a card was still shown as its title only")
+    fit.titles = 1 / 3
+    if [fit.limit([0] * n) for n in (4, 6, 12, 15)] != [2, 2, 4, 5]:
+        problems.append(f"title-only limit: {[fit.limit([0] * n) for n in (4, 6, 12, 15)]}")
+    f = fit.columns(one, w, 4.5, 2)   # two columns come before title-only cards
     if not f or len(f.columns) != 2 or f.collapsed or f.step != mindmap.SPLIT:
         problems.append(f"two-column sequence: a split before title-only cards ({f and (len(f.columns), f.collapsed, f.step)})")
+    f = fit.sub_column(one * 1, w, 2.0, 4)   # sub-map pages: more columns, never title-only cards
+    if not f or f.collapsed or len(f.columns) < 3:
+        problems.append(f"sub-map page: up to the page's columns, no title-only cards ({f and (len(f.columns), f.collapsed)})")
+    g = mindmap.Fit(one)
+    g.gap = z["gap"]
+    cols = fit.balance(one, g, w, 3)   # heights 1.71 1.31 1.71 1.31 (gap 0.36): the tallest column can be 3.38, no less (plus padding)
+    if len(cols) != 3 or not all(cols) or max(fit.col_h(c, g, w) for c in cols) > 3.39:
+        problems.append(f"balance into three columns: {[len(c) for c in cols]}")
     if mindmap.describe(fit.one_column(one, w, 4.5), z) != "step 3 (gaps tightened, grey lines hidden on 2 cards, 1 card shown as the title only)":
         problems.append("one-column sequence: title-only cards are step 3: " + mindmap.describe(fit.one_column(one, w, 4.5), z))
     if mindmap.page_sizes(7, 6) != [4, 3] or mindmap.page_sizes(20, 6) != [5, 5, 5, 5] or mindmap.page_sizes(5, 6) != [5]:

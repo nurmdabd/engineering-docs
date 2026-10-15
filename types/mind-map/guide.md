@@ -58,23 +58,28 @@ never place a box by hand.
 ## When a column is too tall
 
 The build measures every card in LaTeX and fits each column, one step at a time, each step as little as
-needed, and says in its output which step each part needed. A split keeps every formula on the map, so it comes
-before cards lose theirs, whenever there is room for a second column:
+needed, and says in its output which step each part needed. More columns keep every formula on the map, so they
+come before cards lose theirs:
 
-| Step | Room for two columns | No room |
-|---|---|---|
-| 1 | tighten the gaps between cards | tighten the gaps |
-| 2 | hide the grey detail lines, bottom card first (they stay in the outline table) | hide the grey lines |
-| 3 | split the part into two columns under its heading; grey lines come back on cards where they fit | show cards with only the i button as their title alone, non-★ first, bottom first |
-| 4 | title-only cards inside the two columns | **+n more ▸** |
-| 5 | keep the first cards and end the column with **+n more ▸**; the rest continue on a sub-map page | |
+| Step | Main map, room for more columns | Main map, no room | Sub-map pages |
+|---|---|---|---|
+| 1 | tighten the gaps between cards | tighten the gaps | tighten the gaps |
+| 2 | hide the grey detail lines, bottom card first (they stay in the outline table) | hide the grey lines | hide the grey lines |
+| 3 | two columns under the part's heading, then three; grey lines come back where they fit | title-only cards | two, three, … columns, up to the page's width (4 on A4, 5 on A3) |
+| 4 | title-only cards | **+n more ▸** | **+n more ▸** |
+| 5 | keep the first cards and end the column with **+n more ▸**; the rest continue on a sub-map page | | |
 
-**Room for two columns:** on a sub-map page, a free slot (there nearly always is one). On the main map a split
-narrows every column, so a part splits only if each column stays at least the narrowest width and no other part
-needs a later step because of it; otherwise it takes the one-column steps. A main-map page with fewer parts than
-the fullest page keeps that page's column width, so its parts split for free.
+**Title-only cards** show a card's title alone (its formula stays in the outline table): non-★ cards only,
+bottom first, and at most a third of the column's cards (at least 2): 2 of 6, 4 of 12, 5 of 15.
+`map_titles` changes the share (`0.5`: half; `0`: never, so a column that does not fit always ends with
+**+n more**). Sub-map pages never shorten cards: a group there takes more columns, then continues.
 
-**+n more** keeps as many whole cards as fit (formulas back, grey lines hidden), not the title-only ones.
+**Room for more columns:** on the main map each column a part takes narrows every column of the page, so a part
+widens only while each column stays at least the narrowest width and no other part needs a later step because of
+it; otherwise it takes the one-column steps. A main-map page with fewer parts than the fullest page keeps that
+page's column width, so its parts widen for free.
+
+**+n more** keeps as many whole cards as fit (formulas back, grey lines hidden).
 
 If even that cannot fit, the build stops and names the part. `map_detail: false` never shows the grey lines.
 
@@ -107,6 +112,7 @@ way. The build output names every sub-map placed beside its card.
 ```yaml
 type: mind-map
 map_size: a4            # a4 (screen) or a3 (print)
+map_titles: 1/3         # share of a main-map column's cards that may lose their formula (0: never)
 cover: true             # the landscape mind-map cover
 course_code: "COM I"
 course_name: "Communication Engineering I"

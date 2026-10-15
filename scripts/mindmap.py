@@ -25,12 +25,14 @@ preamble and fonts (one extra XeLaTeX run), fits each column, and replaces the c
   the card's strip gets a map button. Otherwise its children are details, listed in grey on the card.
 
   Fitting a column that is too tall, one step at a time, each as little as needed:
-    with room for two columns   1 tighten the gaps   2 hide grey lines (bottom card first)   3 split into two
-                                columns (grey lines back where they fit)   4 title-only cards (non-star first,
-                                bottom first)   5 move the last cards to a continuation ("+n more")
-    without                     1 gaps   2 grey lines   3 title-only cards   4 "+n more"
-  Room: on the main map a split narrows every column, so it is kept only if each column stays at least minslot
-  wide and no other part needs a later step because of it.
+    main map, room for more columns   1 tighten the gaps   2 hide grey lines (bottom card first)   3 two, then
+                                      three columns (grey lines back where they fit)   4 title-only cards
+                                      5 move the last cards to a continuation ("+n more")
+    main map, no room                 1 gaps   2 grey lines   3 title-only cards   4 "+n more"
+    sub-map pages                     1 gaps   2 grey lines   3 up to the page's width in columns   4 "+n more"
+  Title-only cards: non-star, bottom first, at most a third of the column (map_titles; at least 2).
+  Room: on the main map more columns narrow every column, so a part widens only while each column stays at least
+  minslot wide and no other part needs a later step because of it.
 
   Pages: the main map (more parts than a page holds continue on the next page, spread evenly), then every part's
   continuation, then the sub-maps in course order, then the outline table. A sub-map sits beside its card instead
@@ -169,7 +171,7 @@ def inline_latex(fragments, lua, pandoc_args=(), context=""):
     return ["" if x == "MMEMPTY7Q" else x for x in out]
 
 
-def convert(text, detail=None, lua=HERE / "house.lua", pandoc_args=(), context="", wrap=None):
+def convert(text, detail=None, lua=HERE / "house.lua", pandoc_args=(), context="", wrap=None, titles=None):
     """The %MMDATA line for one ::: {.mindmap} block, and a list of problems (empty when it is fine).
     detail: False never shows the grey detail lines on the maps (True or None: where they fit).
     wrap: applied to every converted text (md2tex passes its Bangla wrapper)."""
@@ -183,7 +185,7 @@ def convert(text, detail=None, lua=HERE / "house.lua", pandoc_args=(), context="
     for x in nodes:
         frags += [x["title"], x["formula"], x["defn"], *x["chips"]]
     conv = iter(wrap(t) if wrap else t for t in inline_latex(frags, lua, pandoc_args, context))
-    data = {"v": 1, "title": next(conv), "sub": next(conv), "detail": detail, "parts": []}
+    data = {"v": 1, "title": next(conv), "sub": next(conv), "detail": detail, "titles": titles, "parts": []}
     for p in spec["parts"]:
         data["parts"].append({"name": next(conv), "sub": next(conv), "kids": p["kids"]})
 
@@ -312,9 +314,9 @@ def page_sizes(n, most):
 
 
 def main_widths(parts, z, width):
-    """{columns on the page: card width} for a page laid out for `parts` parts, each splittable once."""
+    """{columns on the page: card width} for a page laid out for `parts` parts, each up to MAIN_COLS wide."""
     out = {}
-    for slots in range(parts, 2 * parts + 1):
+    for slots in range(parts, MAIN_COLS * parts + 1):
         s = slot(z, width, slots)
         if s >= z["minslot"]:
             out[slots] = round(s - z["sgap"] - 0.3, 3)
@@ -337,6 +339,12 @@ def head_text(z, trail_text, title, formula=""):
     """A sub-map heading's lines: the trail in grey, the card's title, its formula."""
     return (rf"{{\color{{white!85!black}}\scriptsize {trail_text}}}\\{{{z['part']}\bfseries $\hookleftarrow$ {title}}}"
             + (rf"\\{formula}" if formula else ""))
+
+
+def part_head(p):
+    """A part heading's lines: its name over "Part n · lectures" (measured and drawn from the same text)."""
+    sub = rf"Part {p['n']}" + (rf" $\cdot$ {p['sub']}" if p["sub"] else "")
+    return rf"{p['name']}\\[-1pt]{{\normalfont\footnotesize {sub}}}"
 
 
 def cont_title(title):
@@ -373,12 +381,12 @@ def measure(maps, z, width, build, main_tex):
                     head((mp.p, "sh-" + x["id"], w, "head"), w, head_text(z, trail(mp, x), x["title"] + star(x), x["formula"]))
                 head((mp.p, "ch-" + x["id"], sw, "head"), sw, head_text(z, trail(mp, x), cont_title(x["title"] + star(x))))
         for part in mp.parts:
-            for slots in range(mp.P, 2 * mp.P + 1):
-                for k in (1, 2):
+            for slots in range(mp.P, MAIN_COLS * mp.P + 1):
+                for k in range(1, MAIN_COLS + 1):
                     span = round(k * slot(z, width, slots) - z["sgap"], 3)
                     box((mp.p, f"head{part['n']}", span, "head"),
-                        rf"\begin{{minipage}}[t]{{\dimexpr{span:.3f}cm-12pt}}\centering\bfseries{z['part']} {part['name']}\\[-1pt]"
-                        rf"{{\normalfont\footnotesize Part {part['n']}}}\end{{minipage}}")
+                        rf"\begin{{minipage}}[t]{{\dimexpr{span:.3f}cm-12pt}}\centering\hyphenpenalty10000\exhyphenpenalty10000"
+                        rf"\bfseries{z['part']} {part_head(part)}\end{{minipage}}")
             head((mp.p, f"ch-p{part['n']}", sw, "head"), sw, head_text(z, f"Part {part['n']}", cont_title(part["name"])))
     body.append(r"\typeout{MMH|TH|\the\textheight|0pt}")
     pre = main_tex[:main_tex.index("\\begin{document}")]
@@ -400,10 +408,14 @@ def measure(maps, z, width, build, main_tex):
 
 # ---------------------------------------------------------------- fitting
 # A column that is too tall takes these steps, each as little as needed (types/mind-map/guide.md):
-#   with room for two columns:  1 gaps  2 grey lines  3 split into two  4 title-only cards  5 "+n more"
-#   without:                    1 gaps  2 grey lines  3 title-only cards  4 "+n more"
-# Fit.step holds the first list's number; describe() prints the second list's number for a column that did not split.
+#   main map, room for more columns:  1 gaps  2 grey lines  3 two, then three columns  4 title-only cards  5 "+n more"
+#   main map, no room:                1 gaps  2 grey lines  3 title-only cards  4 "+n more"
+#   sub-map pages:                    1 gaps  2 grey lines  3 two, three ... columns (the page's width)  4 "+n more"
+# Title-only cards: at most a third of the column's cards (map_titles), never a star card.
+# Fit.step holds the first list's number; describe() prints the number of the list the column followed.
 GAPS, GREY, SPLIT, TITLE, MORE = 1, 2, 3, 4, 5
+MAIN_COLS = 3          # columns one part may take on the main map
+TITLES = 1 / 3         # the default share of a column's cards that may be shown as their title only
 
 
 class Fit:
@@ -416,11 +428,18 @@ class Fit:
         self.moved = []
         self.step = 0
         self.hidden = self.collapsed = 0
+        self.sub = False   # on a sub-map page (for describe)
 
 
 class Fitter:
     def __init__(self, mp, z, H):
         self.mp, self.z, self.H = mp, z, H
+        t = mp.d.get("titles")
+        self.titles = TITLES if t is None else t
+
+    def limit(self, cards):
+        """How many of these cards may be shown as their title only (map_titles; at least 2 unless it is 0)."""
+        return 0 if self.titles <= 0 else max(2, int(len(cards) * self.titles + 0.5))
 
     def card_h(self, c, variant, w):
         h = self.H[(self.mp.p, c["id"], w, variant)] + 2 * self.z["sep"] * PT + 0.03
@@ -434,23 +453,37 @@ class Fitter:
     def fits(self, f, w, avail):
         return all(self.col_h(col, f, w) <= avail for col in f.columns)
 
-    def balance(self, cards, f, w):
-        """Two columns in reading order, the taller one as short as possible."""
-        best = None
-        for k in range(1, len(cards)):
-            t = max(self.col_h(cards[:k], f, w), self.col_h(cards[k:], f, w))
-            if best is None or t < best[0]:
-                best = (t, k)
-        k = best[1] if best else len(cards)
-        return [cards[:k], cards[k:]]
+    def balance(self, cards, f, w, k):
+        """k columns in reading order, the tallest as short as possible."""
+        n = len(cards)
+        hs = [self.card_h(c, f.variant[c["id"]], w) for c in cards]
+        pre = [0.0]
+        for h in hs:
+            pre.append(pre[-1] + h)
 
-    def shrink(self, f, w, avail, steps, two, collapse=True):
-        """Gaps, grey lines, title-only cards, each as little as needed; steps: the step number of each."""
+        def height(i, j):   # cards i..j-1 in one column
+            return pre[j] - pre[i] + f.gap * (j - i - 1)
+        best = {(0, 0): (0.0, None)}   # (columns used, cards placed) -> (tallest, previous cut)
+        for c in range(1, k + 1):
+            for j in range(c, n - (k - c) + 1):
+                cands = [(max(best[(c - 1, i)][0], height(i, j)), i) for i in range(c - 1, j) if (c - 1, i) in best]
+                if cands:
+                    best[(c, j)] = min(cands)
+        cuts, j = [], n
+        for c in range(k, 0, -1):
+            i = best[(c, j)][1]
+            cuts.append((i, j))
+            j = i
+        return [cards[i:j] for i, j in reversed(cuts)]
+
+    def shrink(self, f, w, avail, steps, k, limit=0):
+        """Gaps, grey lines, then up to `limit` title-only cards, each as little as needed, in k columns; steps:
+        the step number of each."""
         z = self.z
 
         def again():
-            if two:
-                f.columns = self.balance(f.cards, f, w)
+            if k > 1:
+                f.columns = self.balance(f.cards, f, w, k)
             return self.fits(f, w, avail)
         f.gap = z["gap"]
         if again():
@@ -464,46 +497,52 @@ class Fitter:
             f.step, f.hidden = max(f.step, steps[1]), f.hidden + 1
             if again():
                 return True
-        if not collapse:
-            return False
         one = [c for c in reversed(f.cards) if not has_map(c)]
-        for c in [c for c in one if not c["star"]] + [c for c in one if c["star"]]:
+        for c in ([c for c in one if not c["star"]])[:limit]:
             f.variant[c["id"]] = "title"
             f.step, f.collapsed = max(f.step, steps[2]), f.collapsed + 1
             if again():
                 return True
         return False
 
+    def columns(self, cards, w, avail, k, titles=False):
+        """k columns (k > 1: the split, step 3): grey lines back wherever they fit, title-only cards if titles."""
+        if len(cards) < k:
+            return None
+        f = Fit(cards)
+        f.step = SPLIT if k > 1 else 0
+        lim = self.limit(cards) if titles else 0
+        return f if self.shrink(f, w, avail - (0.2 if k > 1 else 0), (GAPS if k == 1 else SPLIT, GREY if k == 1 else SPLIT, TITLE),
+                                k, lim) else None
+
     def one_column(self, cards, w, avail, collapse=True):
-        """Steps 1-2, and title-only cards when collapse is True."""
-        f = Fit(cards)
-        return f if self.shrink(f, w, avail, (GAPS, GREY, TITLE), False, collapse) else None
+        """Steps 1-2, and title-only cards (up to the limit) when collapse is True."""
+        return self.columns(cards, w, avail, 1, collapse)
 
-    def two_columns(self, cards, w, avail):
-        """The split (step 3): grey lines back wherever they fit, then title-only cards (step 4)."""
-        f = Fit(cards)
-        f.step = SPLIT
-        return f if len(cards) > 1 and self.shrink(f, w, avail - 0.2, (SPLIT, SPLIT, TITLE), True) else None
-
-    def continue_on(self, cards, w, avail, two):
-        """The last step: keep the first cards (whole if possible), the rest moves to a continuation group."""
-        room = avail - self.z["more"] - self.z["gapmin"] - (0.2 if two else 0)
-        for collapse in (False, True):
-            for keep in range(len(cards) - 1, 0, -1):
+    def continue_on(self, cards, w, avail, k, titles=False):
+        """The last step: keep the first cards (whole if possible) in k columns, the rest moves to a continuation."""
+        room = avail - self.z["more"] - self.z["gapmin"] - (0.2 if k > 1 else 0)
+        for lim in ((0, self.limit(cards)) if titles else (0,)):
+            for keep in range(len(cards) - 1, k - 1, -1):
                 f = Fit(cards[:keep])
-                if two and keep < 2:
-                    break
-                if self.shrink(f, w, room, (MORE, MORE, MORE), two, collapse):
+                if self.shrink(f, w, room, (MORE, MORE, MORE), k, lim):
                     f.step, f.moved = MORE, list(cards[keep:])
                     return f
         return None
 
-    def column(self, cards, w, avail, room):
-        """A group in the agreed order; room: a second column is free (the two-column sequence)."""
-        if room:
-            return (self.one_column(cards, w, avail, collapse=False) or self.two_columns(cards, w, avail)
-                    or self.continue_on(cards, w, avail, True))
-        return self.one_column(cards, w, avail) or self.continue_on(cards, w, avail, False)
+    def sub_column(self, cards, w, avail, most):
+        """A group on a sub-map page: 1, 2, ... `most` columns (no title-only cards), then "+n more"."""
+        for k in range(1, most + 1):
+            f = self.columns(cards, w, avail, k)
+            if f:
+                f.sub = True
+                return f
+        for k in range(min(most, len(cards) - 1), 0, -1):
+            f = self.continue_on(cards, w, avail, k)
+            if f:
+                f.sub = True
+                return f
+        return None
 
     def beside(self, cards, w, avail):
         """A sub-map beside its card: one column, at most steps 1-2, never continued."""
@@ -513,8 +552,8 @@ class Fitter:
 def describe(f, z):
     if not f.step:
         return ""
-    two = len(f.columns) == 2
-    bits = ["split into two columns"] if two else []
+    k = len(f.columns)
+    bits = [f"split into {k} columns"] if k > 1 else []
     if f.gap == z["gapmin"]:
         bits.append("gaps tightened")
     if f.hidden:
@@ -523,7 +562,10 @@ def describe(f, z):
         bits.append(f"{f.collapsed} card{'s' * (f.collapsed > 1)} shown as the title only")
     if f.moved:
         bits.append(f"{len(f.moved)} card{'s' * (len(f.moved) > 1)} continue on a sub-map page")
-    step = f.step if two or f.step < TITLE else f.step - 1
+    if f.sub:
+        step = f.step if f.step < TITLE else f.step - 1      # sub-map pages have no title-only step
+    else:
+        step = f.step if k > 1 or f.step < TITLE else f.step - 1
     return f"step {step} ({', '.join(bits)})"
 
 
@@ -539,23 +581,22 @@ def layout_main(mp, parts, fit, z, width, budget, split):
     base = budget - (z["gap"] + 0.15)
     widths = main_widths(mp.P, z, width)
     cols = {p["n"]: 1 for p in parts}
-    for _ in range(2 * len(parts) + 2):
+    for _ in range(MAIN_COLS * len(parts) + 2):
         slots = max(sum(cols.values()), mp.P)
         s = slot(z, width, slots)
         w = widths[slots]
         out, changed = {}, False
         for p in parts:
-            span = round(cols[p["n"]] * s - z["sgap"], 3)
+            k = cols[p["n"]]
+            span = round(k * s - z["sgap"], 3)
             avail = base - head_h(fit, mp, z, p, span)
-            if cols[p["n"]] == 1:
-                f = fit.one_column(p["kids"], w, avail, collapse=False)
-                if f is None and split and len(p["kids"]) > 1 and max(sum(cols.values()) + 1, mp.P) in widths:
-                    cols[p["n"]] = 2
-                    changed = True
-                    break
-                f = f or fit.one_column(p["kids"], w, avail) or fit.continue_on(p["kids"], w, avail, False)
-            else:
-                f = fit.two_columns(p["kids"], w, avail) or fit.continue_on(p["kids"], w, avail, True)
+            f = fit.columns(p["kids"], w, avail, k)
+            if (f is None and split and k < MAIN_COLS and len(p["kids"]) > k
+                    and max(sum(cols.values()) + 1, mp.P) in widths):
+                cols[p["n"]] = k + 1   # one more column, then lay the page out again
+                changed = True
+                break
+            f = f or fit.columns(p["kids"], w, avail, k, titles=True) or fit.continue_on(p["kids"], w, avail, k, True)
             if f is None:
                 sys.exit(f"mind map: part '{plain(p['name'])}' does not fit the {width:.0f} cm wide map even with a "
                          "continuation column; give it fewer cards or use map_size: a3")
@@ -569,7 +610,7 @@ def fit_main(mp, parts, fit, z, width, budget):
     """Splits allowed, unless a split makes another part take a later step (then nothing splits)."""
     calm, s_calm = layout_main(mp, parts, fit, z, width, budget, split=False)
     bold, s_bold = layout_main(mp, parts, fit, z, width, budget, split=True)
-    split = [n for n, f in bold.items() if len(f.columns) == 2]
+    split = [n for n, f in bold.items() if len(f.columns) > 1]
     if split and all(bold[n].step <= calm[n].step for n in bold if n not in split):
         return bold, s_bold
     return calm, s_calm
@@ -584,7 +625,7 @@ def sub_groups(mp, fit, z, width, th, main, skip):
 
     def add(title, trail_text, cards, head_node, back, target, part, cont, hh):
         while cards:
-            f = fit.column(cards, w, avail, True)
+            f = fit.sub_column(cards, w, avail, z["subslots"])
             if f is None:
                 sys.exit(f"mind map: '{plain(title)}' does not fit a sub-map page")
             groups.append(dict(title=title, trail=trail_text, fit=f, node=head_node, back=back, target=target, part=part,
@@ -671,11 +712,12 @@ def draw_card(mp, n, where, w, z, variant):
 
 
 def draw_group(mp, head_code, head, col, s, f, z, more=None):
-    """A heading over one or two columns of cards (col: the part colour number); the stems hang from the heading (from a short bus for two)."""
+    """A heading over one or more columns of cards (col: the part colour number); the stems hang from the heading
+    (from a short bus when there are several columns)."""
     out = [head_code]
-    two = len(f.columns) == 2
+    many = len(f.columns) > 1
     w = s - z["sgap"] - 0.3
-    drop = 0.2 if two else 0
+    drop = 0.2 if many else 0
     last = None
     for j, cards in enumerate(f.columns):
         stem = f"($({head}.south west)+({j * s + 0.12:.3f},{-drop})$)"
@@ -694,8 +736,8 @@ def draw_group(mp, head_code, head, col, s, f, z, more=None):
                    rf"{{\bfseries +{len(f.moved)} more \hfill $\blacktriangleright$}};" "\n"
                    rf"\mmnodelink{{{head}more}}{{{more}}}" "\n"
                    rf"\draw[mmstem=CoverPart{col}] {stem} |- ({head}more.west);")
-    if two:
-        out.append(rf"\draw[mmstem=CoverPart{col}] ($({head}.south west)+(0.12,0)$) -- ++(0,-0.2) -- ++({s:.3f},0);")
+    if many:
+        out.append(rf"\draw[mmstem=CoverPart{col}] ($({head}.south west)+(0.12,0)$) -- ++(0,-0.2) -- ++({(len(f.columns) - 1) * s:.3f},0);")
     return "\n".join(out)
 
 
@@ -746,10 +788,8 @@ def main_page(mp, i, pages, main, s, z, sides):
         f, n = main[p["n"]], p["n"]
         span = len(f.columns) * s - z["sgap"]
         hn = f"{mp.p}head{n}"
-        sub = rf"Part {n}" + (rf" $\cdot$ {p['sub']}" if p["sub"] else "")
         head = (rf"\node[mmpart={{CoverPart{p['col']}}}, text width={span:.3f}cm-12pt, font=\bfseries{z['part']}, minimum height={z['partmin']}cm, "
-                rf"anchor=north west] ({hn}) at ({x:.3f},0) {{\hypertarget{{{mp.p}part-{n}}}{{}}{p['name']}\\[-1pt]"
-                rf"{{\normalfont\footnotesize {sub}}}}};" "\n" rf"\mmnodelink{{{hn}}}{{{mp.p}table-{n}}}")
+                rf"anchor=north west] ({hn}) at ({x:.3f},0) {{\hypertarget{{{mp.p}part-{n}}}{{}}{part_head(p)}}};" "\n" rf"\mmnodelink{{{hn}}}{{{mp.p}table-{n}}}")
         out.append(draw_group(mp, head, hn, p["col"], s, f, z, more=f"{mp.p}cont-{n}" if f.moved else None))
         heads.append(hn)
         x += len(f.columns) * s
@@ -830,7 +870,7 @@ def pack_sub(mp, fit, z, width, th, groups, pending):
             queue.pop(0)
             items.append(("group", x, g))
             f = g["fit"]
-            left = column_tops(fit, f, f.columns[-1], g["hh"] + f.gap + 0.15 + (0.2 if k == 2 else 0), sw)
+            left = column_tops(fit, f, f.columns[-1], g["hh"] + f.gap + 0.15 + (0.2 if k > 1 else 0), sw)
             ceiling = g["hh"]
             x += k * ss
         if left and queue:   # free columns at the end of the page: sub-maps pulled forward to sit beside their cards
@@ -956,7 +996,7 @@ def render(copies, build, main_tex, paper, width, log=print):
             last, p = fits[parts[-1]["n"]], parts[-1]
             w = round(s - z["sgap"] - 0.3, 3)
             ceiling = head_h(fit, mp, z, p, round(len(last.columns) * s - z["sgap"], 3))
-            top = ceiling + last.gap + 0.15 + (0.2 if len(last.columns) == 2 else 0)
+            top = ceiling + last.gap + 0.15 + (0.2 if len(last.columns) > 1 else 0)
             x = sum(len(fits[q["n"]].columns) for q in parts) * s
             sides = side_columns(mp, fit, z, column_tops(fit, last, last.columns[-1], top, w), ceiling, x, width - x, budget - 0.2,
                                  widths, pending)

@@ -43,6 +43,7 @@ KEYS = {
     "edge_tabs": ("bool", "--edge-tabs"),     # a clickable tab per part on the page edge (false: none)
     "map_size": ("str", "--paper-size"),     # mind maps: a4 (screen, default) or a3 (print)
     "map_detail": ("bool", None),            # mind maps: false never shows the grey detail lines (default: where they fit)
+    "map_titles": ("str", None),             # mind maps: share of a main-map column's cards that may lose their formula (default 1/3)
     "margin_x": ("str", "--margin-x"),       # left/right margin, e.g. 0.6in (default: the type's, else 0.5in)
     "preamble": ("str", "--type-preamble"),
     "toc": ("bool", None),                   # false: no table of contents (build.py --no-toc)
@@ -90,6 +91,7 @@ DOCS = {
     "print_layout": ("Print", "`duplex`", "Print copy page order: `duplex` (even pages) or `booklet` (a multiple of 4)"),
     "map_size": ("Mind map", "`a4`", "`a4` (screen) or `a3` (print) landscape"),
     "map_detail": ("Mind map", "where they fit", "`false`: never show the grey detail lines on the cards"),
+    "map_titles": ("Mind map", "`1/3`", "Share of a main-map column's cards that may be shown as their title only (at least 2); `0`: never, `0.5`: half"),
     "paper": ("Past paper", "`true`", "`false` leaves out the typeset question paper"),
     "paper_header": ("Past paper", "", "List: the paper's centred header lines (raw LaTeX)"),
     "paper_info": ("Past paper", "", "List: the marks / credits / time row; also feeds the paper-at-a-glance page"),
@@ -162,6 +164,10 @@ def md2tex_flags(meta):
         flags += ["--paper-size", meta["map_size"]]
     if meta.get("map_detail") is not None:
         flags += ["--map-detail", "true" if meta["map_detail"] else "false"]
+    if meta.get("map_titles") is not None:
+        t = str(meta["map_titles"]).strip()
+        num, _, den = t.partition("/")
+        flags += ["--map-titles", str(float(num) / float(den) if den else float(num))]
     if meta.get("lang") == "bn":
         flags.append("--bangla")
     return flags

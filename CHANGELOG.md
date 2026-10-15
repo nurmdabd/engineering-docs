@@ -2,9 +2,14 @@
 
 ## October 2026: mind-map pages
 
-- **Fitting order:** with room for a second column, a part that is too tall splits before its cards lose their
-  formulas (gaps, grey lines, two columns, title-only cards, "+n more"); without room, the same minus the
-  split. Grey lines come back after a split wherever they fit.
+- **Fitting order:** more columns come before cards lose their formulas: on the main map a part takes up to
+  three columns where there is room (gaps, grey lines, two then three columns, title-only cards, "+n more");
+  without room, the same minus the columns. Grey lines come back after a split wherever they fit.
+- **Title-only cards** are limited to a third of a column's cards (at least 2; `map_titles` changes the share,
+  `0` turns them off) and never used on sub-map pages, where a group takes up to the page's width in columns
+  (4 on A4, 5 on A3) and then continues.
+- **Fix:** a part heading's sub-line ("Part 2 · L5--8") was left out when the heading was measured, so a long one
+  that wrapped could push the main map off its page.
 - **Main map over several pages:** more parts than a page holds (six) continue on the next page, spread evenly,
   with "page n of m" and a link to the next page. Before, seven or more parts stopped the build with a Python
   error. Part colours repeat after the eighth part.
