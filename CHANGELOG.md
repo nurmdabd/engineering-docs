@@ -5,6 +5,8 @@
 - **Fix:** a link into another PDF (a mind-map card title, a formula sheet's Reference) printed cyan in the print
   copy: hyperref's `filecolor` was not set. `print-bw.tex` now sets `filecolor`, `runcolor` and `menucolor` to
   black too, and the `core-elements` fixture (which has such a link) is built in print and checked for colour.
+- **Fix:** hatching in a figure kept its colour in the grey print copy (a hatch takes the colour of the edge it
+  was drawn with). `figures_bw` now greys the hatch colour of patches and collections, and its test checks it.
 
 ## October 2026: pack cover
 

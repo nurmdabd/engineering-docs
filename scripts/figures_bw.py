@@ -116,6 +116,7 @@ def to_bw(fig, relabel=None):
     for pa in patches:
         pa.set_facecolor(_fill(pa.get_facecolor()))
         pa.set_edgecolor(_stroke(pa.get_edgecolor()))
+        _grey_hatch(pa)
     for tx in fig.findobj(Text):
         c = tx.get_color()
         # light text sat on a strong fill, which is a light grey now: make it black too, or it vanishes
@@ -132,7 +133,20 @@ def to_bw(fig, relabel=None):
             co.set_facecolor([_fill(c) for c in fcs])
         if len(ecs):
             co.set_edgecolor([_stroke(c) for c in ecs])
+        _grey_hatch(co)
     return fig
+
+
+def _grey_hatch(artist):
+    """A hatch keeps its own colour (from the edge colour it was drawn with), so grey it too."""
+    if not artist.get_hatch():
+        return
+    if hasattr(artist, "set_hatchcolor"):   # matplotlib 3.10 and later
+        c = artist.get_hatchcolor()
+        c = c[0] if getattr(c, "ndim", 1) == 2 and len(c) else c
+        artist.set_hatchcolor(_stroke(c))
+    elif hasattr(artist, "_hatch_color"):   # older matplotlib: the hatch colour is a private field
+        artist._hatch_color = to_rgba(_stroke(artist._hatch_color))
 
 
 def save(fig, path, relabel=None, dashes=True, **savefig_kw):
