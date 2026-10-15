@@ -62,7 +62,7 @@ It is in English also for a Bangla document (see ROADMAP.md).
 
 `template/back-cover.tex`, for every type, in the print copy (and the screen PDF with `back_cover: true`): an accent strip on the right edge (the spine side) carrying course,
 title and subtitle; faint rings; "About this document" with the title, `back_blurb` and up to three numbers
-counted from the document plus the page count; course, author and date at the foot. Write `back_blurb` in
+counted from the document plus the page count (the whole PDF's, blank pages and the back cover included, so it matches the viewer); course, author and date at the foot. Write `back_blurb` in
 plain words: what the document is and how it teaches, one or two sentences.
 
 ## 15.5 Edge tabs

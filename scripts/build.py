@@ -84,8 +84,7 @@ def back_cover_block(a, back, covered):
     if not a.bw or not covered:
         return "\\input{back-cover}" if back else ""
     pad = 4 if a.print_layout == "booklet" else 2
-    count = "\\clearpage\\xdef\\HouseContentPages{\\the\\ReadonlyShipoutCounter}"   # before the blank pages
-    return f"{count}\\HousePadBefore{{{pad}}}\\input{{back-cover}}" if back else f"\\HousePadTo{{{pad}}}"
+    return f"\\HousePadBefore{{{pad}}}\\input{{back-cover}}" if back else f"\\HousePadTo{{{pad}}}"
 
 
 def safe_stem(path, used):

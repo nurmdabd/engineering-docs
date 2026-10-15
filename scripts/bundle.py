@@ -240,7 +240,7 @@ def cover_tex(spec, parts, starts, total, bw, with_map=True):
 \PackMap
 \docinfo{{{len(parts)} documents, {total} pages.}}
 \clearpage
-\xdef\HouseContentPages{{{total}}}
+\xdef\HouseTotalPages{{{total}}}
 \input{{back-cover}}
 \end{{document}}
 """
@@ -290,7 +290,19 @@ def main():
             page += 1
         starts.append(page)
         page += len(p["pages"])
+    # the whole pack's page count (the back cover and the "In this pack" page show it): the parts, then in
+    # print the blank pages and the back cover that finish the last sheet
     total = page - 1
+    back = spec.get("back_cover", "print")
+    back = back is True or (back == "print" and a.bw)
+    group = 4 if spec.get("print_layout") == "booklet" else 2
+    if back:
+        while a.bw and (total + 1) % group:
+            total += 1
+        total += 1
+    elif a.bw:
+        while total % group:
+            total += 1
 
     build = out.parent / f"{out.stem}_build"
     shutil.rmtree(build, ignore_errors=True)
@@ -362,15 +374,15 @@ def main():
         if links:
             w.pages[k][NameObject("/Annots")] = ArrayObject(
                 (lambda c: c.indirect_reference or w._add_object(c))(link.get_object().clone(w)) for link in links.get_object())
-    back = spec.get("back_cover", "print")
-    if back is True or (back == "print" and a.bw):
-        group = 4 if spec.get("print_layout") == "booklet" else 2
+    if back:
         while a.bw and (len(w.pages) + 1) % group:
             w.add_blank_page()
         w.append(own, pages=[2], import_outline=False)
     elif a.bw:
-        while len(w.pages) % (4 if spec.get("print_layout") == "booklet" else 2):
+        while len(w.pages) % group:
             w.add_blank_page()
+    if len(w.pages) != total:
+        sys.exit(f"the pack came out as {len(w.pages)} pages, but its covers say {total}")
 
     # links into another part of the pack become links inside it
     moved = 0

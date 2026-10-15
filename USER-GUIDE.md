@@ -200,7 +200,7 @@ With `cover: true` (past papers have it by default), a document gets three extra
   | past paper | The paper at a glance: time, marks, how many to answer, and every sub-part with its marks and minutes |
   | question bank | How to practise, and a practice log with two boxes per question |
 
-- **The back cover** (last page of the print copy; add `back_cover: true` to have it in the screen PDF too), in its own style: a strip on the right edge with the course and document name, faint rings, a short "About this document" (`back_blurb:`), a few numbers and the page count.
+- **The back cover** (last page of the print copy; add `back_cover: true` to have it in the screen PDF too), in its own style: a strip on the right edge with the course and document name, faint rings, a short "About this document" (`back_blurb:`), a few numbers and the page count (the whole PDF, so it matches what your viewer shows).
 
 **Colours:** each type has its own colour, and each subject has one too (`accent:`). Give every document of a subject the same `accent`, and they look like a set. Headings and boxes keep the house colours.
 

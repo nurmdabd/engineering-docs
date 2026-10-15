@@ -448,7 +448,7 @@ def run_builds(cases):
 
 def run_print_layout():
     """Print copies of a document with a cover: page 2 is the back of the cover (or blank), the back cover is the
-    last page, and the page count is even (a multiple of 4 for a booklet); without a back cover, still even."""
+    last page and gives the PDF's whole page count, and the page count is even (a multiple of 4 for a booklet); without a back cover, still even."""
     failed = 0
     body = FIXTURES / ".print-layout.tex"
     side = body.with_suffix(".build.json")
@@ -474,6 +474,9 @@ def run_print_layout():
                     problems.append(f"{pages} pages, not a multiple of {group}")
                 if back != ("ABOUT THIS DOCUMENT" in last):
                     problems.append("the back cover is not the last page" if back else "a back cover was added")
+                said = [int(n) for n in re.findall(r"(\d+)\s+pages", last)]
+                if back and said != [pages]:
+                    problems.append(f"the back cover says {said} pages, the PDF has {pages}")
                 print(f"{'ok' if not problems else 'FAILED':8} {name} ({pages} pages)")
                 for p in problems:
                     print("  " + p)
@@ -576,6 +579,9 @@ def run_bundle():
                 problems.append("expected exactly one back cover, the pack's own, as the last page")
             if not extra and backs:
                 problems.append("the screen pack has a back cover (it belongs to the print pack only)")
+            said = [int(n) for n in re.findall(r"(\d+)PAGES", text[-1])] if extra else []
+            if extra and (not said or max(said) != len(pdf.pages)):   # the largest number is the whole pack's
+                problems.append(f"the back cover says {said} pages, the pack has {len(pdf.pages)}")
             if "INTHISPACK" not in text[1]:
                 problems.append("page 2 is not the In this pack page")
             for k, what in ((0, "cover"), (1, "In this pack page")):   # each part's card or heading is a link
