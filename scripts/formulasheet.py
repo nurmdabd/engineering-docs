@@ -127,12 +127,17 @@ def pages(rows):
     out = []
     keys = [r for r in rows if r["key"]]
     if keys:
-        body = "\n".join(f"    \\hyperlink{{fsrow-{r['n']}}}{{{r['title']}}} &\n    {r['equation']} \\\\ \\hline" for r in keys)
+        # a fraction, root or big operator gets a strut, so it stays clear of the rules above and below
+        tall = lambda eq: "\\rule[-2.9ex]{0pt}{6.9ex}" if re.search(r"\\(?:[dt]?frac|sqrt|sum|int|prod)\b", eq) else ""
+        body = "\n".join(f"    \\hyperlink{{fsrow-{r['n']}}}{{{r['title']}}} &\n    {tall(r['equation'])}{r['equation']} \\\\ \\hline"
+                         for r in keys)
         out.append("\\clearpage\n\\section{Key formulas}\n\\label{sec:key_formulas}\n"
                    "The formulas marked {\\color{orange!80!black}$\\bigstar$} in the sheet, on one page. "
                    "Each title links back to its row.\n\n"
+                   # taller rows than the sheet's, so a fraction does not touch the rules (one formula a row)
+                   "{\\renewcommand{\\arraystretch}{1.5}\n"
                    "\\begin{tabularx}{\\textwidth}{|x{4.2cm}|L|}\n    \\hline\n    \\rowcolor{gray!15}\n"
-                   "    \\yy{Title}{4.2cm} &\n    \\CC{Equation} \\\\ \\hline\n\\endhead\n\n" + body + "\n\\end{tabularx}\n")
+                   "    \\yy{Title}{4.2cm} &\n    \\CC{Equation} \\\\ \\hline\n\\endhead\n\n" + body + "\n\\end{tabularx}}\n")
     syms = symbols(rows)
     if syms:
         body = "\n".join(f"    {s} & {m} & \\hyperlink{{fsrow-{r['n']}}}{{{r['title']}}} \\\\ \\hline" for s, m, r in syms)

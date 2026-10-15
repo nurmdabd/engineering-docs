@@ -14,6 +14,8 @@
   columns (each line linked to its page); long outlines are cut to fit the page.
 - **Page count on the back cover:** the whole PDF's, blank pages and the back cover included, so it matches the
   viewer (before, a print copy left out its padding pages and the back cover). A pack's covers say the same.
+- **Key formulas page:** taller rows, and a row with a fraction, root or sum gets extra height, so the formula no
+  longer touches the lines above and below it.
 - **Fix: links inside a pack.** pypdf dropped every link of every part when it merged them (the parts' named
   destinations were renamed so two parts could not clash, and pypdf drops a link whose name it cannot find), so
   contents pages, the question paper's sub-part links and every cross-reference did nothing; links from one part
