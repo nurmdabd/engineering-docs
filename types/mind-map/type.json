@@ -1,5 +1,5 @@
 {
-  "description": "A one-page mind map of a course (A4 or A3 landscape): parts in story order, cards with key formulas, links into the theory, then any compare tables.",
+  "description": "A mind map of a course (A4 or A3 landscape; more than six parts continue on a second main-map page): parts in story order, cards with key formulas, links into the theory, then any compare tables.",
   "md2tex": ["--landscape"],
   "build": ["--landscape", "--no-toc"],
   "cover": {"label": "MIND MAP", "signature": "2A9D8F"}

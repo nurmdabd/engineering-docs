@@ -246,7 +246,7 @@ date: "October 2026"
 | `author`, `date` | Cover and back cover (author defaults to Nur Mohammad) |
 | `toc: false` | No table of contents (one-table sheets) |
 | `print_layout: booklet` | Print copy padded to a multiple of 4 pages (Section 12) |
-| `map_size` | Mind maps: `a4` or `a3` |
+| `map_size`, `map_titles` | Mind maps: `a4` or `a3`; the share of a column's cards that may lose their formula (`1/3`; `0`: never) |
 
 **Every key with its default** is listed in `references/front-matter-keys.md`, or run `python3 scripts/doc.py keys`. That list is generated from the code, so it is always complete; the linter reports any key it doesn't know.
 
