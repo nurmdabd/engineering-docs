@@ -1,5 +1,11 @@
 # Changelog
 
+## October 2026: print copies stay black and white
+
+- **Fix:** a link into another PDF (a mind-map card title, a formula sheet's Reference) printed cyan in the print
+  copy: hyperref's `filecolor` was not set. `print-bw.tex` now sets `filecolor`, `runcolor` and `menucolor` to
+  black too, and the `core-elements` fixture (which has such a link) is built in print and checked for colour.
+
 ## October 2026: pack cover
 
 - **A pack has its own cover** (`template/pack-cover.tex`) instead of the default study-notes cover: a faint fan
