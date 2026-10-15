@@ -620,11 +620,12 @@ def column_tops(fit, f, col, top, w):
     return out
 
 
-def side_columns(mp, fit, z, left, x, free, budget, widths, pending):
+def side_columns(mp, fit, z, left, ceiling, x, free, budget, widths, pending):
     """Sub-maps beside their cards, in the space right of the last column. left: [(card, top)] of that column;
-    pending: ids of cards whose sub-map may move here. A sub-map takes the next column only when its card is in
-    the column directly to its left; it starts level with its card (the first one of a column may start higher)
-    and fits in one column with at most steps 1-2. Returns [(x, card width, [placement])] and updates pending."""
+    ceiling: the bottom of the heading over it; pending: ids of cards whose sub-map may move here. A sub-map takes
+    the next column only when its card is in the column directly to its left; it starts level with its card (the
+    first one of a column may start higher, but never above the ceiling) and fits in one column with at most
+    steps 1-2. Returns [(x, card width, [placement])] and updates pending."""
     out = []
     while left:
         ws = [w for w in widths if w + 0.3 <= free + 1e-6]
@@ -640,10 +641,10 @@ def side_columns(mp, fit, z, left, x, free, budget, widths, pending):
             f, top = None, ctop
             if bottom is None or ctop >= bottom + 0.4:
                 f = fit.beside(c["kids"], w, budget - ctop - lead)
-            if f is None and bottom is None:   # the first sub-map of a column may start higher than its card
-                f = fit.beside(c["kids"], w, budget - lead)
+            if f is None and bottom is None:   # the first sub-map of a column may start higher, down from the ceiling
+                f = fit.beside(c["kids"], w, budget - ceiling - lead)
                 if f is not None:
-                    top = max(0.0, budget - (lead + fit.col_h(f.cards, f, w)))
+                    top = max(ceiling, budget - (lead + fit.col_h(f.cards, f, w)))
             if f is None:
                 continue
             placed.append(dict(node=c, fit=f, top=top, hh=hh, level=top == ctop))
@@ -652,6 +653,7 @@ def side_columns(mp, fit, z, left, x, free, budget, widths, pending):
         if not placed:
             break
         out.append((x, w, placed))
+        ceiling = placed[0]["top"] + placed[0]["hh"]
         left = [t for p in placed for t in column_tops(fit, p["fit"], p["fit"].cards, p["top"] + p["hh"] + p["fit"].gap + 0.15, w)]
         step = w + 0.3 + z["sgap"]
         x, free = x + step, free - step
@@ -794,12 +796,12 @@ def pack_sub(mp, fit, z, width, th, groups, pending):
     def regular(g):
         return g["node"] is not None and not g["cont"]
 
-    def beside(left, x, free, ids):
-        sides = side_columns(mp, fit, z, left, x, free, budget, [sw], ids)
+    def beside(left, ceiling, x, free, ids):
+        sides = side_columns(mp, fit, z, left, ceiling, x, free, budget, [sw], ids)
         moved = {pl["node"]["id"] for _, _, placed in sides for pl in placed}
         return sides, moved
     while queue:
-        items, x, left = [], 0.0, None
+        items, x, left, ceiling = [], 0.0, None, 0.0
         while queue:
             g = queue[0]
             if left and regular(g):   # the next sub-map in order extends a card of the column on its left
@@ -810,7 +812,7 @@ def pack_sub(mp, fit, z, width, th, groups, pending):
                         break
                     run.add(h["node"]["id"])
                 if run:
-                    sides, moved = beside(left, x, width - x, run & pending)
+                    sides, moved = beside(left, ceiling, x, width - x, run & pending)
                     if moved:
                         for col in sides:
                             items.append(("side", col[0], col))
@@ -818,6 +820,7 @@ def pack_sub(mp, fit, z, width, th, groups, pending):
                         pending -= moved
                         queue = [h for h in queue if h["node"] is None or h["node"]["id"] not in moved]
                         last_x, last_w, placed = sides[-1]
+                        ceiling = placed[0]["top"] + placed[0]["hh"]
                         left = [t for pl in placed for t in column_tops(fit, pl["fit"], pl["fit"].cards,
                                                                        pl["top"] + pl["hh"] + pl["fit"].gap + 0.15, last_w)]
                         continue
@@ -828,10 +831,11 @@ def pack_sub(mp, fit, z, width, th, groups, pending):
             items.append(("group", x, g))
             f = g["fit"]
             left = column_tops(fit, f, f.columns[-1], g["hh"] + f.gap + 0.15 + (0.2 if k == 2 else 0), sw)
+            ceiling = g["hh"]
             x += k * ss
         if left and queue:   # free columns at the end of the page: sub-maps pulled forward to sit beside their cards
             ids = {g["node"]["id"] for g in queue if regular(g)} & pending
-            sides, moved = beside(left, x, width - x, ids)
+            sides, moved = beside(left, ceiling, x, width - x, ids)
             for col in sides:
                 items.append(("side", col[0], col))
             pending -= moved
@@ -951,10 +955,10 @@ def render(copies, build, main_tex, paper, width, log=print):
             main.update(fits)
             last, p = fits[parts[-1]["n"]], parts[-1]
             w = round(s - z["sgap"] - 0.3, 3)
-            top = (head_h(fit, mp, z, p, round(len(last.columns) * s - z["sgap"], 3)) + last.gap + 0.15
-                   + (0.2 if len(last.columns) == 2 else 0))
+            ceiling = head_h(fit, mp, z, p, round(len(last.columns) * s - z["sgap"], 3))
+            top = ceiling + last.gap + 0.15 + (0.2 if len(last.columns) == 2 else 0)
             x = sum(len(fits[q["n"]].columns) for q in parts) * s
-            sides = side_columns(mp, fit, z, column_tops(fit, last, last.columns[-1], top, w), x, width - x, budget - 0.2,
+            sides = side_columns(mp, fit, z, column_tops(fit, last, last.columns[-1], top, w), ceiling, x, width - x, budget - 0.2,
                                  widths, pending)
             mains.append((s, sides))
             for _, _, placed in sides:

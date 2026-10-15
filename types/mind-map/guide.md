@@ -96,7 +96,8 @@ holds:
 - its card is in the column directly to its left (the line never crosses a column);
 - it fits in one column with at most tighter gaps and hidden grey lines (never title-only cards, two columns or
   **+n more**: then it stays on a sub-map page at full size);
-- it starts level with its card; only the first one in a column may start higher, as low as it fits.
+- it starts level with its card; only the first one in a column may start higher, as low as it fits, and
+  never above the bottom of the heading over its card's column.
 
 Several can stack in one column, in course order, and a card in one of them can take the next column the same
 way. The build output names every sub-map placed beside its card.
