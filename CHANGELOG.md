@@ -5,6 +5,9 @@
 - **Fix:** a link into another PDF (a mind-map card title, a formula sheet's Reference) printed cyan in the print
   copy: hyperref's `filecolor` was not set. `print-bw.tex` now sets `filecolor`, `runcolor` and `menucolor` to
   black too, and the `core-elements` fixture (which has such a link) is built in print and checked for colour.
+- **Same top margin for every type:** 0.7in top and bottom (the past-paper type's), so the headers of a
+  solution, its formula sheet and its mind map sit at the same height, also inside a pack (before: 0.83in top
+  for every type but past papers).
 - **Fix:** on a pack cover a long course name ran under the stack of sheets; the name now wraps at 12.8 cm
   there (`\CoverNameWidth` in the cover kit, 16 cm on every other cover).
 - **Fix:** hatching in a figure kept its colour in the grey print copy (a hatch takes the colour of the edge it
