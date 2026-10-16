@@ -677,6 +677,22 @@ local function table_block(t)
   for v in (t.attr.attributes["mword"] or ""):gmatch("[^,]+") do mword[#mword + 1] = tonumber(v) end
   local ncol = #t.colspecs
   local cw = 0.0185 * FONTPT             -- cm per character, rough
+  -- a formula-sheet table (Title | Equation | Notation | Ref.): Title and Equation a size larger so they read
+  -- easily, Notation and Ref. in \footnotesize since they are only looked up (types/formula-sheet/guide.md)
+  local fscale, colfont = {}, {}
+  for j = 1, ncol do fscale[j] = 1; colfont[j] = "" end
+  local hd = {}
+  for _, row in ipairs(t.head.rows) do for j, cell in ipairs(row.cells) do hd[j] = stringify(cell.contents) end end
+  local is_fs = ncol == 4 and hd[1] == "Title" and hd[2] == "Equation" and hd[3] == "Notation"
+    and (hd[4] == "Ref." or hd[4] == "Reference")
+  if is_fs then
+    local big = FONTPT * 1.1
+    for j = 1, 2 do
+      fscale[j] = 1.1
+      colfont[j] = string.format(">{\\fontsize{%g}{%g}\\selectfont}", big, math.floor(big * 1.2 * 2 + 0.5) / 2)
+    end
+    for j = 3, 4 do fscale[j] = 0.8; colfont[j] = ">{\\footnotesize}" end
+  end
   local textw = TEXTW
   local flex, best = nil, 0
   -- flexible column: the maths-heavy column with the longest entries (maths cannot wrap like text);
@@ -700,8 +716,9 @@ local function table_block(t)
     if j == flex then
       kind[j] = "L"
     elseif maxl[j] <= 12 and (tall[j] or 0) == 0 then
-      kind[j] = "c"; fixed_total = fixed_total + maxl[j] * cw + 0.5
+      kind[j] = "c"; fixed_total = fixed_total + maxl[j] * cw * fscale[j] + 0.5
     else
+      local cw = cw * fscale[j]
       -- text columns wrap to 2 lines (3 when the flexible column holds maths, which cannot wrap)
       local mathflex = (mshare[flex] or 0) >= 0.5
       local lines, cap = mathflex and 3 or 2, mathflex and 4.4 or 5.2
@@ -732,8 +749,8 @@ local function table_block(t)
   for j = 1, ncol do if kind[j] == "x" then sumw = sumw + width[j] end end
   local scale = (sumw > fixed_cap) and fixed_cap / sumw or 1
   for j = 1, ncol do
-    if kind[j] == "x" then width[j] = string.format("%.1fcm", width[j] * scale); spec[j] = "x{" .. width[j] .. "}"
-    else spec[j] = kind[j] end
+    if kind[j] == "x" then width[j] = string.format("%.1fcm", width[j] * scale); spec[j] = colfont[j] .. "x{" .. width[j] .. "}"
+    else spec[j] = colfont[j] .. kind[j] end
   end
   local lines = { "\\begin{tabularx}{\\textwidth}{|" .. table.concat(spec, "|") .. "|}", "    \\hline", "    \\rowcolor{gray!15}" }
   for _, row in ipairs(t.head.rows) do
@@ -765,7 +782,7 @@ local function table_block(t)
   local flexw = textw - 0.45 * ncol
   for j = 1, ncol do
     if kind[j] == "x" then colw[j] = tonumber((width[j]:gsub("cm", "")))
-    elseif kind[j] == "c" then colw[j] = maxl[j] * cw + 0.5 end
+    elseif kind[j] == "c" then colw[j] = maxl[j] * cw * fscale[j] + 0.5 end
     if colw[j] then flexw = flexw - colw[j] end
   end
   local nflex = 0
@@ -778,8 +795,8 @@ local function table_block(t)
       for j, cell in ipairs(row.cells) do
         if j <= ncol then
           local n = math_len(pandoc.Blocks(cell.contents))
-          local per = math.max((colw[j] - 0.3) / cw, 1)
-          rl = math.max(rl, math.ceil(n / per))
+          local per = math.max((colw[j] - 0.3) / (cw * fscale[j]), 1)
+          rl = math.max(rl, math.ceil(n / per) * fscale[j])
           if (tall[j] or 0) == 1 then tallrow = true end
         end
       end
