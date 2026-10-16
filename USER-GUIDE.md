@@ -104,7 +104,7 @@ A type is a preset for one kind of document: page settings, a writing guide, a s
 |---|---|---|
 | `theory-notes` | Lecture notes taught like a lesson | 12pt; cover listing the parts; "how to use" page; edge tabs |
 | `exam-notes` | Memorize-version of theory notes, each heading linked back | 12pt; revision cover; revision-plan page; edge tabs |
-| `formula-sheet` | Every formula in Title / Equation / Notation / Reference tables | 10pt, 0.4in margins; cover with the topics; Key formulas and Symbol index pages; edge tabs |
+| `formula-sheet` | Every formula in Title / Equation / Notation / Ref. tables | 11pt (Notation and Ref. 8pt), 0.4in margins; cover with the topics; Key formulas and Symbol index pages; edge tabs |
 | `question-bank` | Practice numericals, short and long questions, linked to solutions | 12pt; cover with the counts; practice-log page |
 | `past-paper` | Full solutions of a previous year's paper | tight layout; solutions cover with a question map; paper-at-a-glance page; the typeset question paper linked to the solutions |
 | `project-report` | Multi-day lab or project report, one chapter per day | 14pt report (chapters); formal framed cover |
@@ -206,7 +206,7 @@ With `cover: true` (past papers have it by default), a document gets three extra
 
 **Turning parts off:** `inside_cover: false` (no page 2), `back_cover: false` (no back cover, not even in print), `cover: false` (none of the three).
 
-**Edge tabs:** theory notes, exam notes and formula sheets also get a clickable coloured tab per part on the right edge of every page; the wide tab is the part you are reading. `edge_tabs: false` removes them. They are never printed.
+**Edge tabs:** theory notes, exam notes and formula sheets also get a clickable tab per part on the right edge of every page, all the same size; the coloured tab is the part you are reading (the others are grey). `edge_tabs: false` removes them. They are never printed.
 
 ---
 

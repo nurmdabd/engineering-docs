@@ -677,8 +677,9 @@ local function table_block(t)
   for v in (t.attr.attributes["mword"] or ""):gmatch("[^,]+") do mword[#mword + 1] = tonumber(v) end
   local ncol = #t.colspecs
   local cw = 0.0185 * FONTPT             -- cm per character, rough
-  -- a formula-sheet table (Title | Equation | Notation | Ref.): Title and Equation a size larger so they read
-  -- easily, Notation and Ref. in \footnotesize since they are only looked up (types/formula-sheet/guide.md)
+  -- a formula-sheet table (Title | Equation | Notation | Ref.): Title and Equation at least 11pt, the size of the
+  -- sheet's body text, so they read easily; Notation and Ref. at 8pt, since they are only looked up
+  -- (types/formula-sheet/guide.md)
   local fscale, colfont = {}, {}
   for j = 1, ncol do fscale[j] = 1; colfont[j] = "" end
   local hd = {}
@@ -686,12 +687,10 @@ local function table_block(t)
   local is_fs = ncol == 4 and hd[1] == "Title" and hd[2] == "Equation" and hd[3] == "Notation"
     and (hd[4] == "Ref." or hd[4] == "Reference")
   if is_fs then
-    local big = FONTPT * 1.1
-    for j = 1, 2 do
-      fscale[j] = 1.1
-      colfont[j] = string.format(">{\\fontsize{%g}{%g}\\selectfont}", big, math.floor(big * 1.2 * 2 + 0.5) / 2)
+    if FONTPT < 11 then
+      for j = 1, 2 do fscale[j] = 11 / FONTPT; colfont[j] = ">{\\fontsize{11}{13.5}\\selectfont}" end
     end
-    for j = 3, 4 do fscale[j] = 0.8; colfont[j] = ">{\\footnotesize}" end
+    for j = 3, 4 do fscale[j] = 8 / FONTPT; colfont[j] = ">{\\fontsize{8}{10}\\selectfont}" end
   end
   local textw = TEXTW
   local flex, best = nil, 0
@@ -776,7 +775,7 @@ local function table_block(t)
   -- table that doesn't fit moves to the next page whole (the guard pass adds a heading or label above it).
   -- A longer one may still continue, repeating its header. (\\* rows would forbid the break too, but
   -- longtable then puts the header on the next page ahead of the text before the table.)
-  local nrows, height = 0, 0
+  local nrows, height, lasth = 0, 0, 0
   local L = FONTPT * 1.2                        -- pt per text line in a cell (stretch 1, the widest case)
   local colw = {}
   local flexw = textw - 0.45 * ncol
@@ -800,14 +799,24 @@ local function table_block(t)
           if (tall[j] or 0) == 1 then tallrow = true end
         end
       end
-      height = height + (rl + 0.45) * L + (tallrow and 10 or 0)
+      lasth = (rl + 0.45) * L + (tallrow and 10 or 0)
+      height = height + lasth
     end
   end
   height = height + 1.6 * L + 2.6 * L           -- header row, caption
   local keep = nrows <= SHORT_TABLE and height < 40 * L
   local rowend = " \\\\ \\hline"
+  -- a long table reserves room for its last row and the caption before that row, so the caption never starts
+  -- a page of its own under a repeated header row; that row moves over with it instead (needs LTchunksize 1)
+  local nleft = 0
+  for _, body in ipairs(t.bodies) do nleft = nleft + #body.body end
   for _, body in ipairs(t.bodies) do
     for _, row in ipairs(body.body) do
+      nleft = nleft - 1
+      if nleft == 0 and not keep then
+        -- in place of the blank line after the previous row: a blank line (\\par) would start a new row first
+        lines[#lines] = string.format("\\noalign{\\needspace{%dpt}}", math.ceil(lasth + 2.6 * L + 6))
+      end
       local cells = {}
       for j, cell in ipairs(row.cells) do
         local tex = cell_tex(cell)
@@ -1033,6 +1042,16 @@ local guard_filter = {
         out:insert(b)
       else
         out:insert(b)
+      end
+    end
+    -- a guard right after a table is \Needspace* (it measures the page exactly): after a long table the plain
+    -- \needspace misjudges the space left and breaks the page early, leaving the table's repeated header
+    -- row alone on the next page
+    for j = 2, #out do
+      local prev, g = out[j - 1], out[j]
+      if prev.t == "RawBlock" and prev.text:match("\\end{tabularx}%s*$") and g.t == "RawBlock" then
+        local n, rest = g.text:match("^\\needspace(%b{})(.*)$")
+        if n then out[j] = rawb("\\Needspace*" .. n .. rest) end
       end
     end
     return out

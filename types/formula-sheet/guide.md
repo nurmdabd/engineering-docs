@@ -6,7 +6,7 @@ Everything in `SKILL.md` and `references/authoring.md` applies; this guide adds 
 
 ## Settings
 
-`type: formula-sheet` sets 10pt text and 0.4in side margins (the converter sizes the columns from the margin; `margin_x` changes it). Add the cover fields in the front matter for its cover, which shows each topic with its formula count.
+`type: formula-sheet` sets 11pt text (Notation and Ref. columns 8pt) and 0.4in side margins (the converter sizes the columns from the margin; `margin_x` changes it). Add the cover fields in the front matter for its cover, which shows each topic with its formula count.
 
 **Added at build time** (the body `.tex` is not changed):
 - **Key formulas:** a row whose Title is bold gets a star, and all of them are gathered on a *Key formulas* page at the end, each linking back to its row. Bold only the formulas that are truly key (about one in five).
@@ -47,7 +47,7 @@ Conventions: the units and symbol conventions used throughout (for example "$k_f
 
 ## After converting
 
-The converter sizes the columns from their content, making the Equation column the flexible one. A table headed exactly `Title | Equation | Notation | Ref.` gets column font sizes: Title and Equation one step larger than the body (11 pt in a 10 pt sheet), so the formulas read easily; Notation and Ref. in `\footnotesize` (8 pt), since they are only looked up, which also keeps those two columns narrow. The user's own COM sheet keeps Notation and Reference narrow (hand-edited smaller), so only widen Notation when its entries wrap badly on the rendered page. Look at the rendered pages (SKILL.md, Step 5): Notation and Reference should be just wide enough; if they wrap badly, adjust the `x{…}` widths in the `.tex` by hand. Once the `.tex` is hand-edited, never re-run the converter over it.
+The converter sizes the columns from their content, making the Equation column the flexible one. A table headed exactly `Title | Equation | Notation | Ref.` gets column font sizes: Title and Equation at the body size, 11 pt (the sheet is set in 11 pt: the text above the tables, the header and the footer), so the formulas read easily; Notation and Ref. at 8 pt, since they are only looked up, which also keeps those two columns narrow. The user's own COM sheet keeps Notation and Reference narrow (hand-edited smaller), so only widen Notation when its entries wrap badly on the rendered page. Look at the rendered pages (SKILL.md, Step 5): Notation and Reference should be just wide enough; if they wrap badly, adjust the `x{…}` widths in the `.tex` by hand. Once the `.tex` is hand-edited, never re-run the converter over it.
 
 ## Review checklist
 

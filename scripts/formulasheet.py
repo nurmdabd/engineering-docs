@@ -54,9 +54,10 @@ def mark_rows(tex, start=0):
             if len(cells) < 2 or "\\caption" in row:
                 continue
             n = start + len(rows) + 1
-            title = cells[0].strip()
+            # leading space, and a \noalign{...} line that the converter puts before a long table's last row
+            lead = re.match(r"\s*(?:\\noalign\{\\needspace\{[^}]*\}\}\s*)?", cells[0]).group(0)
+            title = cells[0][len(lead):].strip()
             key = bool(BOLD.match(title))
-            lead = re.match(r"\s*", cells[0]).group(0)
             star = "{\\color{orange!80!black}$\\bigstar$}\\," if key else ""
             cells[0] = f"{lead}\\hypertarget{{fsrow-{n}}}{{}}{star}{cells[0][len(lead):]}"
             pieces[k] = "&".join(cells)
