@@ -972,8 +972,9 @@ for _, v in pairs(SECTION_CMD) do HEAD_CMDS[v:sub(2)] = true end
 local function is_head(b)
   if not b then return false end
   if b.t == "RawBlock" then
-    local name = b.text:match("^\\(%a+)")
-    return (name and HEAD_CMDS[name]) or b.text:match("^\\phantomsection\\label{[^}]*}\\textbf{") ~= nil
+    local text = b.text:gsub("^\\needspace{[^}]*}\n", "")   -- a {keep} heading carries its own guard
+    local name = text:match("^\\(%a+)")
+    return (name and HEAD_CMDS[name]) or text:match("^\\phantomsection\\label{[^}]*}\\textbf{") ~= nil
   end
   return (b.t == "Para" or b.t == "Plain") and #b.content == 1 and b.content[1].t == "RawInline"
     and b.content[1].text:match("^\\textbf{") ~= nil
@@ -1007,7 +1008,9 @@ local guard_filter = {
         if tablekeep then
           out:insert(rawb(string.format("\\needspace{%dpt}", math.ceil(tablekeep + (lines - 2) * FONTPT * 1.2))))
           skip = k
-        else
+          -- the reservation above covers a {keep} heading's own shorter guard, which alone would leave it behind
+          if b.t == "RawBlock" then b = rawb((b.text:gsub("^\\needspace{[^}]*}\n", ""))) end
+        elseif not (b.t == "RawBlock" and b.text:match("^\\needspace")) then
           out:insert(rawb("\\needspace{" .. lines .. "\\baselineskip}"))
         end
         out:insert(b)
