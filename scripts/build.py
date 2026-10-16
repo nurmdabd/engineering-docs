@@ -531,7 +531,7 @@ def main():
                      "TYPE_PREAMBLE": "\n".join(type_inputs),
                      "HEADER_RIGHT": bn_wrap(tex_escape(a.header_right)) if a.bangla else tex_escape(a.header_right),
                      "GEOMETRY": (f"\\geometry{{{a.paper_size}paper, {'landscape, ' if a.landscape else ''}"
-                                  f"left={a.margin_x}, right={a.margin_x}}}")}.items():
+                                  f"top=0.7in, bottom=0.7in, left={a.margin_x}, right={a.margin_x}}}")}.items():
         main = main.replace(f"<<{key}>>", val)
     (build / "main.tex").write_text(main)
     # mind maps: measured with this build's own preamble, then laid out (scripts/mindmap.py)

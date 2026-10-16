@@ -409,6 +409,7 @@ def run_figures_bw():
     a, = ax.plot(x, x, color="#1f5fa8", label="blue")
     b, = ax.plot(x, [1 - v for v in x], color="#d9730d", label="orange")
     ax.annotate("", xy=(1, 1), xytext=(0, 0), arrowprops=dict(arrowstyle="->", color="red"))
+    band = ax.fill_between([0, 1], 0, 0.5, color="#9fbfe6", ec="#1f5fa8", hatch="++")   # a hatch keeps its edge colour
     ax.legend()
     figures_bw.to_bw(fig)
     legend = ax.get_legend().get_lines()
@@ -417,6 +418,10 @@ def run_figures_bw():
     checks = [("curves get different dashes", a.get_linestyle() != b.get_linestyle()),
               ("legend samples match their curves", [l.get_linestyle() for l in legend] == [a.get_linestyle(), b.get_linestyle()]),
               ("curves and arrows are grey", grey and max(arrow[:3]) - min(arrow[:3]) < 1e-6)]
+    if hasattr(band, "get_hatchcolor"):
+        import numpy as np
+        h = np.atleast_2d(band.get_hatchcolor())[0]
+        checks.append(("hatching is grey", max(h[:3]) - min(h[:3]) < 1e-6))
     plt.close(fig)
     for what, ok in checks:
         print(f"{'ok' if ok else 'FAILED':8} figures_bw: {what}")

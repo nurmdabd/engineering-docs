@@ -17,6 +17,7 @@
 % ---------- front cover ----------
 \thispagestyle{empty}
 \pgfmathtruncatemacro{\packk}{0}\foreach \s in \PackSheets {\xdef\packk{\s}}
+\renewcommand{\CoverNameWidth}{12.8cm}   % the stack of sheets starts at about 14.5 cm
 \begin{tikzpicture}[remember picture, overlay]
 	% the white middle: a faint fan of pages between the title and the panel, thin lines in a light tint of the pack colour,
 	% fading in and out at both ends so neither edge of the page is the strongest part

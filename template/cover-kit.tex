@@ -74,10 +74,12 @@
 
 % ---------- pieces of a front cover ----------
 % \coverhead: type label, course code and course name on the band (inside a remember-picture overlay)
+% the course name's width on the band; a cover with a picture on the right of the band narrows it
+\providecommand{\CoverNameWidth}{16cm}
 \newcommand{\coverhead}{%
 	\node[anchor=north west, text=CoverBandSoft, font=\small] at ($(current page.north west)+(1.6cm,-1.4cm)$) {\spaced{\CoverLabel}};
 	\node[anchor=north west, text=CoverBandText, font=\fontsize{50}{54}\selectfont\bfseries] at ($(current page.north west)+(1.5cm,-2.2cm)$) {\CoverCourseCode};
-	\node[anchor=north west, text=CoverBandSoft, font=\LARGE, text width=16cm, align=left] at ($(current page.north west)+(1.6cm,-4.4cm)$) {\CoverCourseName};}
+	\node[anchor=north west, text=CoverBandSoft, font=\LARGE, text width=\CoverNameWidth, align=left] at ($(current page.north west)+(1.6cm,-4.4cm)$) {\CoverCourseName};}
 % \coverbandrect{height}: the plain top band with the signature strip under it
 \newcommand{\coverbandrect}[1]{%
 	\fill[CoverBand] (current page.north west) rectangle ($(current page.north east)+(0,-#1)$);

@@ -677,6 +677,21 @@ local function table_block(t)
   for v in (t.attr.attributes["mword"] or ""):gmatch("[^,]+") do mword[#mword + 1] = tonumber(v) end
   local ncol = #t.colspecs
   local cw = 0.0185 * FONTPT             -- cm per character, rough
+  -- a formula-sheet table (Title | Equation | Notation | Ref.): Title and Equation at least 11pt, the size of the
+  -- sheet's body text, so they read easily; Notation and Ref. at 8pt, since they are only looked up
+  -- (types/formula-sheet/guide.md)
+  local fscale, colfont = {}, {}
+  for j = 1, ncol do fscale[j] = 1; colfont[j] = "" end
+  local hd = {}
+  for _, row in ipairs(t.head.rows) do for j, cell in ipairs(row.cells) do hd[j] = stringify(cell.contents) end end
+  local is_fs = ncol == 4 and hd[1] == "Title" and hd[2] == "Equation" and hd[3] == "Notation"
+    and (hd[4] == "Ref." or hd[4] == "Reference")
+  if is_fs then
+    if FONTPT < 11 then
+      for j = 1, 2 do fscale[j] = 11 / FONTPT; colfont[j] = ">{\\fontsize{11}{13.5}\\selectfont}" end
+    end
+    for j = 3, 4 do fscale[j] = 8 / FONTPT; colfont[j] = ">{\\fontsize{8}{10}\\selectfont}" end
+  end
   local textw = TEXTW
   local flex, best = nil, 0
   -- flexible column: the maths-heavy column with the longest entries (maths cannot wrap like text);
@@ -700,8 +715,9 @@ local function table_block(t)
     if j == flex then
       kind[j] = "L"
     elseif maxl[j] <= 12 and (tall[j] or 0) == 0 then
-      kind[j] = "c"; fixed_total = fixed_total + maxl[j] * cw + 0.5
+      kind[j] = "c"; fixed_total = fixed_total + maxl[j] * cw * fscale[j] + 0.5
     else
+      local cw = cw * fscale[j]
       -- text columns wrap to 2 lines (3 when the flexible column holds maths, which cannot wrap)
       local mathflex = (mshare[flex] or 0) >= 0.5
       local lines, cap = mathflex and 3 or 2, mathflex and 4.4 or 5.2
@@ -732,8 +748,8 @@ local function table_block(t)
   for j = 1, ncol do if kind[j] == "x" then sumw = sumw + width[j] end end
   local scale = (sumw > fixed_cap) and fixed_cap / sumw or 1
   for j = 1, ncol do
-    if kind[j] == "x" then width[j] = string.format("%.1fcm", width[j] * scale); spec[j] = "x{" .. width[j] .. "}"
-    else spec[j] = kind[j] end
+    if kind[j] == "x" then width[j] = string.format("%.1fcm", width[j] * scale); spec[j] = colfont[j] .. "x{" .. width[j] .. "}"
+    else spec[j] = colfont[j] .. kind[j] end
   end
   local lines = { "\\begin{tabularx}{\\textwidth}{|" .. table.concat(spec, "|") .. "|}", "    \\hline", "    \\rowcolor{gray!15}" }
   for _, row in ipairs(t.head.rows) do
@@ -759,13 +775,13 @@ local function table_block(t)
   -- table that doesn't fit moves to the next page whole (the guard pass adds a heading or label above it).
   -- A longer one may still continue, repeating its header. (\\* rows would forbid the break too, but
   -- longtable then puts the header on the next page ahead of the text before the table.)
-  local nrows, height = 0, 0
+  local nrows, height, lasth = 0, 0, 0
   local L = FONTPT * 1.2                        -- pt per text line in a cell (stretch 1, the widest case)
   local colw = {}
   local flexw = textw - 0.45 * ncol
   for j = 1, ncol do
     if kind[j] == "x" then colw[j] = tonumber((width[j]:gsub("cm", "")))
-    elseif kind[j] == "c" then colw[j] = maxl[j] * cw + 0.5 end
+    elseif kind[j] == "c" then colw[j] = maxl[j] * cw * fscale[j] + 0.5 end
     if colw[j] then flexw = flexw - colw[j] end
   end
   local nflex = 0
@@ -778,19 +794,29 @@ local function table_block(t)
       for j, cell in ipairs(row.cells) do
         if j <= ncol then
           local n = math_len(pandoc.Blocks(cell.contents))
-          local per = math.max((colw[j] - 0.3) / cw, 1)
-          rl = math.max(rl, math.ceil(n / per))
+          local per = math.max((colw[j] - 0.3) / (cw * fscale[j]), 1)
+          rl = math.max(rl, math.ceil(n / per) * fscale[j])
           if (tall[j] or 0) == 1 then tallrow = true end
         end
       end
-      height = height + (rl + 0.45) * L + (tallrow and 10 or 0)
+      lasth = (rl + 0.45) * L + (tallrow and 10 or 0)
+      height = height + lasth
     end
   end
   height = height + 1.6 * L + 2.6 * L           -- header row, caption
   local keep = nrows <= SHORT_TABLE and height < 40 * L
   local rowend = " \\\\ \\hline"
+  -- a long table reserves room for its last row and the caption before that row, so the caption never starts
+  -- a page of its own under a repeated header row; that row moves over with it instead (needs LTchunksize 1)
+  local nleft = 0
+  for _, body in ipairs(t.bodies) do nleft = nleft + #body.body end
   for _, body in ipairs(t.bodies) do
     for _, row in ipairs(body.body) do
+      nleft = nleft - 1
+      if nleft == 0 and not keep then
+        -- in place of the blank line after the previous row: a blank line (\\par) would start a new row first
+        lines[#lines] = string.format("\\noalign{\\needspace{%dpt}}", math.ceil(lasth + 2.6 * L + 6))
+      end
       local cells = {}
       for j, cell in ipairs(row.cells) do
         local tex = cell_tex(cell)
@@ -972,8 +998,9 @@ for _, v in pairs(SECTION_CMD) do HEAD_CMDS[v:sub(2)] = true end
 local function is_head(b)
   if not b then return false end
   if b.t == "RawBlock" then
-    local name = b.text:match("^\\(%a+)")
-    return (name and HEAD_CMDS[name]) or b.text:match("^\\phantomsection\\label{[^}]*}\\textbf{") ~= nil
+    local text = b.text:gsub("^\\needspace{[^}]*}\n", "")   -- a {keep} heading carries its own guard
+    local name = text:match("^\\(%a+)")
+    return (name and HEAD_CMDS[name]) or text:match("^\\phantomsection\\label{[^}]*}\\textbf{") ~= nil
   end
   return (b.t == "Para" or b.t == "Plain") and #b.content == 1 and b.content[1].t == "RawInline"
     and b.content[1].text:match("^\\textbf{") ~= nil
@@ -1007,12 +1034,24 @@ local guard_filter = {
         if tablekeep then
           out:insert(rawb(string.format("\\needspace{%dpt}", math.ceil(tablekeep + (lines - 2) * FONTPT * 1.2))))
           skip = k
-        else
+          -- the reservation above covers a {keep} heading's own shorter guard, which alone would leave it behind
+          if b.t == "RawBlock" then b = rawb((b.text:gsub("^\\needspace{[^}]*}\n", ""))) end
+        elseif not (b.t == "RawBlock" and b.text:match("^\\needspace")) then
           out:insert(rawb("\\needspace{" .. lines .. "\\baselineskip}"))
         end
         out:insert(b)
       else
         out:insert(b)
+      end
+    end
+    -- a guard right after a table is \Needspace* (it measures the page exactly): after a long table the plain
+    -- \needspace misjudges the space left and breaks the page early, leaving the table's repeated header
+    -- row alone on the next page
+    for j = 2, #out do
+      local prev, g = out[j - 1], out[j]
+      if prev.t == "RawBlock" and prev.text:match("\\end{tabularx}%s*$") and g.t == "RawBlock" then
+        local n, rest = g.text:match("^\\needspace(%b{})(.*)$")
+        if n then out[j] = rawb("\\Needspace*" .. n .. rest) end
       end
     end
     return out

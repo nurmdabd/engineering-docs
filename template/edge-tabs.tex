@@ -1,5 +1,5 @@
 % Edge tabs: one tab per part (or topic) on the right edge of every body page: light grey, except the current
-% one, which is wider and in its part's colour (the same colour as on the cover); each tab is a link to its
+% one, which has the same size and is in its part's colour (the same colour as on the cover); each tab is a link to its
 % part. build.py loads this file when the build has --edge-tabs (theory notes, exam notes and formula sheets
 % by default) and fills \HouseTabList with \housetabitem{n}{label} items. The current part is the last one
 % whose label is on this page or before it (page references, so it is right after the second LaTeX run).
@@ -19,8 +19,9 @@
 \newcommand{\HouseTabsOn}{\ifdefined\HousePrintCopy\else\global\HouseTabstrue\fi}
 \newcommand{\HouseTabsOff}{\clearpage\global\HouseTabsfalse}
 \newcount\housetabcount
-% Chip sizes (cm): the current part's chip is wider; \housetabgap is the space between two chips
-\def\housetabwide{0.6}\def\housetabnarrow{0.4}\def\housetabgap{0.06}
+% Chip sizes (cm): every chip is the same width (the colour alone marks the current part); \housetabgap is the
+% space between two chips
+\def\housetabwide{0.4}\def\housetabnarrow{0.4}\def\housetabgap{0.06}
 % A chip: the fill, then a link annotation exactly the chip's size (XeTeX sizes a \hyperref by the glyphs inside
 % it, which would leave only the number clickable)
 \newcommand{\housetabchip}[3]{% {fill colour}{width cm}{label}
@@ -34,7 +35,7 @@
 	\pgfmathsetmacro{\housetabh}{\housetabstep-\housetabgap}%
 	\ifnum#1=\housecurrent\relax
 		\housetabchip{\partcolor}{\housetabwide}{#2}%
-		\node[rotate=-90, text=white, font=\bfseries\footnotesize, anchor=center]
+		\node[rotate=-90, text=white, font=\bfseries\scriptsize, anchor=center]
 			at ($(current page.north east)+(-\housetabwide/2,-\housetabtop-\housetabh/2)$) {#1};
 	\else
 		\housetabchip{gray!18}{\housetabnarrow}{#2}%
