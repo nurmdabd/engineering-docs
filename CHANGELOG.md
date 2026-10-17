@@ -1,5 +1,12 @@
 # Changelog
 
+## October 2026: past-paper wording
+
+- **Fix:** the back of a past paper's cover (*the paper at a glance*) found the total time only in "Time: 3 Hours"
+  and the number of questions to answer only in "Answer any two …". Papers that print "Exam Duration: 3 Hours" or
+  "(Answer two of the following questions)" lost the time, the questions to answer and the minutes per sub-part.
+  `coverdata.py` now reads "Duration" as well as "Time", and "Answer two of / from …" as well as "any two".
+
 ## October 2026: share copy
 
 - **New `--share` copy** (`doc.py build … --share`, `NAME_share.pdf`), for handing a PDF to other people: printing

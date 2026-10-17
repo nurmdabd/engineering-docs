@@ -234,8 +234,8 @@ def strip_tex(text):
 
 
 def duration(text):
-    """Minutes in 'Time: 3 Hours' or 'Time: 20 min', else None."""
-    m = re.search(r"time\W*(\d+(?:\.\d+)?)\s*(hours?|hrs?|h\b|minutes?|mins?)", text, re.I)
+    """Minutes in 'Time: 3 Hours', 'Duration: 3 Hours' or 'Time: 20 min', else None."""
+    m = re.search(r"(?:time|duration)\W*(\d+(?:\.\d+)?)\s*(hours?|hrs?|h\b|minutes?|mins?)", text, re.I)
     return float(m.group(1)) * (60 if m.group(2).lower().startswith("h") else 1) if m else None
 
 
@@ -259,7 +259,7 @@ def paper(tex, info, parts_spec, linked):
         if not nums:
             continue
         plain = strip_tex(note)
-        m = re.search(r"any\s+(\w+)", plain, re.I)
+        m = re.search(r"\bany\s+(\w+)", plain, re.I) or re.search(r"\banswer\s+(\w+)\s+(?:of|from|questions?)\b", plain, re.I)
         answer = (WORDS.get(m.group(1).lower(), int(m.group(1)) if m.group(1).isdigit() else 0)) if m else 0
         own_time, own_marks = duration(plain), total_marks_in(plain)
         note = spaced_caps(plain.strip().strip("[]"))
