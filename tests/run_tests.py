@@ -396,6 +396,55 @@ def colour_pages(pdf, tmp):
     return [f"colour left on {', '.join(bad)}"] if bad else []
 
 
+def share_problems(pdf, pages):
+    """What is wrong with a share copy: printing must be locked, every page must carry the print-only stamp on one
+    layer that is off on screen and on in print, and the footer line must be on the pages with a footer."""
+    from pypdf import PdfReader
+    from pypdf.constants import UserAccessPermissions as P
+    r = PdfReader(pdf)
+    if not r.is_encrypted:
+        return ["not locked"]
+    r.decrypt("")
+    problems = [] if not r.user_access_permissions & P.PRINT else ["printing is allowed"]
+    oc = r.trailer["/Root"].get("/OCProperties")
+    ocgs = [g.get_object() for g in oc["/OCGs"].get_object()] if oc else []
+    if [str(g["/Name"]) for g in ocgs] != ["Print stamp"]:
+        return problems + [f"expected one layer 'Print stamp', found {[str(g['/Name']) for g in ocgs]}"]
+    usage = ocgs[0].get("/Usage", {})
+    if str(usage.get("/Print", {}).get("/PrintState")) != "/ON" or str(usage.get("/View", {}).get("/ViewState")) != "/OFF":
+        problems.append("the stamp layer is not view: off, print: on")
+    if oc["/OCGs"].get_object()[0].idnum not in [g.idnum for g in oc["/D"].get_object().get("/OFF", [])]:
+        problems.append("the stamp layer starts visible on screen")
+    stamped = sum(c is not None and b"/OC" in c.get_data() for c in (pg.get_contents() for pg in r.pages))
+    if stamped != len(r.pages):
+        problems.append(f"the stamp is on {stamped} of {len(r.pages)} pages")
+    footer = sum("Free shared copy" in (pg.extract_text() or "") for pg in r.pages)
+    if footer < pages:
+        problems.append(f"the footer line is on {footer} pages, expected at least {pages}")
+    return problems
+
+
+def run_share():
+    """--share: the example and a pack of two share copies are locked, stamped on one layer, and carry the footer line."""
+    failed = 0
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = Path(tmp)
+        for name in ("a", "b"):
+            subprocess.run([sys.executable, str(BUILD), str(SKILL / "examples" / "example-body.tex"),
+                            "--out", str(tmp / f"{name}_share.pdf"), "--share"], capture_output=True, text=True)
+        (tmp / "pack.yaml").write_text('title: "Test Pack"\ncourse_code: "VLSI"\nparts:\n  - pdf: a.pdf\n  - pdf: b.pdf\n',
+                                       encoding="utf-8")
+        r = subprocess.run([sys.executable, str(DOC), "bundle", str(tmp / "pack.yaml"), "--share"], capture_output=True, text=True)
+        for label, pdf, pages in (("build example-body --share", tmp / "a_share.pdf", 1),
+                                  ("bundle --share", tmp / "pack_share.pdf", 2)):
+            problems = share_problems(pdf, pages) if pdf.exists() else [f"not built\n{r.stdout[-600:]}{r.stderr[-600:]}"]
+            print(f"{'ok' if not problems else 'FAILED':8} {label}")
+            for p in problems:
+                print("  " + p)
+            failed += bool(problems)
+    return failed
+
+
 def run_figures_bw():
     """figures_bw.to_bw: two coloured curves get different dashes, legend samples follow, nothing stays coloured."""
     sys.path.insert(0, str(SKILL / "scripts"))
@@ -431,6 +480,7 @@ def run_figures_bw():
 def run_builds(cases):
     failed = build_one(SKILL / "examples" / "example-body.tex", [], "example-body")
     failed += build_one(SKILL / "examples" / "example-body.tex", ["--print"], "example-body --print", grey=True)
+    failed += run_share()
     failed += run_figures_bw()
     for case in cases:
         if case.get("build", True):

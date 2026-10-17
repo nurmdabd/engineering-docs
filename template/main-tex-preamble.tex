@@ -300,21 +300,24 @@ literate=
 \cs_generate_variant:Nn \regex_match:nnF { nV }
 \NewDocumentCommand{\addcolon}{m}{\house_addcolon:n {#1}}
 \ExplSyntaxOff
+% ---------- Heading colours (the print copy sets them black, the share copy a step lighter) ----------
+\colorlet{headblue}{blue!75!black}
+\colorlet{headred}{red!70!black}
 % ---------- Section format ----------
 \titleformat{\section}
-{\normalfont\Large\bfseries\color{blue!75!black}}
+{\normalfont\Large\bfseries\color{headblue}}
 {\thesection.}
 {0.3em}
 {\addcolon}
 % ---------- Subsection format ----------
 \titleformat{\subsection}
-{\normalfont\large\bfseries\color{red!70!black}}
+{\normalfont\large\bfseries\color{headred}}
 {\thesubsection.}
 {0.3em}
 {\addcolon}
 % ---------- Subsubsection format ----------
 \titleformat{\subsubsection}
-{\normalfont\normalsize\bfseries\color{blue!75!black}}
+{\normalfont\normalsize\bfseries\color{headblue}}
 {\thesubsubsection.}
 {0.3em}
 {\addcolon}

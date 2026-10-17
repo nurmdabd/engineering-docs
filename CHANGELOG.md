@@ -1,5 +1,23 @@
 # Changelog
 
+## October 2026: share copy
+
+- **New `--share` copy** (`doc.py build … --share`, `NAME_share.pdf`), for handing a PDF to other people: printing
+  and changes are locked in the PDF (it opens without a password; text can still be copied); a small "Free shared
+  copy · AUTHOR" line sits in the footer of every page but the covers; the same text is a large diagonal stamp on
+  a layer that is hidden on screen and always printed; the red and blue headings are a step lighter (`#BF4040`,
+  `#4560D0`). `template/share.tex` holds the look.
+- **Share pack:** `doc.py bundle pack.yaml --share` takes each part's `_share.pdf`, stamps the pack's own pages
+  too and locks the pack.
+- **Fix:** a pack lost its parts' PDF layers (pypdf copies the pages but not the list of layers, and a viewer
+  shows content on an unlisted layer). `bundle.py` now joins the parts' layers into the pack.
+- **Fix:** a pack part without `title:` took its file name raw, so an underscore in it broke the pack cover; the
+  default title now uses the screen PDF's name, escaped.
+- The house headings take their colours from `headblue` and `headred` (unchanged: `blue!75!black`,
+  `red!70!black`), so a copy can recolour them in one place; the print copy sets both black.
+- Tests: `build example-body --share` and `bundle --share` check the lock, the one stamp layer (off on screen, on
+  in print, on every page) and the footer line.
+
 ## October 2026: print copies stay black and white
 
 - **Fix:** a link into another PDF (a mind-map card title, a formula sheet's Reference) printed cyan in the print

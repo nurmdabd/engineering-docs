@@ -5,8 +5,8 @@ doc.py -- one entry point for the whole path, Markdown to PDF.
     python3 doc.py types                        # the document types and what each is for
     python3 doc.py new TYPE notes.md            # start a document from types/TYPE/template.md
     python3 doc.py check notes.md [--type T]    # lint (references/authoring.md)
-    python3 doc.py build notes.md [--out notes.pdf] [--reconvert] [--print] [build.py options ...]
-    python3 doc.py bundle pack.yaml [--print] [--out pack.pdf]   # combine finished PDFs (scripts/bundle.py)
+    python3 doc.py build notes.md [--out notes.pdf] [--reconvert] [--print | --share] [build.py options ...]
+    python3 doc.py bundle pack.yaml [--print | --share] [--out pack.pdf]   # combine finished PDFs (scripts/bundle.py)
     python3 doc.py keys [--write]               # every front-matter key, its default and effect
 
 `build` lints the Markdown (and stops on errors), converts it to latex/NAME.tex beside it, checks the
@@ -14,7 +14,8 @@ structure, then builds the PDF (default: NAME.pdf beside the Markdown). An exist
 been edited by hand, so it is reused, never overwritten, unless --reconvert is given; if the Markdown is newer
 than it, `build` stops and asks for one or the other. Any other options go to build.py unchanged.
 --print builds the black-and-white copy for printing as NAME_print.pdf (from --out, or the default name); make
-the grey figures first with DOC_PRINT=1 (scripts/figures_bw.py).
+the grey figures first with DOC_PRINT=1 (scripts/figures_bw.py). --share builds the copy for sharing as
+NAME_share.pdf (template/share.tex): printing locked, a footer line and a print-only stamp on every page.
 """
 import json
 import shutil
@@ -68,6 +69,8 @@ def build(args):
     out = out or md.parent / f"{md.stem}.pdf"
     if "--print" in rest and not out.stem.endswith("_print"):
         out = out.with_name(f"{out.stem}_print{out.suffix}")
+    if "--share" in rest and not out.stem.endswith("_share"):
+        out = out.with_name(f"{out.stem}_share{out.suffix}")
 
     if run("lint_md.py", md):
         sys.exit("doc.py: fix the errors above first")

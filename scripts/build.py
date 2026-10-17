@@ -29,6 +29,8 @@ Usage:
         [--build-dir DIR]                      # default: <OUT stem>_build next to OUT
         [--print]                              # black-and-white copy for printing (template/print-bw.tex):
                                                # uses figures/print/NAME for each image that has one, greys the rest
+        [--share]                              # copy for sharing (template/share.tex): a footer line and a print-only
+                                               # stamp "Free shared copy · AUTHOR", lighter headings, printing locked
 
 Exit code 0 = PDF built (warnings may still be printed). 1 = compile failed.
 """
@@ -304,6 +306,39 @@ def with_sidecar(argv):
     return [argv[0], *kept, *argv[1:]]
 
 
+SHARE_TEXT = "Free shared copy"
+
+
+def share_input(author):
+    """The lines that load template/share.tex, with the text of its footer line and print stamp."""
+    text = SHARE_TEXT + (f"\\quad\\textperiodcentered\\quad {tex_escape(author)}" if author else "")
+    return f"\\newcommand{{\\HouseShareText}}{{{text}}}\n\\input{{share.tex}}"
+
+
+def protect(pdf):
+    """Share copy: lock printing and changes in the finished PDF. It still opens without a password, and text can
+    still be copied; the owner password is random and not kept (the normal build is the unlocked copy)."""
+    import secrets
+    from pypdf import PdfReader, PdfWriter
+    from pypdf.constants import UserAccessPermissions as P
+    reader = PdfReader(pdf)
+    if reader.is_encrypted:
+        reader.decrypt("")
+    w = PdfWriter(clone_from=reader)
+    allowed = P.all()
+    for flag in (P.PRINT, P.PRINT_TO_REPRESENTATION, P.MODIFY, P.ADD_OR_MODIFY, P.FILL_FORM_FIELDS, P.ASSEMBLE_DOC):
+        allowed &= ~flag
+    try:   # AES needs the cryptography package; RC4 works without it and every viewer reads it
+        import cryptography  # noqa: F401
+        algorithm = "AES-128"
+    except ImportError:
+        algorithm = "RC4-128"
+    w.encrypt(user_password="", owner_password=secrets.token_hex(16), permissions_flag=allowed, algorithm=algorithm)
+    with open(pdf, "wb") as f:
+        w.write(f)
+    print(f"share: printing and changes locked ({algorithm}); a footer line and a print-only stamp on every page")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("bodies", nargs="+", type=Path)
@@ -358,7 +393,10 @@ def main():
     ap.add_argument("--source", default="")            # the Markdown file (from the front-matter sidecar)
     ap.add_argument("--build-dir", type=Path)
     ap.add_argument("--print", dest="bw", action="store_true")
+    ap.add_argument("--share", action="store_true")
     a = ap.parse_args(doctype.expand(with_sidecar(sys.argv), "build")[1:])
+    if a.share and a.bw:
+        sys.exit("--share and --print make different copies; build them one at a time")
 
     out = a.out.resolve()
     build = (a.build_dir or out.parent / f"{out.stem}_build").resolve()
@@ -375,6 +413,10 @@ def main():
     if a.bw:   # last, so it recolours the type's own commands too
         shutil.copy(TEMPLATE / "print-bw.tex", build)
         type_inputs.append("\\input{print-bw.tex}")
+    (build / "share.tex").unlink(missing_ok=True)
+    if a.share:   # last too, so it recolours the type's headings
+        shutil.copy(TEMPLATE / "share.tex", build)
+        type_inputs.append(share_input(a.author))
     for f in ("cover-page-preamble.tex", "cover-page-main.tex", "cover-kit.tex", "inside-cover.tex", "back-cover.tex"):
         (build / f).unlink(missing_ok=True)
     for f in ("cover-page-preamble.tex", "cover-page-main.tex"):
@@ -545,6 +587,8 @@ def main():
         sys.exit(1)
     out.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy(build / "main.pdf", out)
+    if a.share:
+        protect(out)
     pages = re.search(r"Output written on main.pdf \((\d+) page", (build / "main.log").read_text(errors="replace"))
     sys.stdout.flush()
     print(f"PDF: {out}" + (f" ({pages.group(1)} pages)" if pages else ""))
