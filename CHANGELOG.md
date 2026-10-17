@@ -6,7 +6,10 @@
   and changes are locked in the PDF (it opens without a password; text can still be copied); a small "Free shared
   copy · AUTHOR" line sits in the footer of every page but the covers; the same text is a large diagonal stamp on
   a layer that is hidden on screen and always printed; the red and blue headings are a step lighter (`#BF4040`,
-  `#4560D0`). `template/share.tex` holds the look.
+  `#4560D0`) and on a layer that is never printed. Both layers start visible (Firefox can hide a layer in print
+  but not show one that starts hidden) and are written with xdvipdfmx specials, not ocgx2, whose handling of a
+  layer open at a page break put whole pages on the headings layer once the stamp was added.
+  `template/share.tex` holds the look.
 - **Share pack:** `doc.py bundle pack.yaml --share` takes each part's `_share.pdf`, stamps the pack's own pages
   too and locks the pack.
 - **Fix:** a pack lost its parts' PDF layers (pypdf copies the pages but not the list of layers, and a viewer
@@ -14,9 +17,11 @@
 - **Fix:** a pack part without `title:` took its file name raw, so an underscore in it broke the pack cover; the
   default title now uses the screen PDF's name, escaped.
 - The house headings take their colours from `headblue` and `headred` (unchanged: `blue!75!black`,
-  `red!70!black`), so a copy can recolour them in one place; the print copy sets both black.
-- Tests: `build example-body --share` and `bundle --share` check the lock, the one stamp layer (off on screen, on
-  in print, on every page) and the footer line.
+  `red!70!black`) and pass their number and title through `\headingwrap` (does nothing by default), so a copy
+  can recolour them or put them on a layer in one place; the print copy sets both colours black.
+- Tests: `build example-body --share` and `bundle --share` check the lock, the two layers (headings never
+  printed; the stamp off on screen, on in print, on every page; neither starting hidden), that every layer mark
+  closes on its own page, and the footer line.
 
 ## October 2026: print copies stay black and white
 

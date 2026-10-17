@@ -356,9 +356,11 @@ Say "make a print version of the 2022-23 solution". You get `NAME_print.pdf` bes
 Say "make a share copy of the 2022-23 solution" (or build with `--share`). You get `NAME_share.pdf`, meant for handing to other people; a print shop cannot simply print and sell it:
 
 - **Printing is locked** in the PDF. It opens without a password and text can still be copied, but Chrome, Edge, Acrobat and Foxit grey out Print. Firefox's built-in viewer ignores the lock, and a determined person can remove it, so:
-- **a small line in the footer** of every page but the covers, "Free shared copy · Nur Mohammad", is always visible, in screenshots too;
-- **a large diagonal stamp** with the same text is printed on every page by any viewer that knows PDF layers (Acrobat, Foxit, PDF-XChange); it never shows on screen;
-- **the red and blue headings are a step lighter** (`#BF4040` and `#4560D0`, about 60 % grey on paper, against 79 % and 91 % for the normal pair).
+- **the red and blue headings are left out of any print**: they sit on a layer that shows on screen and is never printed, so a print has blank space where Theory, Answer and the numbered headings were. On screen they are a step lighter (`#BF4040` and `#4560D0`);
+- **a large diagonal stamp**, "Free shared copy · Nur Mohammad", is printed on every page; it never shows on screen;
+- **a small line in the footer** of every page but the covers carries the same text and is always visible, in screenshots too.
+
+The two layers work in Acrobat, Foxit, PDF-XChange, Chrome and Firefox's viewer. A viewer that ignores PDF layers altogether shows the stamp in light grey on screen and prints the headings.
 
 Your own normal and print PDFs are never locked. A share pack: build each part with `--share`, then `doc.py bundle pack.yaml --share`.
 

@@ -397,8 +397,9 @@ def colour_pages(pdf, tmp):
 
 
 def share_problems(pdf, pages):
-    """What is wrong with a share copy: printing must be locked, every page must carry the print-only stamp on one
-    layer that is off on screen and on in print, and the footer line must be on the pages with a footer."""
+    """What is wrong with a share copy: printing must be locked; the headings must be on a layer that is never
+    printed and every page must carry the stamp on a layer that is off on screen and on in print, both starting
+    visible; the footer line must be on the pages with a footer."""
     from pypdf import PdfReader
     from pypdf.constants import UserAccessPermissions as P
     r = PdfReader(pdf)
@@ -407,15 +408,33 @@ def share_problems(pdf, pages):
     r.decrypt("")
     problems = [] if not r.user_access_permissions & P.PRINT else ["printing is allowed"]
     oc = r.trailer["/Root"].get("/OCProperties")
-    ocgs = [g.get_object() for g in oc["/OCGs"].get_object()] if oc else []
-    if [str(g["/Name"]) for g in ocgs] != ["Print stamp"]:
-        return problems + [f"expected one layer 'Print stamp', found {[str(g['/Name']) for g in ocgs]}"]
-    usage = ocgs[0].get("/Usage", {})
-    if str(usage.get("/Print", {}).get("/PrintState")) != "/ON" or str(usage.get("/View", {}).get("/ViewState")) != "/OFF":
+    ocgs = {str(g.get_object()["/Name"]): g for g in oc["/OCGs"].get_object()} if oc else {}
+    if sorted(ocgs) != ["Headings, screen only", "Print stamp"]:
+        return problems + [f"expected the layers 'Headings, screen only' and 'Print stamp', found {sorted(ocgs)}"]
+    def state(name, kind):
+        return str(ocgs[name].get_object().get("/Usage", {}).get(f"/{kind}", {}).get(f"/{kind}State"))
+    if state("Print stamp", "Print") != "/ON" or state("Print stamp", "View") != "/OFF":
         problems.append("the stamp layer is not view: off, print: on")
-    if oc["/OCGs"].get_object()[0].idnum not in [g.idnum for g in oc["/D"].get_object().get("/OFF", [])]:
-        problems.append("the stamp layer starts visible on screen")
-    stamped = sum(c is not None and b"/OC" in c.get_data() for c in (pg.get_contents() for pg in r.pages))
+    if state("Headings, screen only", "Print") != "/OFF":
+        problems.append("the headings layer is printed")
+    off = oc["/D"].get_object().get("/OFF")
+    hidden = [g.idnum for g in (off.get_object() if off is not None else [])]
+    if any(g.idnum in hidden for g in ocgs.values()):   # a viewer can hide a layer in print, never show a hidden one
+        problems.append("a layer starts hidden")
+    stamped = unbalanced = headed = 0
+    for pg in r.pages:
+        data = pg.get_contents().get_data() if pg.get_contents() is not None else b""
+        stamped += b"/OC /HouseStamp BDC" in data
+        headed += data.count(b"/OC /HouseHead BDC")
+        depth = 0
+        for mark in re.findall(rb"\bBDC\b|\bEMC\b", data):   # a mark left open puts the rest of the page on a layer
+            depth += 1 if mark == b"BDC" else -1
+            unbalanced += depth < 0
+        unbalanced += depth != 0
+    if unbalanced:
+        problems.append(f"layer marks open and close unevenly ({unbalanced} times)")
+    if not headed:
+        problems.append("no heading is on the screen-only layer")
     if stamped != len(r.pages):
         problems.append(f"the stamp is on {stamped} of {len(r.pages)} pages")
     footer = sum("Free shared copy" in (pg.extract_text() or "") for pg in r.pages)
@@ -425,7 +444,7 @@ def share_problems(pdf, pages):
 
 
 def run_share():
-    """--share: the example and a pack of two share copies are locked, stamped on one layer, and carry the footer line."""
+    """--share: the example and a pack of two share copies are locked, have the two layers, and carry the footer line."""
     failed = 0
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
