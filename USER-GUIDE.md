@@ -335,7 +335,7 @@ Set `lang: bn`. Technical terms, maths, numbers, figure paths and the callout ma
 - **Covers, the back of the cover and a back cover** for every type (Section 5), and **edge tabs** on theory notes, exam notes and formula sheets.
 - **Formula sheets** also get a *Key formulas* page (the bold rows, starred in the sheet) and a *Symbol index*, both linked to the rows.
 - **Bookmarks** read cleanly: the EXAM and NOTE markers appear as words.
-- **Black-and-white print copy** when you ask (Section 12).
+- **Black-and-white print copy** when you ask, and a **share copy** locked against printing (Section 12).
 
 ---
 
@@ -350,6 +350,19 @@ Say "make a print version of the 2022-23 solution". You get `NAME_print.pdf` bes
   - `print_layout: booklet` pads to a multiple of 4 pages, for a folded and stapled booklet;
   - without a back cover (`back_cover: false`), the document still ends on a full sheet.
 - **No edge tabs** in print: printers cannot print to the edge of the sheet.
+
+### Share copy
+
+Say "make a share copy of the 2022-23 solution" (or build with `--share`). You get `NAME_share.pdf`, meant for handing to other people; a print shop cannot simply print and sell it:
+
+- **Printing is locked** in the PDF. It opens without a password, text can still be copied and readers can highlight and comment, but Chrome, Edge, Acrobat and Foxit grey out Print. Firefox's built-in viewer ignores the lock, and a determined person can remove it, so:
+- **the red and blue headings are left out of any print**: they sit on a layer that shows on screen and is never printed, so a print has blank space where Theory, Answer and the numbered headings were. On screen they are a step lighter (`#BF4040` and `#4560D0`);
+- **a large diagonal stamp**, "Free shared copy · Nur Mohammad", is printed on every page; it never shows on screen;
+- **a small line in the footer** of every page but the covers carries the same text and is always visible, in screenshots too.
+
+The two layers work in Acrobat, Foxit, PDF-XChange, Chrome and Firefox's viewer. A viewer that ignores PDF layers altogether shows the stamp in light grey on screen and prints the headings.
+
+Your own normal and print PDFs are never locked. A share pack: build each part with `--share`, then `doc.py bundle pack.yaml --share`.
 
 ---
 
@@ -371,7 +384,7 @@ parts:
     title: "Formula Sheet"
 ```
 
-Then run `python3 scripts/doc.py bundle pack.yaml` (add `--print` for the print pack). You get one PDF with:
+Then run `python3 scripts/doc.py bundle pack.yaml` (add `--print` for the print pack, `--share` for the share pack). You get one PDF with:
 - the pack's own cover: the parts drawn as a stack of sheets in their types' colours, a strip split into the parts by their pages, and one linked card per part;
 - an "In this pack" page with every part and its outline (questions, sections), each line linked to its page;
 - every part as it was built, its own cover kept as a divider (its back cover is left out);
@@ -396,7 +409,8 @@ python3 $S/doc.py build 2023-24.md --out pdf/2023-24.pdf             # lint + co
 python3 $S/doc.py build 2023-24.md --out pdf/2023-24.pdf --reconvert # regenerate the .tex from the Markdown
 DOC_PRINT=1 python3 figures/_src/2023-24.py     # grey copies of the figures, in figures/print/
 python3 $S/doc.py build 2023-24.md --out pdf/2023-24.pdf --print     # black-and-white copy: pdf/2023-24_print.pdf
-python3 $S/doc.py bundle pack.yaml               # several PDFs as one pack (Section 13)
+python3 $S/doc.py build 2023-24.md --out pdf/2023-24.pdf --share     # share copy, printing locked: pdf/2023-24_share.pdf
+python3 $S/doc.py bundle pack.yaml               # several PDFs as one pack (Section 13); --print or --share for those packs
 python3 $S/doc.py keys                           # every front-matter key and its default
 bash $S/setup.sh                                 # install TeX, pandoc, fonts, pypdf (safe to re-run)
 ```

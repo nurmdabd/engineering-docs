@@ -40,15 +40,15 @@
 	\renewcommand{\theHsubsection}{shadow.\theshadowq.\arabic{subsection}}
 	\renewcommand{\thesubsection}{\arabic{subsection}}
 	\titleformat{\subsection}
-	{\Large\bfseries\color{red!70!black}}
-	{\thesubsection.}
+	{\Large\bfseries\color{headred}}
+	{\headingwrap{\thesubsection.}}
 	{0.3em}
-	{}
+	{\headingwrap}
 	\titleformat{\subsubsection}
-	{\large\bfseries\color{blue!75!black}}
-	{\thesubsubsection}
+	{\large\bfseries\color{headblue}}
+	{\headingwrap{\thesubsubsection}}
 	{0.3em}
-	{}
+	{\headingwrap}
 }
 {}
 

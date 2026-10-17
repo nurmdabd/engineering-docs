@@ -6,7 +6,7 @@ The pack has its own cover (template/pack-cover.tex): the parts drawn as a stack
 colour (read from the label on the part's cover, or the part's 'type:'), a strip and a spine split into the
 parts by their pages, and the parts as linked cards. The "In this pack" page lists every part with its outline.
 
-    python3 bundle.py pack.yaml [--print] [--out pdf/pack.pdf]
+    python3 bundle.py pack.yaml [--print | --share] [--out pdf/pack.pdf]
     (or: python3 doc.py bundle pack.yaml ...)
 
 pack.yaml (paths are relative to it; the cover fields are raw LaTeX, as in front matter):
@@ -38,6 +38,9 @@ links inside the pack; the bookmarks show one entry per part with that part's ou
 --print uses each part's print copy (NAME_print.pdf beside it) and lays the pack out for double-sided
 printing: the "In this pack" page is the back of the cover, every part starts on a right-hand page, and the
 back cover is the back of the last sheet (a multiple of 4 pages for print_layout: booklet).
+
+--share uses each part's share copy (NAME_share.pdf, from doc.py build --share), gives the pack's own pages the
+same footer line and print-only stamp (template/share.tex), and locks printing in the finished pack.
 """
 import argparse
 import logging
@@ -165,7 +168,7 @@ def plain(text):
     return re.sub(r"\\[A-Za-z]+\*?|[{}$\\]", "", text).strip()
 
 
-def cover_tex(spec, parts, starts, total, bw, with_map=True):
+def cover_tex(spec, parts, starts, total, bw, with_map=True, share=False):
     """main.tex of the pack's own pages: front cover, "In this pack", back cover (three pages)."""
     esc = lambda s: s if s is not None else ""
     fields = {"CoverCourseCode": esc(spec.get("course_code")), "CoverCourseName": esc(spec.get("course_name")),
@@ -220,7 +223,7 @@ def cover_tex(spec, parts, starts, total, bw, with_map=True):
             f"\\newcommand{{\\PackCards}}{{{('%' + chr(10)).join(cards)}}}\n"
             f"\\newcommand{{\\PackBackParts}}{{{('%' + chr(10)).join(backs)}}}\n"
             f"\\newcommand{{\\PackMap}}{{{('%' + chr(10)).join(rows)}}}")
-    bw_line = "\\input{print-bw.tex}" if bw else ""
+    bw_line = "\\input{print-bw.tex}" if bw else (house.share_input(spec.get("author") or "Nur Mohammad") if share else "")
     pdftitle = re.sub(r"[{}\\$]", "", fields["CoverTitle"])
     return rf"""\documentclass[a4paper, 12pt]{{extarticle}}
 \newcommand{{\ReportHeader}}{{}}
@@ -245,12 +248,48 @@ def cover_tex(spec, parts, starts, total, bw, with_map=True):
 """
 
 
+def join_layers(w, readers):
+    """The parts' layers (optional content: the share copy's print-only stamp), kept in the pack. pypdf copies
+    the pages but not each PDF's list of layers, and a viewer shows content on an unlisted layer, so the stamp
+    would show on screen. Layers with the same name become one, which starts off where it started off in a part."""
+    from pypdf.generic import ArrayObject, DictionaryObject, NameObject
+    off = set()
+    for r in readers:
+        props = r.trailer["/Root"].get("/OCProperties")
+        if props:
+            hidden = props.get_object()["/D"].get_object().get("/OFF")
+            off |= {str(g.get_object()["/Name"]) for g in (hidden.get_object() if hidden else [])}
+    one = {}
+    for page in w.pages:
+        res = page.get("/Resources")
+        props = res.get_object().get("/Properties") if res else None
+        if not props:
+            continue
+        props = props.get_object()
+        for key, ref in list(props.items()):
+            ocg = ref.get_object()
+            if ocg.get("/Type") == "/OCG":
+                props[NameObject(key)] = one.setdefault(str(ocg["/Name"]), ref)
+    if not one:
+        return
+    ocgs = ArrayObject(one.values())
+    events = ArrayObject(DictionaryObject({NameObject("/Event"): NameObject(e), NameObject("/Category"): ArrayObject([NameObject(e)]),
+                                           NameObject("/OCGs"): ocgs}) for e in ("/View", "/Print", "/Export"))
+    w._root_object[NameObject("/OCProperties")] = DictionaryObject({
+        NameObject("/OCGs"): ocgs,
+        NameObject("/D"): DictionaryObject({NameObject("/Order"): ocgs, NameObject("/AS"): events,
+                                            NameObject("/OFF"): ArrayObject(r for n, r in one.items() if n in off)})})
+
+
 def main():
     ap = argparse.ArgumentParser(description="Combine finished PDFs into one pack (see the module docstring).")
     ap.add_argument("spec", type=Path)
     ap.add_argument("--print", dest="bw", action="store_true", help="use the parts' print copies; lay out for double-sided printing")
+    ap.add_argument("--share", action="store_true", help="use the parts' share copies; lock printing in the pack")
     ap.add_argument("--out", type=Path)
     a = ap.parse_args()
+    if a.share and a.bw:
+        sys.exit("--share and --print make different packs; build them one at a time")
     try:
         from pypdf import PdfReader, PdfWriter
         from pypdf.generic import (ArrayObject, DictionaryObject, FloatObject, NameObject, NullObject, NumberObject,
@@ -264,23 +303,31 @@ def main():
     out = (a.out or base / (spec.get("out") or spec_path.with_suffix(".pdf").name)).resolve()
     if a.bw and not out.stem.endswith("_print"):
         out = out.with_name(f"{out.stem}_print{out.suffix}")
+    if a.share and not out.stem.endswith("_share"):
+        out = out.with_name(f"{out.stem}_share{out.suffix}")
 
     parts, names, known = [], {}, types()
     for i, p in enumerate(spec["parts"], 1):
-        pdf = (base / p["pdf"]).resolve()
+        pdf = screen = (base / p["pdf"]).resolve()
         if a.bw:
             printed = pdf.with_name(f"{pdf.stem}_print{pdf.suffix}")
             if printed.exists():
                 pdf = printed
             else:
                 print(f"note: no print copy of {pdf.name} ({printed.name}); using the screen PDF")
+        if a.share:   # never fall back to an unlocked part without the footer line
+            pdf = pdf.with_name(f"{pdf.stem}_share{pdf.suffix}")
+            if not pdf.exists():
+                sys.exit(f"part {i}: {pdf} not found (build its share copy first: doc.py build ... --share)")
         if not pdf.exists():
             sys.exit(f"part {i}: {pdf} not found (build it first: doc.py build ...)")
         reader = PdfReader(pdf)
+        if reader.is_encrypted:   # a share copy: it opens without a password
+            reader.decrypt("")
         pages = part_pages(reader, p.get("keep_back_cover", False))
-        parts.append({"title": p.get("title") or pdf.stem, "reader": reader, "pages": pages,
+        parts.append({"title": p.get("title") or house.tex_escape(screen.stem), "reader": reader, "pages": pages,
                       "type": part_type(reader, p.get("type"), known), "outline": outline(reader, pages)})
-        for n in (pdf.name, pdf.name.replace("_print.pdf", ".pdf")):   # links name the screen PDF
+        for n in (pdf.name, pdf.name.replace("_print.pdf", ".pdf").replace("_share.pdf", ".pdf")):   # links name the screen PDF
             names[n] = f"p{i}"
 
     # where each part starts: after the cover and "In this pack" (pages 1-2); in print, on a right-hand page
@@ -307,10 +354,10 @@ def main():
     build = out.parent / f"{out.stem}_build"
     shutil.rmtree(build, ignore_errors=True)
     build.mkdir(parents=True)
-    for f in ("main-tex-preamble.tex", "cover-kit.tex", "pack-cover.tex", "back-cover.tex", "print-bw.tex"):
+    for f in ("main-tex-preamble.tex", "cover-kit.tex", "pack-cover.tex", "back-cover.tex", "print-bw.tex", "share.tex"):
         shutil.copy(TEMPLATE / f, build)
     for with_map in (True, False):   # an outline too long for the "In this pack" page is left to the bookmarks
-        (build / "main.tex").write_text(cover_tex(spec, parts, starts, total, a.bw, with_map), encoding="utf-8")
+        (build / "main.tex").write_text(cover_tex(spec, parts, starts, total, a.bw, with_map, a.share), encoding="utf-8")
         ok = house.compile_tex(build)
         house.report(build / "main.log")
         if not ok or not (build / "main.pdf").exists():
@@ -481,11 +528,14 @@ def main():
     if lost:
         print(f"note: {lost} links lead to pages left out of the pack (a part's back cover) and were dropped")
 
+    join_layers(w, [own] + [p["reader"] for p in parts])
     w.add_metadata({"/Title": plain(spec.get("title") or out.stem), "/Author": spec.get("author") or "Nur Mohammad"})
     w.page_mode = "/UseOutlines"
     out.parent.mkdir(parents=True, exist_ok=True)
     with open(out, "wb") as f:
         w.write(f)
+    if a.share:
+        house.protect(out)
     print(f"PDF: {out} ({len(w.pages)} pages, {len(parts)} parts; {relinked} links, {moved} of them between parts)")
     print(f"Build folder (the pack's cover pages): {build}")
 

@@ -300,24 +300,30 @@ literate=
 \cs_generate_variant:Nn \regex_match:nnF { nV }
 \NewDocumentCommand{\addcolon}{m}{\house_addcolon:n {#1}}
 \ExplSyntaxOff
+% ---------- Heading colours (the print copy sets them black, the share copy a step lighter) ----------
+\colorlet{headblue}{blue!75!black}
+\colorlet{headred}{red!70!black}
+% each heading's number and title pass through \headingwrap (the share copy puts them on a screen-only layer)
+\newcommand{\headingwrap}[1]{#1}
+\newcommand{\headingwrapcolon}[1]{\headingwrap{\addcolon{#1}}}
 % ---------- Section format ----------
 \titleformat{\section}
-{\normalfont\Large\bfseries\color{blue!75!black}}
-{\thesection.}
+{\normalfont\Large\bfseries\color{headblue}}
+{\headingwrap{\thesection.}}
 {0.3em}
-{\addcolon}
+{\headingwrapcolon}
 % ---------- Subsection format ----------
 \titleformat{\subsection}
-{\normalfont\large\bfseries\color{red!70!black}}
-{\thesubsection.}
+{\normalfont\large\bfseries\color{headred}}
+{\headingwrap{\thesubsection.}}
 {0.3em}
-{\addcolon}
+{\headingwrapcolon}
 % ---------- Subsubsection format ----------
 \titleformat{\subsubsection}
-{\normalfont\normalsize\bfseries\color{blue!75!black}}
-{\thesubsubsection.}
+{\normalfont\normalsize\bfseries\color{headblue}}
+{\headingwrap{\thesubsubsection.}}
 {0.3em}
-{\addcolon}
+{\headingwrapcolon}
 
 % ---------- Contents title ----------
 % The same size as a section title in every class (extreport would otherwise set it like a \Huge chapter).

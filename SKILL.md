@@ -1,6 +1,6 @@
 ---
 name: engineering-docs
-description: "Writes and builds engineering documents in Nur Mohammad's house LaTeX style and compiles them to interactive PDFs with XeLaTeX: lecture and theory notes, exam notes, formula sheets, question banks, mind maps, derivation sheets, full solutions of previous years' exam papers, and multi-day project or lab reports, each kind with its own document type, cover and writing guide. English, or Bangla with English technical terms. Covers the whole path: writing the Markdown when asked, converting it to house-style LaTeX, and building the PDF with the bundled preamble, covers, callout boxes, linked questions and solutions and links between PDFs; plus a black-and-white print copy laid out for double-sided printing, and packs that combine several PDFs into one. Use whenever the user wants notes, solutions, a report or exam material as a PDF or .tex in \"my format\" or \"my LaTeX style\", even without saying LaTeX. When converting the user's finished Markdown, content is preserved exactly (grammar fixes only)."
+description: "Writes and builds engineering documents in Nur Mohammad's house LaTeX style and compiles them to interactive PDFs with XeLaTeX: lecture and theory notes, exam notes, formula sheets, question banks, mind maps, derivation sheets, full solutions of previous years' exam papers, and multi-day project or lab reports, each kind with its own document type, cover and writing guide. English, or Bangla with English technical terms. Covers the whole path: writing the Markdown if asked, converting it to house-style LaTeX, and building the PDF with the bundled preamble, covers, callout boxes, linked questions and solutions and links between PDFs; plus a black-and-white print copy for double-sided printing, a print-locked share copy, and packs that combine several PDFs into one. Use whenever the user wants notes, solutions, a report or exam material as a PDF or .tex in \"my format\" or \"my LaTeX style\", even without saying LaTeX. When converting the user's finished Markdown, content is preserved exactly (grammar fixes only)."
 ---
 
 # Engineering documents in the house LaTeX style
@@ -122,7 +122,7 @@ python3 <skill>/scripts/build.py body1.tex [body2.tex ...] --out path/Name.pdf \
     --title "First title line:" --title "Second title line" \
     --header "Short running header" \
     [--class extarticle|extreport] [--fontsize 12pt] [--author "Nur Mohammad"] \
-    [--figures extra/image/dir ...] [--no-toc] [--print] \
+    [--figures extra/image/dir ...] [--no-toc] [--print | --share] \
     [--cover --course-code "COM I" --course-name "Communication Engineering I" \
      --cover-title "Formula Sheet" --cover-subtitle "Lectures 24--38" --cover-note "Term test preparation" \
      --cover-contents "Item" --cover-contents "Item" --date "October 2026"]
@@ -141,6 +141,11 @@ python3 <skill>/scripts/build.py body1.tex [body2.tex ...] --out path/Name.pdf \
   2. Build with `--print`. The build uses `print/NAME` for each image that has one and greys every other PNG or JPEG itself (say so: curves told apart only by colour may merge there).
   3. Fix what the build reports under "text naming a colour without a line style or shape": reword it in the Markdown so it names both ("the dashed orange curve"); that fixes the normal PDF too. Then look at the pages (Step 5).
   4. With a cover, the print copy is laid out for double-sided printing: page 2 is the back of the cover (or blank), and blank pages put the back cover on the back of the last sheet; `print_layout: booklet` pads to a multiple of 4 (Section 15.6).
+- **Share copy (`--share`), for handing the PDF to other people:** built beside the normal PDF as `<Name>_share.pdf` (`doc.py build` adds the `_share`; the normal build is never replaced). It makes printing and reselling awkward and marks every copy. It loads `template/share.tex` after the type's preamble:
+  1. a small line "Free shared copy · AUTHOR" in the footer of every page but the covers, always visible (it survives screenshots and every viewer);
+  2. the red and blue headings a step lighter (`#BF4040`, `#4560D0`) and on a layer that shows on screen and is never printed: a print has blank space where they were;
+  3. the same text as the footer line as a large diagonal stamp on a layer that is hidden on screen and always printed.
+  Both layers start visible and carry their view and print behaviour, which Acrobat, Foxit, PDF-XChange, Chrome and Firefox's viewer follow. After the build, printing and changes are locked in the PDF (it opens without a password, and text can still be copied and commented on; the owner password is random and not kept). Chrome, Edge, Acrobat and Foxit refuse to print it; Firefox's viewer ignores the lock but still leaves out the headings and adds the stamp. `--share` and `--print` are separate copies, built one at a time. A share pack: `doc.py bundle pack.yaml --share` after building each part with `--share`.
 - **Several documents as one PDF (a pack):** build each part, then `doc.py bundle pack.yaml` (Section 15.7). Each part keeps its own layout; links between them become links inside the pack.
 - **Build folder:** the build writes `<Name>_build/` next to the PDF. It holds `main.tex`, the preamble and the body files, and it compiles as-is on the user's MikTeX.
 
