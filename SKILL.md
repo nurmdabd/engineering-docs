@@ -160,6 +160,7 @@ Check the following, and fix the body file and rebuild if anything is off:
 - Figures are sized sensibly. Use `width=0.8\linewidth` by default and narrower for tall images.
 - Nothing is blank where a glyph should be.
 - With a cover: page 1, page 2 (the back of the cover) and the last page (the back cover, print copy) look right, and the numbers on them match the document (Section 15.8).
+- A share copy: the build prints `share: printing and editing locked`, the page count equals the normal PDF's, and the footer line is on every page but the covers (Section 15.6).
 
 ### Step 6: Deliver
 Give the user:

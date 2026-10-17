@@ -13,7 +13,8 @@ How to get the best documents out of this skill: what to ask for, what to give C
 | Give it a cover | `cover: true` and the `course_*` / `cover_*` keys | [5](#5-covers-colours-and-the-back-pages) |
 | Colour a subject's documents | `accent: 5B3A8C` (the same on every document of that subject) | [5](#5-covers-colours-and-the-back-pages) |
 | Change the margins | `margin_x: 0.6in` | [6](#6-front-matter-the-settings-block) |
-| Print it double-sided | "make a print version" | [12](#12-printing) |
+| Print it double-sided | "make a print version" | [12](#12-printing-and-sharing) |
+| Give it to other people, hard to print and resell | "make a share copy" (`--share`) | [12](#share-copy) |
 | Put several PDFs in one | a `pack.yaml`, then `doc.py bundle` | [13](#13-packs-several-documents-in-one-pdf) |
 | Draw a course mind map | `type: mind-map` | [4](#mind-map) |
 | See every setting | `python3 scripts/doc.py keys` or `references/front-matter-keys.md` | [6](#6-front-matter-the-settings-block) |
@@ -33,7 +34,7 @@ How to get the best documents out of this skill: what to ask for, what to give C
 9. [Bangla documents](#9-bangla-documents)
 10. [Changing a document after the build](#10-changing-a-document-after-the-build)
 11. [Layout features you get for free](#11-layout-features-you-get-for-free)
-12. [Printing](#12-printing)
+12. [Printing and sharing](#12-printing-and-sharing)
 13. [Packs: several documents in one PDF](#13-packs-several-documents-in-one-pdf)
 14. [Running the scripts yourself](#14-running-the-scripts-yourself)
 15. [Checking the result](#15-checking-the-result)
@@ -335,11 +336,11 @@ Set `lang: bn`. Technical terms, maths, numbers, figure paths and the callout ma
 - **Covers, the back of the cover and a back cover** for every type (Section 5), and **edge tabs** on theory notes, exam notes and formula sheets.
 - **Formula sheets** also get a *Key formulas* page (the bold rows, starred in the sheet) and a *Symbol index*, both linked to the rows.
 - **Bookmarks** read cleanly: the EXAM and NOTE markers appear as words.
-- **Black-and-white print copy** when you ask, and a **share copy** locked against printing (Section 12).
+- **Black-and-white print copy** when you ask, and a **share copy** to give to other people, locked against printing (Section 12).
 
 ---
 
-## 12. Printing
+## 12. Printing and sharing
 
 Say "make a print version of the 2022-23 solution". You get `NAME_print.pdf` beside the normal PDF, which stays as it is:
 
@@ -363,6 +364,10 @@ Say "make a share copy of the 2022-23 solution" (or build with `--share`). You g
 The two layers work in Acrobat, Foxit, PDF-XChange, Chrome and Firefox's viewer. A viewer that ignores PDF layers altogether shows the stamp in light grey on screen and prints the headings.
 
 Your own normal and print PDFs are never locked. A share pack: build each part with `--share`, then `doc.py bundle pack.yaml --share`.
+
+What still prints, by design: black body text, figures, the green bold labels ("**Frequency:**"), the question boxes and the contents page (which lists the headings). The share copy is meant to make a printout incomplete and clearly marked, not to hide the content.
+
+Rebuild the share copy whenever the document changes, together with the normal PDF; a project's `build-all.sh` should build it every time, so an old share copy never goes out.
 
 ---
 
@@ -392,7 +397,7 @@ Then run `python3 scripts/doc.py bundle pack.yaml` (add `--print` for the print 
 - bookmarks with one entry per part and that part's outline under it;
 - links between the parts working inside the file, so the "same folder" rule no longer applies.
 
-Build or rebuild the parts first; the pack takes the PDFs as they are. The print pack uses each part's `_print.pdf` and starts every part on a right-hand page. `scripts/bundle.py` lists every key (`label`, `note`, `date`, `out`, `keep_back_cover`, …).
+Build or rebuild the parts first; the pack takes the PDFs as they are. The print pack uses each part's `_print.pdf` and starts every part on a right-hand page. The share pack (`--share`) uses each part's `_share.pdf`, keeps their layers, stamps the pack's own pages too and is locked like the parts. `scripts/bundle.py` lists every key (`label`, `note`, `date`, `out`, `keep_back_cover`, …).
 
 ---
 
@@ -409,7 +414,7 @@ python3 $S/doc.py build 2023-24.md --out pdf/2023-24.pdf             # lint + co
 python3 $S/doc.py build 2023-24.md --out pdf/2023-24.pdf --reconvert # regenerate the .tex from the Markdown
 DOC_PRINT=1 python3 figures/_src/2023-24.py     # grey copies of the figures, in figures/print/
 python3 $S/doc.py build 2023-24.md --out pdf/2023-24.pdf --print     # black-and-white copy: pdf/2023-24_print.pdf
-python3 $S/doc.py build 2023-24.md --out pdf/2023-24.pdf --share     # share copy, printing locked: pdf/2023-24_share.pdf
+python3 $S/doc.py build 2023-24.md --out pdf/2023-24.pdf --share     # share copy to give away: pdf/2023-24_share.pdf
 python3 $S/doc.py bundle pack.yaml               # several PDFs as one pack (Section 13); --print or --share for those packs
 python3 $S/doc.py keys                           # every front-matter key and its default
 bash $S/setup.sh                                 # install TeX, pandoc, fonts, pypdf (safe to re-run)
@@ -429,6 +434,7 @@ Before you call a document done:
 - [ ] Links work: click the TOC, a few cross-references, and question ↔ solution.
 - [ ] **Content:** every number has its unit, and formulas match the course notes. Past papers: the grey boxes match the paper word for word. Reports: every number is in your logs.
 - [ ] The type's own review checklist at the end of `types/NAME/guide.md`.
+- [ ] **A share copy:** the build says `share: printing and editing locked`; the page count equals the normal PDF's; the footer line "Free shared copy · …" is on every page but the covers. To be sure of the print side, print one page from Firefox (headings blank, stamp across the page) and open it in Edge or Chrome (Print greyed out).
 
 ---
 
@@ -449,6 +455,11 @@ Before you call a document done:
 | "mind map: part … does not fit" | Even "+n more" cannot fit that part. Move cards into a sub-map (give a card children), to another part, or use `map_size: a3`. |
 | "mind map: part 3 …: step 3" in the build output | Not an error: that part was shortened to fit (here: some cards show only their title). Moving cards into a sub-map gives them back their room. |
 | "'→ X' … no card has that title" | The chip must name another card's title exactly as written (markup and case don't matter). |
+| `--share and --print make different copies` | Build the print copy and the share copy as two separate commands. |
+| `bundle --share`: "… _share.pdf not found" | Build each part's share copy first: `doc.py build PART.md --share`. |
+| Firefox prints the share copy | Expected: Firefox's viewer ignores the print lock. Its print leaves out the headings and carries the stamp; Chrome, Edge, Acrobat and Foxit refuse to print. |
+| A whole page prints blank from a share copy | A layer mark did not close on its page. Rebuild with the current skill (each heading's mark stays on its line); the tests check every page for this. |
+| Edge shows "Signing" or "Filling form fields" allowed on a share copy | They come with commenting (one PDF permission). The documents have no form or signature fields, and printing and editing stay locked. |
 | `doc.py bundle` says it needs pypdf | Run `scripts/setup.sh`, or `pip install pypdf`. |
 | The edge tab highlights the wrong part | It needs the second LaTeX run; `build.py` does that. On a hand compile, compile twice. |
 

@@ -20,6 +20,8 @@ Fixed so far:
 - Tables (`table-layout`): a column of short symbols no longer takes the spare width from a prose column; header cells no longer draw double rules between them; a table of up to 6 rows no longer splits across pages (it reserves its height with `\needspace`, together with a heading or label right above it).
 - In-file links written with GitHub's anchors (`#2-tables`, `#lecture-24--pm-bandwidth`) now reach their heading; before, they became plain text.
 
-`--build` also builds the example and the cases marked `"print": true` with `--print`: no rendered page of those may hold colour. A small check draws two coloured curves and runs `figures_bw.to_bw` on them: they must get different dashes, the legend must match, and nothing may stay coloured.
+`--build` also builds the example with `--share`, and a pack of two share copies with `bundle --share`: printing and editing must be locked and commenting allowed, the headings and the stamp must each be on their layer (headings never printed, stamp only printed, neither starting hidden), every layer mark must close on its own page, the stamp must be on every page and the footer line present.
+
+It also builds the example and the cases marked `"print": true` with `--print`: no rendered page of those may hold colour. A small check draws two coloured curves and runs `figures_bw.to_bw` on them: they must get different dashes, the legend must match, and nothing may stay coloured.
 
 `lint/` holds Markdown for the linter: `clean.md` must give no findings, `problems.md` one of each. Their output is compared with the `.expected` files.
