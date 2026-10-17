@@ -3,7 +3,8 @@
 ## October 2026: share copy
 
 - **New `--share` copy** (`doc.py build … --share`, `NAME_share.pdf`), for handing a PDF to other people: printing
-  and changes are locked in the PDF (it opens without a password; text can still be copied); a small "Free shared
+  and editing are locked in the PDF (it opens without a password; text can still be copied, and readers can
+  highlight and comment); a small "Free shared
   copy · AUTHOR" line sits in the footer of every page but the covers; the same text is a large diagonal stamp on
   a layer that is hidden on screen and always printed; the red and blue headings are a step lighter (`#BF4040`,
   `#4560D0`) and on a layer that is never printed. Both layers start visible (Firefox can hide a layer in print

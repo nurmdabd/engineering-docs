@@ -406,7 +406,10 @@ def share_problems(pdf, pages):
     if not r.is_encrypted:
         return ["not locked"]
     r.decrypt("")
-    problems = [] if not r.user_access_permissions & P.PRINT else ["printing is allowed"]
+    perm = r.user_access_permissions
+    problems = [] if not perm & P.PRINT else ["printing is allowed"]
+    problems += [] if not perm & P.MODIFY else ["editing is allowed"]
+    problems += [] if perm & P.ADD_OR_MODIFY else ["commenting is locked"]
     oc = r.trailer["/Root"].get("/OCProperties")
     ocgs = {str(g.get_object()["/Name"]): g for g in oc["/OCGs"].get_object()} if oc else {}
     if sorted(ocgs) != ["Headings, screen only", "Print stamp"]:

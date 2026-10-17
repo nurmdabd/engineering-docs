@@ -316,8 +316,9 @@ def share_input(author):
 
 
 def protect(pdf):
-    """Share copy: lock printing and changes in the finished PDF. It still opens without a password, and text can
-    still be copied; the owner password is random and not kept (the normal build is the unlocked copy)."""
+    """Share copy: lock printing and changes in the finished PDF. It still opens without a password, text can still
+    be copied, and readers can still highlight and comment (one PDF permission, which also covers form filling);
+    the owner password is random and not kept (the normal build is the unlocked copy)."""
     import secrets
     from pypdf import PdfReader, PdfWriter
     from pypdf.constants import UserAccessPermissions as P
@@ -326,7 +327,7 @@ def protect(pdf):
         reader.decrypt("")
     w = PdfWriter(clone_from=reader)
     allowed = P.all()
-    for flag in (P.PRINT, P.PRINT_TO_REPRESENTATION, P.MODIFY, P.ADD_OR_MODIFY, P.FILL_FORM_FIELDS, P.ASSEMBLE_DOC):
+    for flag in (P.PRINT, P.PRINT_TO_REPRESENTATION, P.MODIFY, P.ASSEMBLE_DOC):
         allowed &= ~flag
     try:   # AES needs the cryptography package; RC4 works without it and every viewer reads it
         import cryptography  # noqa: F401
@@ -336,7 +337,7 @@ def protect(pdf):
     w.encrypt(user_password="", owner_password=secrets.token_hex(16), permissions_flag=allowed, algorithm=algorithm)
     with open(pdf, "wb") as f:
         w.write(f)
-    print(f"share: printing and changes locked ({algorithm}); a footer line and a print-only stamp on every page")
+    print(f"share: printing and editing locked, comments allowed ({algorithm}); a footer line and a print-only stamp on every page")
 
 
 def main():
