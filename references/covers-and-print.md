@@ -1,4 +1,4 @@
-# Covers, print copies and packs (Section 15)
+# Covers, print copies, share copies and packs (Section 15)
 
 Part of the engineering-docs rules; SKILL.md has the workflow. Every front-matter key named here is in
 `references/front-matter-keys.md` with its default.
@@ -80,6 +80,28 @@ Never in the print copy: printers cannot print to the edge.
 covers turn to light tints, and the page order above makes double-sided printing come out right.
 `print_layout: booklet` pads to a multiple of 4 pages for a folded booklet. Figures: see SKILL.md Step 4.
 
+### Share copy
+
+`--share` builds `NAME_share.pdf`, the copy to hand to other people (`template/share.tex`, loaded after the type's
+preamble; it never changes the normal or print build, and cannot be combined with `--print`):
+
+- after the build, `build.py` locks printing, editing and page assembly (pypdf, AES-128, empty user password,
+  random owner password that is not kept); copying, commenting and form filling stay allowed;
+- the headings' number and title pass through `\headingwrap` (the house and past-paper heading formats call it;
+  it does nothing in other builds). Here it puts them on the layer "Headings, screen only" (view on, print off),
+  in `headred` / `headblue` lightened to `#BF4040` / `#4560D0`;
+- the stamp, \HouseShareText at 40 pt, 30 % grey, at 55° (35° landscape), on the layer "Print stamp" (view off,
+  print on), drawn on every page at shipout;
+- the footer line, \HouseShareText in `\scriptsize` at 55 % grey, right of the page number in the `fancy` and
+  `plain` styles, so the covers (`empty`) have none;
+- `\HouseShareText` is "Free shared copy · AUTHOR" (`build.py` writes it from `--author`).
+
+Both layers start visible (`/D` has no `/OFF`) and carry `/Usage` with `/AS` events for view, print and export:
+Firefox's viewer can hide a layer in print but never shows one that starts hidden. They are written with
+xdvipdfmx specials (`pdf:obj`, `pdf:put @resources`, `pdf:literal direct … BDC` / `EMC`), not ocgx2, which carried
+a layer open at a page break over to the next page once the stamp was drawn at shipout. A heading title reached
+in vertical mode starts its paragraph before its mark, so a mark never falls on the page before its heading.
+
 ## 15.7 Packs: several documents in one PDF
 
 `doc.py bundle pack.yaml` (scripts/bundle.py; its docstring shows the YAML) combines finished PDFs:
@@ -100,6 +122,9 @@ covers turn to light tints, and the page order above makes double-sided printing
 - links from one part into another (`file.pdf#label`) become links inside the pack, so the folder rule of
   Section 13 no longer applies to them;
 - `--print` uses the parts' `NAME_print.pdf`, starts every part on a right-hand page and ends on a full sheet.
+- `--share` uses the parts' `NAME_share.pdf` (it stops if one is missing, never falling back to an unlocked part),
+  compiles the pack's own pages with `share.tex`, joins the parts' layers (pypdf copies pages but not the list of
+  layers; layers of the same name become one) and locks the finished pack.
 
 Build every part first, then the pack. Rebuild the pack after any part changes.
 
@@ -109,3 +134,5 @@ Build every part first, then the pack. Rebuild the pack after any part changes.
 - Edge tabs: each chip is a link over its whole area (a link annotation the size of the chip); click two of them.
 - A print copy: the page count is even (a multiple of 4 for a booklet) and the back cover is last.
 - A pack: open the "In this pack" links and two links that cross between parts.
+- A share copy: locked for printing and editing; the two layers on every page with each mark closed on its own
+  page (the tests check this); the page count equals the normal PDF's.
